@@ -78,4 +78,30 @@
             alert(mxrouteMailer.i18n.failedClear);
         });
     });
+    $(document).on('click', '#mxroute-test-connection', function (e) {
+        e.preventDefault();
+        var $btn = $(this);
+        var $result = $('#mxroute-test-result');
+
+        $btn.prop('disabled', true);
+        $result.text(mxrouteMailer.i18n.testing || 'Testing...').css('color', '#666');
+
+        $.post(mxrouteMailer.ajaxUrl, {
+            action: 'mxroute_test_connection',
+            nonce: mxrouteMailer.nonce,
+            server: $('#mxroute_mailer_server').val(),
+            username: $('#mxroute_mailer_username').val(),
+            password: $('#mxroute_mailer_password').val()
+        }, function (response) {
+            if (response.success) {
+                $result.text(response.data.message).css('color', '#00a32a');
+            } else {
+                $result.text(response.data.message).css('color', '#d63638');
+            }
+        }).fail(function () {
+            $result.text(mxrouteMailer.i18n.error).css('color', '#d63638');
+        }).always(function () {
+            $btn.prop('disabled', false);
+        });
+    });
 })(jQuery);

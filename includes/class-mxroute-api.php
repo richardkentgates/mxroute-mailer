@@ -27,7 +27,7 @@ class MXRoute_API {
 	private static $max_field_length = 5000;
 
 	/**
-	 * Send an email via the MXRoute API.
+	 * Send an email via the MXRoute API using saved settings.
 	 *
 	 * @param string       $from    Sender email address.
 	 * @param string|array $to      Recipient email address(es).
@@ -47,6 +47,29 @@ class MXRoute_API {
 		$username = get_option( 'mxroute_mailer_username', '' );
 		$password = get_option( 'mxroute_mailer_password', '' );
 
+		return $this->send_with_credentials( $from, $to, $subject, $body, $server, $username, $password );
+	}
+
+	/**
+	 * Send an email via the MXRoute API with explicit credentials.
+	 *
+	 * @param string       $from     Sender email address.
+	 * @param string|array $to       Recipient email address(es).
+	 * @param string       $subject  Email subject.
+	 * @param string       $body     Email body.
+	 * @param string       $server   MXRoute server hostname.
+	 * @param string       $username MXRoute username.
+	 * @param string       $password MXRoute password.
+	 * @return array {
+	 *     Response data.
+	 *
+	 *     @type bool   $success  Whether the send was successful.
+	 *     @type string $message  Server message.
+	 *     @type array  $request  Request data sent to API.
+	 *     @type array  $response Raw API response.
+	 * }
+	 */
+	public function send_with_credentials( $from, $to, $subject, $body, $server, $username, $password ) {
 		if ( empty( $server ) || empty( $username ) || empty( $password ) ) {
 			return array(
 				'success'  => false,

@@ -19,6 +19,7 @@ class MXRoute_Settings {
 		add_action( 'admin_menu', array( $this, 'add_menu_pages' ) );
 		add_action( 'admin_init', array( $this, 'register_settings' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
+		add_action( 'wp_ajax_mxroute_test_connection', array( $this, 'ajax_test_connection' ) );
 	}
 
 	/**
@@ -164,9 +165,46 @@ class MXRoute_Settings {
 					'failedDelete'  => __( 'Failed to delete log.', 'mxroute-mailer' ),
 					'failedClear'   => __( 'Failed to clear logs.', 'mxroute-mailer' ),
 					'error'         => __( 'An error occurred.', 'mxroute-mailer' ),
+					'testing'       => __( 'Testing...', 'mxroute-mailer' ),
 				),
 			)
 		);
+	}
+
+	/**
+	 * AJAX handler for testing connection with form values.
+	 *
+	 * @return void
+	 */
+	public function ajax_test_connection() {
+		check_ajax_referer( 'mxroute_test_email', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Unauthorized.', 'mxroute-mailer' ) ) );
+			return;
+		}
+
+		$server   = sanitize_text_field( wp_unslash( $_POST['server'] ?? '' ) );
+		$username = sanitize_text_field( wp_unslash( $_POST['username'] ?? '' ) );
+		$password = sanitize_text_field( wp_unslash( $_POST['password'] ?? '' ) );
+
+		if ( empty( $server ) || empty( $username ) || empty( $password ) ) {
+			wp_send_json_error( array( 'message' => __( 'All fields are required.', 'mxroute-mailer' ) ) );
+			return;
+		}
+
+		$api      = new MXRoute_API();
+		$to       = get_option( 'admin_email' );
+		$from     = $username;
+		$subject  = 'MXRoute Connection Test';
+		$body     = 'This is a connection test from MXRoute Mailer.';
+		$result   = $api->send_with_credentials( $from, $to, $subject, $body, $server, $username, $password );
+
+		if ( $result['success'] ) {
+			wp_send_json_success( array( 'message' => $result['message'] ) );
+		} else {
+			wp_send_json_error( array( 'message' => $result['message'] ) );
+		}
 	}
 
 	/**

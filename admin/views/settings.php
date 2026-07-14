@@ -101,6 +101,11 @@ defined( 'ABSPATH' ) || exit;
 		</table>
 
 		<?php submit_button( __( 'Save Settings', 'mxroute-mailer' ) ); ?>
+
+		<p class="submit" style="margin-left: 10px; display: inline-block;">
+			<button type="button" id="mxroute-test-connection" class="button"><?php esc_html_e( 'Test Connection', 'mxroute-mailer' ); ?></button>
+			<span id="mxroute-test-result" style="margin-left: 10px;"></span>
+		</p>
 	</form>
 
 	<hr />
