@@ -139,7 +139,9 @@ class MXRoute_Settings {
 	 * @return void
 	 */
 	public function enqueue_assets( $hook ) {
-		if ( 'settings_page_mxroute-mailer' !== $hook && 'tools_page_mxroute-logs' !== $hook && 'tools_page_mxroute-log-view' !== $hook ) {
+		$is_log_view = isset( $_GET['page'] ) && 'mxroute-log-view' === sanitize_text_field( wp_unslash( $_GET['page'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+
+		if ( 'settings_page_mxroute-mailer' !== $hook && 'tools_page_mxroute-logs' !== $hook && ! $is_log_view ) {
 			return;
 		}
 

@@ -120,6 +120,12 @@ if (!function_exists('sanitize_textarea_field')) {
     }
 }
 
+if (!function_exists('wp_kses_post')) {
+    function wp_kses_post($content) {
+        return is_string($content) ? $content : '';
+    }
+}
+
 if (!function_exists('wp_unslash')) {
     function wp_unslash($value) {
         if (is_array($value)) {

@@ -7,6 +7,9 @@
 
 defined( 'ABSPATH' ) || exit;
 
+// phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Set page title for admin-header.php to prevent PHP 8.1 null deprecation.
+$GLOBALS['title'] = __( 'MXRoute Log Detail', 'mxroute-mailer' );
+
 $log_id = isset( $_GET['id'] ) ? intval( wp_unslash( $_GET['id'] ) ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 $logger = new MXRoute_Logger();
 $log    = $logger->get_log( $log_id );
@@ -64,6 +67,9 @@ $response = json_decode( $log->api_response, true );
 			<td><?php echo esc_html( $log->subject ); ?></td>
 		</tr>
 	</table>
+
+	<h4><?php esc_html_e( 'Message', 'mxroute-mailer' ); ?></h4>
+	<div class="mxroute-json"><?php echo wp_kses_post( $log->message ); ?></div>
 
 	<h4><?php esc_html_e( 'API Request', 'mxroute-mailer' ); ?></h4>
 	<pre class="mxroute-json"><?php echo esc_html( wp_json_encode( $request, JSON_PRETTY_PRINT ) ); ?></pre>

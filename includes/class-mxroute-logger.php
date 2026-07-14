@@ -43,6 +43,7 @@ class MXRoute_Logger {
             from_email varchar(255) NOT NULL,
             to_email varchar(255) NOT NULL,
             subject varchar(255) NOT NULL,
+            message longtext,
             api_request longtext,
             api_response longtext,
             success tinyint(1) NOT NULL DEFAULT 0,
@@ -76,12 +77,13 @@ class MXRoute_Logger {
 	 * @param string       $from     Sender email address.
 	 * @param string|array $to       Recipient email address(es).
 	 * @param string       $subject  Email subject.
+	 * @param string       $body     Email message body.
 	 * @param array        $request  API request data.
 	 * @param array        $response API response data.
 	 * @param bool         $success  Whether the send was successful.
 	 * @return void
 	 */
-	public function log( $from, $to, $subject, $request, $response, $success ) {
+	public function log( $from, $to, $subject, $body, $request, $response, $success ) {
 		if ( ! get_option( 'mxroute_mailer_logging_enabled', 1 ) ) {
 			return;
 		}
@@ -103,11 +105,12 @@ class MXRoute_Logger {
 				'from_email'   => sanitize_email( $from ),
 				'to_email'     => $to_address,
 				'subject'      => sanitize_text_field( $subject ),
+				'message'      => $body,
 				'api_request'  => wp_json_encode( $request ),
 				'api_response' => wp_json_encode( $response ),
 				'success'      => $success ? 1 : 0,
 			),
-			array( '%s', '%s', '%s', '%s', '%s', '%d' )
+			array( '%s', '%s', '%s', '%s', '%s', '%s', '%d' )
 		);
 	}
 

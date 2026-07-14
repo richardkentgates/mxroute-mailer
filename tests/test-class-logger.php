@@ -26,6 +26,7 @@ class MXRoute_Logger_Test extends \PHPUnit\Framework\TestCase {
             'from@example.com',
             'to@example.com',
             'Test Subject',
+            'Test body content',
             array('server' => 'test', 'username' => 'user'),
             array('success' => true, 'message' => 'Sent'),
             true
@@ -48,6 +49,7 @@ class MXRoute_Logger_Test extends \PHPUnit\Framework\TestCase {
             'from@example.com',
             'to@example.com',
             'Test Subject',
+            'Test body content',
             array(),
             array(),
             true
@@ -63,6 +65,7 @@ class MXRoute_Logger_Test extends \PHPUnit\Framework\TestCase {
             'from@example.com',
             'to@example.com',
             'Test Subject',
+            'Test body content',
             array(),
             array(),
             true
@@ -174,6 +177,7 @@ class MXRoute_Logger_Test extends \PHPUnit\Framework\TestCase {
             'from@example.com',
             array('to@example.com', 'to2@example.com'),
             'Test Subject',
+            'Test body content',
             array(),
             array(),
             true
@@ -193,6 +197,7 @@ class MXRoute_Logger_Test extends \PHPUnit\Framework\TestCase {
             'from@example.com',
             '',
             'Test Subject',
+            'Test body content',
             array(),
             array(),
             true
@@ -211,6 +216,7 @@ class MXRoute_Logger_Test extends \PHPUnit\Framework\TestCase {
             'from@example.com',
             'to@example.com',
             'Test Subject',
+            'Test body content',
             array('server' => 'test'),
             array('error' => 'Connection failed'),
             false

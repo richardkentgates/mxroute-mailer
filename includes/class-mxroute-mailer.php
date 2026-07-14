@@ -108,6 +108,7 @@ class MXRoute_Mailer {
 			$from,
 			$args['to'],
 			$args['subject'],
+			$args['message'],
 			$result['request'],
 			$result['response'],
 			$result['success']
@@ -225,6 +226,7 @@ class MXRoute_Mailer {
 			$from,
 			$to,
 			$subject,
+			$body,
 			$result['request'],
 			$result['response'],
 			$result['success']
