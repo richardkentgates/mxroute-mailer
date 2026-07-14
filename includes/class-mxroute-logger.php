@@ -172,8 +172,10 @@ class MXRoute_Logger {
 
 		$count_values = array_slice( $values, 0, -2 );
 		$count_query  = "SELECT COUNT(*) FROM {$this->table_name} WHERE $where";
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Count query with dynamic WHERE, table name is safe.
-		$count_query = $wpdb->prepare( $count_query, $count_values );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Count query with dynamic WHERE, table name is safe.
+		$count_query = ! empty( $count_values )
+			? $wpdb->prepare( $count_query, $count_values ) // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			: $count_query;
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Already prepared above.
 		$total = (int) $wpdb->get_var( $count_query );
 
