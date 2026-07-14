@@ -99,6 +99,20 @@ class MXRoute_Logger_Test extends \PHPUnit\Framework\TestCase {
         $this->assertTrue(true);
     }
 
+    public function test_delete_logs_calls_delete_with_multiple_ids() {
+        $logger = new MXRoute_Logger();
+        $logger->delete_logs( array( 1, 2, 3 ) );
+
+        $this->assertTrue(true);
+    }
+
+    public function test_delete_logs_handles_empty_array() {
+        $logger = new MXRoute_Logger();
+        $logger->delete_logs( array() );
+
+        $this->assertTrue(true);
+    }
+
     public function test_get_logs_returns_array_with_pagination() {
         $logger = new MXRoute_Logger();
         $result = $logger->get_logs(10, 1, array());

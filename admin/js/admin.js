@@ -44,4 +44,54 @@
             alert(mxrouteMailer.i18n.failedClear);
         });
     });
+
+    $('#mxroute-select-all').on('change', function () {
+        $('.mxroute-log-checkbox').prop('checked', this.checked);
+    });
+
+    $(document).on('change', '.mxroute-log-checkbox', function () {
+        var total = $('.mxroute-log-checkbox').length;
+        var checked = $('.mxroute-log-checkbox:checked').length;
+        $('#mxroute-select-all').prop('checked', total === checked);
+    });
+
+    function mxrouteBulkDelete() {
+        var ids = [];
+        $('.mxroute-log-checkbox:checked').each(function () {
+            ids.push($(this).val());
+        });
+
+        if (ids.length === 0) {
+            alert(mxrouteMailer.i18n.noSelection);
+            return;
+        }
+
+        if (!confirm(mxrouteMailer.i18n.confirmBulkDelete.replace('%d', ids.length))) {
+            return;
+        }
+
+        $.post(mxrouteMailer.ajaxUrl, {
+            action: 'mxroute_bulk_delete_logs',
+            nonce: mxrouteMailer.logManageNonce,
+            log_ids: ids
+        }, function (response) {
+            if (response.success) {
+                $('.mxroute-log-checkbox:checked').closest('tr').fadeOut(300, function () { $(this).remove(); });
+                $('#mxroute-select-all').prop('checked', false);
+                alert(response.data.message);
+            } else {
+                alert(response.data && response.data.message ? response.data.message : mxrouteMailer.i18n.failedBulkDelete);
+            }
+        }).fail(function () {
+            alert(mxrouteMailer.i18n.failedBulkDelete);
+        });
+    }
+
+    $('#mxroute-bulk-apply, #mxroute-bulk-apply-bottom').on('click', function (e) {
+        e.preventDefault();
+        var action = $(this).closest('.tablenav').find('select[name="action"]').val();
+        if (action === 'bulk-delete') {
+            mxrouteBulkDelete();
+        }
+    });
 })(jQuery);

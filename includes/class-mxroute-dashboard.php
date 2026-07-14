@@ -18,6 +18,7 @@ class MXRoute_Dashboard {
 	public function __construct() {
 		add_action( 'admin_ajax_mxroute_clear_logs', array( $this, 'ajax_clear_logs' ) );
 		add_action( 'admin_ajax_mxroute_delete_log', array( $this, 'ajax_delete_log' ) );
+		add_action( 'admin_ajax_mxroute_bulk_delete_logs', array( $this, 'ajax_bulk_delete_logs' ) );
 	}
 
 	/**
@@ -52,11 +53,42 @@ class MXRoute_Dashboard {
 			return;
 		}
 
-		$id     = intval( $_POST['log_id'] ?? 0 );
+		$log_id = intval( $_POST['log_id'] ?? 0 );
 		$logger = new MXRoute_Logger();
-		$logger->delete_log( $id );
+		$logger->delete_log( $log_id );
 
 		wp_send_json_success( array( 'message' => __( 'Log deleted.', 'mxroute-mailer' ) ) );
+	}
+
+	/**
+	 * AJAX handler to delete multiple selected logs.
+	 *
+	 * @return void
+	 */
+	public function ajax_bulk_delete_logs() {
+		check_ajax_referer( 'mxroute_log_manage', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Unauthorized.', 'mxroute-mailer' ) ) );
+			return;
+		}
+
+		$ids = isset( $_POST['log_ids'] ) ? array_map( 'intval', (array) $_POST['log_ids'] ) : array();
+		$ids = array_filter( $ids );
+
+		if ( empty( $ids ) ) {
+			wp_send_json_error( array( 'message' => __( 'No logs selected.', 'mxroute-mailer' ) ) );
+			return;
+		}
+
+		$logger = new MXRoute_Logger();
+		$logger->delete_logs( $ids );
+
+		wp_send_json_success( array( 'message' => sprintf(
+			/* translators: %d: number of logs deleted */
+			_n( '%d log deleted.', '%d logs deleted.', count( $ids ), 'mxroute-mailer' ),
+			count( $ids )
+		) ) );
 	}
 }
 

@@ -7,9 +7,9 @@
 
 defined( 'ABSPATH' ) || exit;
 
-$id     = isset( $_GET['id'] ) ? intval( wp_unslash( $_GET['id'] ) ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+$log_id = isset( $_GET['id'] ) ? intval( wp_unslash( $_GET['id'] ) ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 $logger = new MXRoute_Logger();
-$log    = $logger->get_log( $id );
+$log    = $logger->get_log( $log_id );
 
 if ( ! $log ) {
 	?>

@@ -165,10 +165,13 @@ class MXRoute_Settings {
 					'ajaxUrl'        => admin_url( 'admin-ajax.php' ),
 					'logManageNonce' => wp_create_nonce( 'mxroute_log_manage' ),
 					'i18n'           => array(
-						'confirmDelete' => __( 'Delete this log entry?', 'mxroute-mailer' ),
-						'confirmClear'  => __( 'Are you sure you want to clear ALL email logs? This cannot be undone.', 'mxroute-mailer' ),
-						'failedDelete'  => __( 'Failed to delete log.', 'mxroute-mailer' ),
-						'failedClear'   => __( 'Failed to clear logs.', 'mxroute-mailer' ),
+						'confirmDelete'     => __( 'Delete this log entry?', 'mxroute-mailer' ),
+						'confirmClear'      => __( 'Are you sure you want to clear ALL email logs? This cannot be undone.', 'mxroute-mailer' ),
+						'confirmBulkDelete' => __( 'Are you sure you want to delete %d log entries? This cannot be undone.', 'mxroute-mailer' ),
+						'failedDelete'      => __( 'Failed to delete log.', 'mxroute-mailer' ),
+						'failedClear'       => __( 'Failed to clear logs.', 'mxroute-mailer' ),
+						'failedBulkDelete'  => __( 'Failed to delete logs.', 'mxroute-mailer' ),
+						'noSelection'       => __( 'No logs selected.', 'mxroute-mailer' ),
 					),
 				)
 			);

@@ -225,6 +225,28 @@ class MXRoute_Logger {
 	}
 
 	/**
+	 * Delete multiple log entries by ID.
+	 *
+	 * @param array $ids Array of log entry IDs.
+	 * @return void
+	 */
+	public function delete_logs( $ids ) {
+		global $wpdb;
+		$ids = array_map( 'intval', $ids );
+		$ids = array_filter( $ids );
+		if ( empty( $ids ) ) {
+			return;
+		}
+		$placeholders = array_fill( 0, count( $ids ), '%d' );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Delete by primary keys, caching not applicable.
+		$wpdb->delete(
+			$this->table_name,
+			array( 'id' => $ids ),
+			array( $placeholders )
+		);
+	}
+
+	/**
 	 * Get the most recent log entries.
 	 *
 	 * @param int $count Number of logs to retrieve.
