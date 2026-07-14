@@ -2,7 +2,7 @@
 Contributors: richardkentgates
 Tags: email, smtp, mxroute, mail
 Requires at least: 5.0
-Tested up to: 6.7
+Tested up to: 7.0
 Requires PHP: 7.3
 Stable tag: 1.1.2
 License: GPLv2 or later
