@@ -298,6 +298,13 @@ if (!function_exists('add_management_page')) {
     }
 }
 
+if (!function_exists('add_submenu_page')) {
+    function add_submenu_page($parent_slug, $page_title, $menu_title, $capability, $menu_slug, $function = '') {
+        $GLOBALS['wp_function_calls']['add_submenu_page'][] = compact('parent_slug', 'page_title', 'menu_title', 'capability', 'menu_slug');
+        return true;
+    }
+}
+
 if (!function_exists('wp_enqueue_style')) {
     function wp_enqueue_style($handle, $src = '', $deps = array(), $ver = false, $media = 'all') {
         $GLOBALS['wp_function_calls']['wp_enqueue_style'][] = compact('handle', 'src', 'deps', 'ver', 'media');

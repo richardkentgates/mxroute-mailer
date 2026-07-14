@@ -43,7 +43,8 @@ class MXRoute_Settings {
 			array( $this, 'render_logs_page' )
 		);
 
-		add_management_page(
+		add_submenu_page(
+			null,
 			__( 'MXRoute Log Detail', 'mxroute-mailer' ),
 			__( 'MXRoute Log Detail', 'mxroute-mailer' ),
 			'manage_options',
