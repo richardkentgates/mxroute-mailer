@@ -42,7 +42,7 @@
 }
 
 .mxroute-filters select[name="status"] {
-    min-width: 120px;
+    min-width: 160px;
 }
 
 .mxroute-logs-table {
