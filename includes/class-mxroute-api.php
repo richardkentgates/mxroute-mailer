@@ -79,11 +79,16 @@ class MXRoute_API {
 			'subject'  => $payload['subject'],
 		);
 
+		$auth_header = 'Basic ' . base64_encode( $username . ':' . $password ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
+
 		$response = wp_remote_post(
 			$this->endpoint,
 			array(
 				'body'      => wp_json_encode( $payload ),
-				'headers'   => array( 'Content-Type' => 'application/json' ),
+				'headers'   => array(
+					'Content-Type'  => 'application/json',
+					'Authorization' => $auth_header,
+				),
 				'timeout'   => 30,
 				'sslverify' => true,
 			)
