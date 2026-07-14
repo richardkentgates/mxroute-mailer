@@ -1,0 +1,26 @@
+name: Promote Dev to Test
+
+on:
+  workflow_dispatch:
+
+jobs:
+  promote:
+    name: Promote dev → test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: test
+          fetch-depth: 0
+
+      - name: Merge dev into test
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git merge origin/dev --no-edit
+
+      - name: Push to test
+        run: git push origin test
