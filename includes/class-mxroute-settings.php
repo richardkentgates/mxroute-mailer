@@ -19,6 +19,7 @@ class MXRoute_Settings {
 		add_action( 'admin_menu', array( $this, 'add_menu_pages' ) );
 		add_action( 'admin_init', array( $this, 'register_settings' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
+		add_filter( 'admin_title', array( $this, 'set_admin_title' ), 10, 2 );
 	}
 
 	/**
@@ -130,6 +131,22 @@ class MXRoute_Settings {
 			return get_option( 'mxroute_mailer_password', '' );
 		}
 		return $value;
+	}
+
+	/**
+	 * Set the admin page title for the log detail view.
+	 *
+	 * Hooks into admin_title so the title is set before admin-header.php
+	 * calls strip_tags(), preventing PHP 8.1 null deprecation.
+	 *
+	 * @param string $title The admin page title.
+	 * @return string Modified title.
+	 */
+	public function set_admin_title( $title ) {
+		if ( isset( $_GET['page'] ) && 'mxroute-log-view' === sanitize_text_field( wp_unslash( $_GET['page'] ) ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			return __( 'MXRoute Log Detail', 'mxroute-mailer' );
+		}
+		return $title;
 	}
 
 	/**
