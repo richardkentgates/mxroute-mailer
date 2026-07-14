@@ -91,9 +91,9 @@ $total_pages = $result['pages'];
 						<td><?php echo esc_html( $log->from_email ); ?></td>
 						<td><?php echo esc_html( $log->to_email ); ?></td>
 						<td><?php echo esc_html( wp_trim_words( $log->subject, 8 ) ); ?></td>
-						<td>
-							<button class="button button-small mxroute-view-log" data-log-id="<?php echo esc_attr( $log->id ); ?>"><?php esc_html_e( 'View', 'mxroute-mailer' ); ?></button>
-							<button class="button button-small mxroute-delete-log" data-log-id="<?php echo esc_attr( $log->id ); ?>"><?php esc_html_e( 'Delete', 'mxroute-mailer' ); ?></button>
+					<td>
+						<a href="<?php echo esc_url( admin_url( 'tools.php?page=mxroute-log-view&id=' . $log->id ) ); ?>" class="button button-small"><?php esc_html_e( 'View', 'mxroute-mailer' ); ?></a>
+						<button class="button button-small mxroute-delete-log" data-log-id="<?php echo esc_attr( $log->id ); ?>"><?php esc_html_e( 'Delete', 'mxroute-mailer' ); ?></button>
 						</td>
 					</tr>
 				<?php endforeach; ?>
@@ -121,12 +121,4 @@ $total_pages = $result['pages'];
 			</div>
 		<?php endif; ?>
 	<?php endif; ?>
-
-	<div id="mxroute-log-modal" class="mxroute-modal" style="display:none;">
-		<div class="mxroute-modal-content">
-			<span class="mxroute-modal-close">&times;</span>
-			<h3><?php esc_html_e( 'Email Log Details', 'mxroute-mailer' ); ?></h3>
-			<div id="mxroute-modal-body"></div>
-		</div>
-	</div>
 </div>

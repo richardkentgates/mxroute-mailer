@@ -67,12 +67,12 @@ class MXRoute_Settings_Test extends \PHPUnit\Framework\TestCase {
         $this->assertEmpty($GLOBALS['wp_function_calls']['wp_enqueue_script'] ?? array());
     }
 
-    public function test_enqueue_assets_loads_on_settings_page() {
+    public function test_enqueue_assets_loads_css_on_settings_page() {
         $settings = new MXRoute_Settings();
         $settings->enqueue_assets('settings_page_mxroute-mailer');
 
         $this->assertArrayHasKey('wp_enqueue_style', $GLOBALS['wp_function_calls']);
-        $this->assertArrayHasKey('wp_enqueue_script', $GLOBALS['wp_function_calls']);
+        $this->assertEmpty($GLOBALS['wp_function_calls']['wp_enqueue_script'] ?? array());
     }
 
     public function test_enqueue_assets_loads_on_logs_page() {
@@ -83,16 +83,17 @@ class MXRoute_Settings_Test extends \PHPUnit\Framework\TestCase {
         $this->assertArrayHasKey('wp_enqueue_script', $GLOBALS['wp_function_calls']);
     }
 
-    public function test_enqueue_assets_localizes_ajax_url() {
+    public function test_enqueue_assets_localizes_on_logs_page() {
         $settings = new MXRoute_Settings();
-        $settings->enqueue_assets('settings_page_mxroute-mailer');
+        $settings->enqueue_assets('tools_page_mxroute-logs');
 
         $calls = $GLOBALS['wp_function_calls']['wp_localize_script'];
         $this->assertCount(1, $calls);
         $this->assertEquals('mxroute-mailer-admin', $calls[0]['handle']);
         $this->assertEquals('mxrouteMailer', $calls[0]['object_name']);
         $this->assertArrayHasKey('ajaxUrl', $calls[0]['l10n']);
-        $this->assertArrayHasKey('nonce', $calls[0]['l10n']);
+        $this->assertArrayHasKey('logManageNonce', $calls[0]['l10n']);
+        $this->assertArrayHasKey('i18n', $calls[0]['l10n']);
     }
 
     public function test_enqueue_assets_uses_plugin_version() {

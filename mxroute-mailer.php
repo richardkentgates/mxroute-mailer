@@ -15,7 +15,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'MXROUTE_MAILER_VERSION', '1.0.0' );
+define( 'MXROUTE_MAILER_VERSION', '1.1.2' );
 define( 'MXROUTE_MAILER_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'MXROUTE_MAILER_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 

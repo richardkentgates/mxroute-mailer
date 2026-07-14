@@ -19,7 +19,6 @@ class MXRoute_Settings {
 		add_action( 'admin_menu', array( $this, 'add_menu_pages' ) );
 		add_action( 'admin_init', array( $this, 'register_settings' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
-		add_action( 'wp_ajax_mxroute_test_connection', array( $this, 'ajax_test_connection' ) );
 	}
 
 	/**
@@ -42,6 +41,14 @@ class MXRoute_Settings {
 			'manage_options',
 			'mxroute-logs',
 			array( $this, 'render_logs_page' )
+		);
+
+		add_management_page(
+			__( 'MXRoute Log Detail', 'mxroute-mailer' ),
+			__( 'MXRoute Log Detail', 'mxroute-mailer' ),
+			'manage_options',
+			'mxroute-log-view',
+			array( $this, 'render_log_view_page' )
 		);
 	}
 
@@ -131,7 +138,7 @@ class MXRoute_Settings {
 	 * @return void
 	 */
 	public function enqueue_assets( $hook ) {
-		if ( 'settings_page_mxroute-mailer' !== $hook && 'tools_page_mxroute-logs' !== $hook ) {
+		if ( 'settings_page_mxroute-mailer' !== $hook && 'tools_page_mxroute-logs' !== $hook && 'tools_page_mxroute-log-view' !== $hook ) {
 			return;
 		}
 
@@ -142,68 +149,29 @@ class MXRoute_Settings {
 			MXROUTE_MAILER_VERSION
 		);
 
-		wp_enqueue_script(
-			'mxroute-mailer-admin',
-			MXROUTE_MAILER_PLUGIN_URL . 'admin/js/admin.js',
-			array( 'jquery' ),
-			MXROUTE_MAILER_VERSION,
-			true
-		);
+		if ( 'tools_page_mxroute-logs' === $hook ) {
+			wp_enqueue_script(
+				'mxroute-mailer-admin',
+				MXROUTE_MAILER_PLUGIN_URL . 'admin/js/admin.js',
+				array( 'jquery' ),
+				MXROUTE_MAILER_VERSION,
+				true
+			);
 
-		wp_localize_script(
-			'mxroute-mailer-admin',
-			'mxrouteMailer',
-			array(
-				'ajaxUrl'        => admin_url( 'admin-ajax.php' ),
-				'nonce'          => wp_create_nonce( 'mxroute_test_email' ),
-				'logViewNonce'   => wp_create_nonce( 'mxroute_log_view' ),
-				'logManageNonce' => wp_create_nonce( 'mxroute_log_manage' ),
-				'i18n'           => array(
-					'confirmDelete' => __( 'Delete this log entry?', 'mxroute-mailer' ),
-					'confirmClear'  => __( 'Are you sure you want to clear ALL email logs? This cannot be undone.', 'mxroute-mailer' ),
-					'failedLoad'    => __( 'Failed to load log details.', 'mxroute-mailer' ),
-					'failedDelete'  => __( 'Failed to delete log.', 'mxroute-mailer' ),
-					'failedClear'   => __( 'Failed to clear logs.', 'mxroute-mailer' ),
-					'error'         => __( 'An error occurred.', 'mxroute-mailer' ),
-					'testing'       => __( 'Testing...', 'mxroute-mailer' ),
-				),
-			)
-		);
-	}
-
-	/**
-	 * AJAX handler for testing connection with form values.
-	 *
-	 * @return void
-	 */
-	public function ajax_test_connection() {
-		check_ajax_referer( 'mxroute_test_email', 'nonce' );
-
-		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( array( 'message' => __( 'Unauthorized.', 'mxroute-mailer' ) ) );
-			return;
-		}
-
-		$server   = sanitize_text_field( wp_unslash( $_POST['server'] ?? '' ) );
-		$username = sanitize_text_field( wp_unslash( $_POST['username'] ?? '' ) );
-		$password = sanitize_text_field( wp_unslash( $_POST['password'] ?? '' ) );
-
-		if ( empty( $server ) || empty( $username ) || empty( $password ) ) {
-			wp_send_json_error( array( 'message' => __( 'All fields are required.', 'mxroute-mailer' ) ) );
-			return;
-		}
-
-		$api      = new MXRoute_API();
-		$to       = get_option( 'admin_email' );
-		$from     = $username;
-		$subject  = 'MXRoute Connection Test';
-		$body     = 'This is a connection test from MXRoute Mailer.';
-		$result   = $api->send_with_credentials( $from, $to, $subject, $body, $server, $username, $password );
-
-		if ( $result['success'] ) {
-			wp_send_json_success( array( 'message' => $result['message'] ) );
-		} else {
-			wp_send_json_error( array( 'message' => $result['message'] ) );
+			wp_localize_script(
+				'mxroute-mailer-admin',
+				'mxrouteMailer',
+				array(
+					'ajaxUrl'        => admin_url( 'admin-ajax.php' ),
+					'logManageNonce' => wp_create_nonce( 'mxroute_log_manage' ),
+					'i18n'           => array(
+						'confirmDelete' => __( 'Delete this log entry?', 'mxroute-mailer' ),
+						'confirmClear'  => __( 'Are you sure you want to clear ALL email logs? This cannot be undone.', 'mxroute-mailer' ),
+						'failedDelete'  => __( 'Failed to delete log.', 'mxroute-mailer' ),
+						'failedClear'   => __( 'Failed to clear logs.', 'mxroute-mailer' ),
+					),
+				)
+			);
 		}
 	}
 
@@ -223,6 +191,15 @@ class MXRoute_Settings {
 	 */
 	public function render_logs_page() {
 		include MXROUTE_MAILER_PLUGIN_DIR . 'admin/views/logs.php';
+	}
+
+	/**
+	 * Render the single log view page.
+	 *
+	 * @return void
+	 */
+	public function render_log_view_page() {
+		include MXROUTE_MAILER_PLUGIN_DIR . 'admin/views/log-view.php';
 	}
 }
 

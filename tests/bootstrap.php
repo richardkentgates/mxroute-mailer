@@ -298,12 +298,6 @@ if (!function_exists('add_management_page')) {
     }
 }
 
-if (!function_exists('wp_add_dashboard_widget')) {
-    function wp_add_dashboard_widget($widget_id, $widget_name, $callback, $control_callback = null) {
-        $GLOBALS['wp_function_calls']['wp_add_dashboard_widget'][] = compact('widget_id', 'widget_name');
-    }
-}
-
 if (!function_exists('wp_enqueue_style')) {
     function wp_enqueue_style($handle, $src = '', $deps = array(), $ver = false, $media = 'all') {
         $GLOBALS['wp_function_calls']['wp_enqueue_style'][] = compact('handle', 'src', 'deps', 'ver', 'media');
