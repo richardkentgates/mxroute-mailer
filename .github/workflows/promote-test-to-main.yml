@@ -73,3 +73,35 @@ jobs:
 
       - name: Push to main
         run: git push origin main
+
+  build:
+    name: Build Main Artifact
+    runs-on: ubuntu-latest
+    needs: [promote]
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Build zip
+        run: |
+          zip -r mxroute-mailer-main.zip . \
+            -x ".git/*" \
+            -x "tests/*" \
+            -x "vendor/*" \
+            -x "composer.*" \
+            -x "phpunit.xml" \
+            -x "phpcs.xml.dist" \
+            -x ".github/*" \
+            -x ".phpunit.result.cache" \
+            -x "*.zip"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mxroute-mailer-main-${{ github.run_id }}
+          path: mxroute-mailer-main.zip
+          retention-days: 30

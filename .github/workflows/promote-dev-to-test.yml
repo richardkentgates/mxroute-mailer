@@ -73,3 +73,35 @@ jobs:
 
       - name: Push to test
         run: git push origin test
+
+  build:
+    name: Build Test Artifact
+    runs-on: ubuntu-latest
+    needs: [promote]
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: test
+
+      - name: Build zip
+        run: |
+          zip -r mxroute-mailer-test.zip . \
+            -x ".git/*" \
+            -x "tests/*" \
+            -x "vendor/*" \
+            -x "composer.*" \
+            -x "phpunit.xml" \
+            -x "phpcs.xml.dist" \
+            -x ".github/*" \
+            -x ".phpunit.result.cache" \
+            -x "*.zip"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mxroute-mailer-test-${{ github.run_id }}
+          path: mxroute-mailer-test.zip
+          retention-days: 30
