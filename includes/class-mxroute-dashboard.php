@@ -84,11 +84,15 @@ class MXRoute_Dashboard {
 		$logger = new MXRoute_Logger();
 		$logger->delete_logs( $ids );
 
-		wp_send_json_success( array( 'message' => sprintf(
-			/* translators: %d: number of logs deleted */
-			_n( '%d log deleted.', '%d logs deleted.', count( $ids ), 'mxroute-mailer' ),
-			count( $ids )
-		) ) );
+		$count = count( $ids );
+		// translators: %d: number of logs deleted.
+		$message = sprintf( _n( '%d log deleted.', '%d logs deleted.', $count, 'mxroute-mailer' ), $count );
+
+		wp_send_json_success(
+			array(
+				'message' => $message,
+			)
+		);
 	}
 }
 
