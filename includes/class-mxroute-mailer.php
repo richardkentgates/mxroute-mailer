@@ -233,6 +233,6 @@ class MXRoute_Mailer {
 		set_transient( 'mxroute_test_email_result', $result, 60 );
 
 		wp_safe_redirect( admin_url( 'options-general.php?page=mxroute-mailer&test_sent=1' ) );
-		exit;
+		wp_die();
 	}
 }
