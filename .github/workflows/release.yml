@@ -1,0 +1,52 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+
+      - name: Run PHPCS
+        run: |
+          composer global require wp-coding-standards/wpcs dealerdirect/phpcodesniffer-composer-installer phpcompatibility/phpcompatibility-wp
+          phpcs --standard=phpcs.xml.dist --extensions=php --ignore=vendor/*,tests/* mxroute-mailer.php includes/ admin/ uninstall.php
+
+      - name: Run PHPUnit
+        run: |
+          composer install --no-progress --prefer-dist
+          vendor/bin/phpunit
+
+      - name: Build zip
+        run: |
+          zip -r mxroute-mailer-${{ github.ref_name }}.zip . \
+            -x ".git/*" \
+            -x "tests/*" \
+            -x "vendor/*" \
+            -x "composer.*" \
+            -x "phpunit.xml" \
+            -x "phpcs.xml.dist" \
+            -x ".github/*" \
+            -x ".phpunit.result.cache" \
+            -x "*.zip"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: mxroute-mailer-${{ github.ref_name }}.zip
+          generate_release_notes: true
+          draft: false
+          prerelease: false

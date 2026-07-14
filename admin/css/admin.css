@@ -1,0 +1,162 @@
+.mxroute-status-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    line-height: 1.5;
+}
+
+.mxroute-success {
+    background: #d4edda;
+    color: #155724;
+}
+
+.mxroute-fail {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.mxroute-widget-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.mxroute-widget-table th,
+.mxroute-widget-table td {
+    padding: 6px 8px;
+    text-align: left;
+    border-bottom: 1px solid #ccd0d4;
+}
+
+.mxroute-widget-table tr:last-child td {
+    border-bottom: none;
+}
+
+.mxroute-widget-table th {
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    color: #50575e;
+}
+
+.mxroute-widget-footer {
+    margin-top: 12px;
+    text-align: right;
+}
+
+.mxroute-no-logs {
+    color: #666;
+    font-style: italic;
+}
+
+.mxroute-filters-form {
+    margin: 16px 0;
+}
+
+.mxroute-filters {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.mxroute-filters input,
+.mxroute-filters select {
+    padding: 6px 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.mxroute-filters input[type="search"],
+.mxroute-filters input[type="email"] {
+    min-width: 200px;
+}
+
+.mxroute-logs-table {
+    margin-top: 10px;
+}
+
+.mxroute-logs-table th {
+    text-transform: uppercase;
+    font-size: 12px;
+}
+
+.mxroute-log-row {
+    cursor: pointer;
+}
+
+.mxroute-log-row:hover {
+    background: #f0f0f1;
+}
+
+.mxroute-json {
+    background: #1e1e1e;
+    color: #d4d4d4;
+    padding: 12px;
+    border-radius: 4px;
+    overflow-x: auto;
+    font-size: 12px;
+    line-height: 1.5;
+    max-height: 300px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.mxroute-modal {
+    position: fixed;
+    z-index: 100000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mxroute-modal-content {
+    background: #fff;
+    border-radius: 6px;
+    padding: 24px;
+    max-width: 700px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    position: relative;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.mxroute-modal-close {
+    position: absolute;
+    right: 12px;
+    top: 8px;
+    font-size: 24px;
+    cursor: pointer;
+    color: #666;
+    line-height: 1;
+}
+
+.mxroute-modal-close:hover {
+    color: #000;
+}
+
+.mxroute-modal-content h3 {
+    margin-top: 0;
+}
+
+.mxroute-modal-content h4 {
+    margin-top: 16px;
+    margin-bottom: 6px;
+}
+
+.mxroute-settings-form .form-table th {
+    width: 180px;
+}
+
+.mxroute-test-form .form-table th {
+    width: 100px;
+}

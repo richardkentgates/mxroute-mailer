@@ -1,0 +1,191 @@
+<?php
+/**
+ * MXRoute Mailer admin settings.
+ *
+ * @package MXRoute_Mailer
+ */
+
+defined( 'ABSPATH' ) || exit;
+
+/**
+ * Registers admin settings pages and handles asset loading.
+ */
+class MXRoute_Settings {
+
+	/**
+	 * Constructor.
+	 */
+	public function __construct() {
+		add_action( 'admin_menu', array( $this, 'add_menu_pages' ) );
+		add_action( 'admin_init', array( $this, 'register_settings' ) );
+		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
+	}
+
+	/**
+	 * Register admin menu pages.
+	 *
+	 * @return void
+	 */
+	public function add_menu_pages() {
+		add_options_page(
+			__( 'MXRoute Mailer', 'mxroute-mailer' ),
+			__( 'MXRoute Mailer', 'mxroute-mailer' ),
+			'manage_options',
+			'mxroute-mailer',
+			array( $this, 'render_settings_page' )
+		);
+
+		add_management_page(
+			__( 'MXRoute Email Logs', 'mxroute-mailer' ),
+			__( 'MXRoute Logs', 'mxroute-mailer' ),
+			'manage_options',
+			'mxroute-logs',
+			array( $this, 'render_logs_page' )
+		);
+	}
+
+	/**
+	 * Register plugin settings.
+	 *
+	 * @return void
+	 */
+	public function register_settings() {
+		register_setting(
+			'mxroute_mailer_settings',
+			'mxroute_mailer_server',
+			array(
+				'sanitize_callback' => 'sanitize_text_field',
+			)
+		);
+		register_setting(
+			'mxroute_mailer_settings',
+			'mxroute_mailer_username',
+			array(
+				'sanitize_callback' => 'sanitize_text_field',
+			)
+		);
+		register_setting(
+			'mxroute_mailer_settings',
+			'mxroute_mailer_password',
+			array(
+				'sanitize_callback' => array( $this, 'sanitize_password' ),
+			)
+		);
+		register_setting(
+			'mxroute_mailer_settings',
+			'mxroute_mailer_default_from',
+			array(
+				'sanitize_callback' => 'sanitize_email',
+			)
+		);
+		register_setting(
+			'mxroute_mailer_settings',
+			'mxroute_mailer_logging_enabled',
+			array(
+				'type'              => 'boolean',
+				'sanitize_callback' => array( $this, 'sanitize_checkbox' ),
+			)
+		);
+		register_setting(
+			'mxroute_mailer_settings',
+			'mxroute_mailer_keep_data',
+			array(
+				'type'              => 'boolean',
+				'sanitize_callback' => array( $this, 'sanitize_checkbox' ),
+			)
+		);
+	}
+
+	/**
+	 * Sanitize checkbox value.
+	 *
+	 * @param mixed $value Checkbox value.
+	 * @return int 1 or 0.
+	 */
+	public function sanitize_checkbox( $value ) {
+		return $value ? 1 : 0;
+	}
+
+	/**
+	 * Sanitize password value, preserving existing when empty.
+	 *
+	 * When the password field is left blank on save, the stored password is
+	 * returned unchanged so the user does not accidentally clear it.
+	 *
+	 * @param string $value Password value.
+	 * @return string Sanitized password.
+	 */
+	public function sanitize_password( $value ) {
+		$value = sanitize_text_field( $value );
+		if ( empty( $value ) ) {
+			return get_option( 'mxroute_mailer_password', '' );
+		}
+		return $value;
+	}
+
+	/**
+	 * Enqueue admin scripts and styles.
+	 *
+	 * @param string $hook Current admin page hook.
+	 * @return void
+	 */
+	public function enqueue_assets( $hook ) {
+		if ( 'settings_page_mxroute-mailer' !== $hook && 'tools_page_mxroute-logs' !== $hook ) {
+			return;
+		}
+
+		wp_enqueue_style(
+			'mxroute-mailer-admin',
+			MXROUTE_MAILER_PLUGIN_URL . 'admin/css/admin.css',
+			array(),
+			MXROUTE_MAILER_VERSION
+		);
+
+		wp_enqueue_script(
+			'mxroute-mailer-admin',
+			MXROUTE_MAILER_PLUGIN_URL . 'admin/js/admin.js',
+			array( 'jquery' ),
+			MXROUTE_MAILER_VERSION,
+			true
+		);
+
+		wp_localize_script(
+			'mxroute-mailer-admin',
+			'mxrouteMailer',
+			array(
+				'ajaxUrl'        => admin_url( 'admin-ajax.php' ),
+				'nonce'          => wp_create_nonce( 'mxroute_test_email' ),
+				'logViewNonce'   => wp_create_nonce( 'mxroute_log_view' ),
+				'logManageNonce' => wp_create_nonce( 'mxroute_log_manage' ),
+				'i18n'           => array(
+					'confirmDelete' => __( 'Delete this log entry?', 'mxroute-mailer' ),
+					'confirmClear'  => __( 'Are you sure you want to clear ALL email logs? This cannot be undone.', 'mxroute-mailer' ),
+					'failedLoad'    => __( 'Failed to load log details.', 'mxroute-mailer' ),
+					'failedDelete'  => __( 'Failed to delete log.', 'mxroute-mailer' ),
+					'failedClear'   => __( 'Failed to clear logs.', 'mxroute-mailer' ),
+					'error'         => __( 'An error occurred.', 'mxroute-mailer' ),
+				),
+			)
+		);
+	}
+
+	/**
+	 * Render the settings page.
+	 *
+	 * @return void
+	 */
+	public function render_settings_page() {
+		include MXROUTE_MAILER_PLUGIN_DIR . 'admin/views/settings.php';
+	}
+
+	/**
+	 * Render the logs page.
+	 *
+	 * @return void
+	 */
+	public function render_logs_page() {
+		include MXROUTE_MAILER_PLUGIN_DIR . 'admin/views/logs.php';
+	}
+}
+
+new MXRoute_Settings();
