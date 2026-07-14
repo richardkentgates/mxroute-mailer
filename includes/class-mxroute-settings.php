@@ -167,6 +167,7 @@ class MXRoute_Settings {
 					'i18n'           => array(
 						'confirmDelete'     => __( 'Delete this log entry?', 'mxroute-mailer' ),
 						'confirmClear'      => __( 'Are you sure you want to clear ALL email logs? This cannot be undone.', 'mxroute-mailer' ),
+						// translators: %d: number of log entries to delete.
 						'confirmBulkDelete' => __( 'Are you sure you want to delete %d log entries? This cannot be undone.', 'mxroute-mailer' ),
 						'failedDelete'      => __( 'Failed to delete log.', 'mxroute-mailer' ),
 						'failedClear'       => __( 'Failed to clear logs.', 'mxroute-mailer' ),
