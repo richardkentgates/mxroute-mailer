@@ -86,7 +86,8 @@ class MXRoute_Dashboard {
 
 		$count = count( $ids );
 		// translators: %d: number of logs deleted.
-		$message = sprintf( _n( '%d log deleted.', '%d logs deleted.', $count, 'mxroute-mailer' ), $count );
+		$singular = _n( '%d log deleted.', '%d logs deleted.', $count, 'mxroute-mailer' );
+		$message  = sprintf( $singular, $count );
 
 		wp_send_json_success(
 			array(
