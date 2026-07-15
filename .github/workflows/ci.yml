@@ -29,7 +29,9 @@ jobs:
           echo "$(composer global config bin-dir)" >> $GITHUB_PATH
 
       - name: Run PHPCS
-        run: phpcs --standard=phpcs.xml.dist --extensions=php --ignore=vendor/*,tests/* --report=checkstyle mxroute-mailer.php includes/ admin/ uninstall.php | cs2pr
+        run: |
+          set -o pipefail
+          phpcs --standard=phpcs.xml.dist --extensions=php --ignore=vendor/*,tests/* --report=checkstyle mxroute-mailer.php includes/ admin/ uninstall.php | cs2pr
 
   phpunit:
     name: PHPUnit (PHP ${{ matrix.php }})
