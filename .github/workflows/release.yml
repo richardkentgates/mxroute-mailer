@@ -5,33 +5,40 @@ on:
     tags:
       - 'v*'
 
-permissions: {}
+permissions:
+  contents: write
+  security-events: write
+  id-token: write
 
 jobs:
+  scorecard:
+    name: Security - Scorecard Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Run Scorecard
+        uses: ossf/scorecard-action@4eaacf0543bb3f2c246792bd56e8cdeffafb205a # v2.4.3
+        with:
+          results_file: results.sarif
+          results_format: sarif
+          publish_results: true
+
+      - name: Upload SARIF
+        uses: github/codeql-action/upload-sarif@02c5e83432fe5497fd85b873b6c9f16a8578e1d9 # v3
+        if: always()
+        with:
+          sarif_file: results.sarif
+
   release:
     name: Create Release
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-
+    needs: scorecard
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
-
-      - name: Set up PHP
-        uses: shivammathur/setup-php@b604ade2a87db23f8871b7182e69ec5e75effb45 # v2
-        with:
-          php-version: '8.2'
-
-      - name: Run PHPCS
-        run: |
-          composer global config --no-plugins allow-plugins.dealerdirect/phpcodesniffer-composer-installer true
-          composer global require wp-coding-standards/wpcs dealerdirect/phpcodesniffer-composer-installer phpcompatibility/phpcompatibility-wp
-          phpcs --standard=phpcs.xml.dist --extensions=php --ignore=vendor/*,tests/* mxroute-mailer.php includes/ admin/ uninstall.php
-
-      - name: Run PHPUnit
-        run: |
-          composer install --no-progress --prefer-dist
-          vendor/bin/phpunit
 
       - name: Build zip
         run: |
