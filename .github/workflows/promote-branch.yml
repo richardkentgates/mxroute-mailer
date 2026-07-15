@@ -54,4 +54,5 @@ jobs:
         if: steps.check.outputs.existing != ''
         env:
           EXISTING: ${{ steps.check.outputs.existing }}
-        run: echo "Open PR already exists: number $EXISTING"
+        run: |
+          echo "Open PR already exists: number $EXISTING"
