@@ -93,10 +93,15 @@ class MXRoute_Logger {
 		$to_address = '';
 		if ( is_array( $to ) ) {
 			$first      = reset( $to );
-			$to_address = false !== $first ? sanitize_email( $first ) : '';
+			$to_address = false !== $first ? $first : '';
 		} else {
-			$to_address = sanitize_email( $to );
+			$to_address = $to;
 		}
+
+		if ( preg_match( '/<(.+?)>/', $to_address, $matches ) ) {
+			$to_address = $matches[1];
+		}
+		$to_address = sanitize_email( $to_address );
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Logging write, caching not applicable.
 		$wpdb->insert(

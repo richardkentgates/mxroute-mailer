@@ -4,7 +4,7 @@ Tags: email, smtp, mxroute, mail
 Requires at least: 5.0
 Tested up to: 7.0
 Requires PHP: 7.3
-Stable tag: 1.2.2
+Stable tag: 1.2.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -28,6 +28,9 @@ Features:
 3. Go to Settings > MXRoute Mailer to configure
 
 == Changelog ==
+
+= 1.2.3 =
+* Strip display names from recipient addresses in log storage
 
 = 1.2.2 =
 * Strip display names from recipient addresses (e.g. "Name <email>" to just email)
