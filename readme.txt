@@ -4,7 +4,7 @@ Tags: email, smtp, mxroute, mail
 Requires at least: 5.0
 Tested up to: 6.7
 Requires PHP: 7.3
-Stable tag: 1.2.4
+Stable tag: 1.2.5
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -84,6 +84,13 @@ The plugin fires a `wp_mail_failed` action so other plugins can handle the failu
 
 == Changelog ==
 
+= 1.2.5 =
+* Formalize PR-based promotion workflow
+* Consolidate CI/CD from 7 workflow files to 4
+* Add branch protection on test and main branches
+* Fix CodeQL workflow to analyze GitHub Actions instead of unsupported PHP
+* Update Scorecard action SHA to fix imposter commit error
+
 = 1.2.4 =
 * Always use plugin username as From address in logs and API calls
 * Set form-provided From address as Reply-To header
@@ -123,6 +130,9 @@ The plugin fires a `wp_mail_failed` action so other plugins can handle the failu
 * Initial release
 
 == Upgrade Notice ==
+
+= 1.2.5 =
+CI/CD improvements. No functional changes.
 
 = 1.2.4 =
 From address now always uses your MXRoute username. Form sender addresses are preserved as Reply-To.
