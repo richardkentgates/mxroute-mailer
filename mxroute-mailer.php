@@ -45,14 +45,10 @@ register_activation_hook(
 function mxroute_mailer_db_upgrade() {
 	if ( get_option( 'mxroute_mailer_db_version', '0' ) !== MXROUTE_MAILER_VERSION ) {
 		global $wpdb;
-		$table_name = $wpdb->prefix . 'mxroute_mailer_logs';
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange -- Schema upgrade.
-		$column_exists = $wpdb->get_var(
-			$wpdb->prepare( 'SHOW COLUMNS FROM %i LIKE %s', $table_name, 'reply_to' )
-		);
+		$table_name    = $wpdb->prefix . 'mxroute_mailer_logs';
+		$column_exists = $wpdb->get_var( "SHOW COLUMNS FROM `$table_name` LIKE 'reply_to'" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Schema upgrade.
 		if ( ! $column_exists ) {
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Schema upgrade, table name is safe.
-			$wpdb->query( "ALTER TABLE `$table_name` ADD COLUMN `reply_to` varchar(255) NOT NULL DEFAULT '' AFTER `from_email`" );
+			$wpdb->query( "ALTER TABLE `$table_name` ADD COLUMN `reply_to` varchar(255) NOT NULL DEFAULT '' AFTER `from_email`" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Schema upgrade.
 		}
 		update_option( 'mxroute_mailer_db_version', MXROUTE_MAILER_VERSION );
 	}
