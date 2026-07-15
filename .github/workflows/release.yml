@@ -1,7 +1,9 @@
 name: Release
 
 on:
-  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
 
 permissions:
   contents: write
@@ -15,7 +17,6 @@ jobs:
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
-          ref: main
           fetch-depth: 0
           persist-credentials: false
 
@@ -33,25 +34,15 @@ jobs:
           sarif_file: results.sarif
 
   release:
-    name: Tag and Release
+    name: Create Release
     runs-on: ubuntu-latest
     needs: scorecard
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
-        with:
-          ref: main
-          fetch-depth: 0
-
-      - name: Read plugin version
-        id: version
-        run: |
-          version=$(grep -oP "Version:\s*\K[0-9.]+" mxroute-mailer.php | head -1)
-          echo "version=$version" >> "$GITHUB_OUTPUT"
-          echo "tag=v$version" >> "$GITHUB_OUTPUT"
 
       - name: Build zip
         run: |
-          zip -r mxroute-mailer-${{ steps.version.outputs.tag }}.zip . \
+          zip -r mxroute-mailer-${{ github.ref_name }}.zip . \
             -x ".git/*" \
             -x "tests/*" \
             -x "vendor/*" \
@@ -62,20 +53,10 @@ jobs:
             -x ".phpunit.result.cache" \
             -x "*.zip"
 
-      - name: Create tag
-        env:
-          TAG: ${{ steps.version.outputs.tag }}
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git tag -a "$TAG" -m "Release $TAG"
-          git push origin "$TAG"
-
       - name: Create GitHub Release
         uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
-          tag_name: ${{ steps.version.outputs.tag }}
-          files: mxroute-mailer-${{ steps.version.outputs.tag }}.zip
+          files: mxroute-mailer-${{ github.ref_name }}.zip
           generate_release_notes: true
           draft: false
           prerelease: false

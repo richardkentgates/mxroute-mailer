@@ -83,6 +83,21 @@ jobs:
           gh pr merge "$PR_NUMBER" --repo "$REPO" --merge
           echo "PR #$PR_NUMBER merged. Promotion complete."
 
+      - name: Tag release on main
+        if: github.ref_name == 'test' && inputs.target == 'main'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git fetch origin main
+          git checkout main
+          version=$(grep -oP "Version:\\s*\\K[0-9.]+" mxroute-mailer.php | head -1)
+          tag="v$version"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "$tag" -m "Release $tag"
+          git push origin "$tag"
+          echo "Created release tag $tag"
+
   build-test:
     name: Build Test Artifact
     runs-on: ubuntu-latest
