@@ -1,0 +1,54 @@
+name: Promote
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'Target branch'
+        required: true
+        type: choice
+        options:
+          - test
+          - main
+
+permissions: {}
+
+jobs:
+  create-pr:
+    name: Create Promotion PR
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
+
+      - name: Check for existing PR
+        id: check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          existing=$(gh pr list --repo "${{ github.repository }}" --head ${{ github.ref_name }} --base ${{ inputs.target }} --state open --json number --jq '.[0].number')
+          echo "existing=$existing" >> "$GITHUB_OUTPUT"
+
+      - name: Create PR → ${{ inputs.target }}
+        if: steps.check.outputs.existing == ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr create \
+            --repo "${{ github.repository }}" \
+            --head ${{ github.ref_name }} \
+            --base ${{ inputs.target }} \
+            --title "Promote ${{ github.ref_name }} → ${{ inputs.target }}" \
+            --body "Automated promotion from \`${{ github.ref_name }}\` to \`${{ inputs.target }}\`.
+
+          **Checks required before merge:** PHPCS + PHPUnit (PHP 7.3–8.3)"
+
+      - name: PR already exists
+        if: steps.check.outputs.existing != ''
+        run: echo "Open PR already exists: #${{ steps.check.outputs.existing }}"
