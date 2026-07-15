@@ -15,8 +15,25 @@
 
 defined( 'ABSPATH' ) || exit;
 
+/**
+ * Plugin version.
+ *
+ * @var string
+ */
 define( 'MXROUTE_MAILER_VERSION', '1.2.4' );
+
+/**
+ * Absolute path to the plugin directory.
+ *
+ * @var string
+ */
 define( 'MXROUTE_MAILER_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
+
+/**
+ * URL to the plugin directory.
+ *
+ * @var string
+ */
 define( 'MXROUTE_MAILER_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 
 /**
@@ -41,6 +58,8 @@ register_activation_hook(
 
 /**
  * Run database upgrades on admin init.
+ *
+ * @return void
  */
 function mxroute_mailer_db_upgrade() {
 	if ( get_option( 'mxroute_mailer_db_version', '0' ) !== MXROUTE_MAILER_VERSION ) {

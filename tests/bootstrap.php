@@ -3,6 +3,8 @@
  * MXRoute Mailer Test Bootstrap
  *
  * Mocks WordPress functions for unit testing without a full WP installation.
+ *
+ * @package MXRoute_Mailer
  */
 
 $plugin_dir = dirname(__DIR__);

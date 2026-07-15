@@ -4,6 +4,8 @@
  *
  * Covers boundary conditions, malformed input, type coercion,
  * and unusual but realistic scenarios.
+ *
+ * @package MXRoute_Mailer
  */
 
 /**
@@ -21,6 +23,9 @@ class MXRoute_API_Edge_Test extends \PHPUnit\Framework\TestCase {
 		unset( $GLOBALS['mxroute_mock_remote_response'] );
 	}
 
+	/**
+	 * Tests that send accepts an empty from address.
+	 */
 	public function test_send_with_empty_from_address() {
 		$GLOBALS['wp_options']['mxroute_mailer_server']   = 'server.example.com';
 		$GLOBALS['wp_options']['mxroute_mailer_username'] = 'user@example.com';
@@ -33,6 +38,9 @@ class MXRoute_API_Edge_Test extends \PHPUnit\Framework\TestCase {
 		$this->assertEquals( '', $result['request']['from'] );
 	}
 
+	/**
+	 * Tests that send uses the first address from an array recipient.
+	 */
 	public function test_send_with_array_recipient() {
 		$GLOBALS['wp_options']['mxroute_mailer_server']   = 'server.example.com';
 		$GLOBALS['wp_options']['mxroute_mailer_username'] = 'user@example.com';
@@ -44,6 +52,9 @@ class MXRoute_API_Edge_Test extends \PHPUnit\Framework\TestCase {
 		$this->assertEquals( 'a@example.com', $result['request']['to'] );
 	}
 
+	/**
+	 * Tests that send handles an empty array recipient gracefully.
+	 */
 	public function test_send_with_empty_array_recipient() {
 		$GLOBALS['wp_options']['mxroute_mailer_server']   = 'server.example.com';
 		$GLOBALS['wp_options']['mxroute_mailer_username'] = 'user@example.com';
@@ -55,6 +66,9 @@ class MXRoute_API_Edge_Test extends \PHPUnit\Framework\TestCase {
 		$this->assertEquals( '', $result['request']['to'] );
 	}
 
+	/**
+	 * Tests that send truncates an excessively long subject line.
+	 */
 	public function test_send_truncates_long_subject() {
 		$GLOBALS['wp_options']['mxroute_mailer_server']   = 'server.example.com';
 		$GLOBALS['wp_options']['mxroute_mailer_username'] = 'user@example.com';
@@ -68,6 +82,9 @@ class MXRoute_API_Edge_Test extends \PHPUnit\Framework\TestCase {
 		$this->assertLessThanOrEqual( 5000, strlen( $result['request']['subject'] ) );
 	}
 
+	/**
+	 * Tests that send handles an excessively long body without error.
+	 */
 	public function test_send_truncates_long_body() {
 		$GLOBALS['wp_options']['mxroute_mailer_server']   = 'server.example.com';
 		$GLOBALS['wp_options']['mxroute_mailer_username'] = 'user@example.com';
@@ -80,6 +97,9 @@ class MXRoute_API_Edge_Test extends \PHPUnit\Framework\TestCase {
 		$this->assertArrayHasKey( 'request', $result );
 	}
 
+	/**
+	 * Tests that send accepts an empty subject.
+	 */
 	public function test_send_with_empty_subject() {
 		$GLOBALS['wp_options']['mxroute_mailer_server']   = 'server.example.com';
 		$GLOBALS['wp_options']['mxroute_mailer_username'] = 'user@example.com';
@@ -91,6 +111,9 @@ class MXRoute_API_Edge_Test extends \PHPUnit\Framework\TestCase {
 		$this->assertEquals( '', $result['request']['subject'] );
 	}
 
+	/**
+	 * Tests that send handles an empty body by omitting it from the request.
+	 */
 	public function test_send_with_empty_body() {
 		$GLOBALS['wp_options']['mxroute_mailer_server']   = 'server.example.com';
 		$GLOBALS['wp_options']['mxroute_mailer_username'] = 'user@example.com';
@@ -103,6 +126,9 @@ class MXRoute_API_Edge_Test extends \PHPUnit\Framework\TestCase {
 		$this->assertArrayNotHasKey( 'body', $result['request'] );
 	}
 
+	/**
+	 * Tests that send handles an empty response body from the API.
+	 */
 	public function test_send_api_returns_empty_body() {
 		$GLOBALS['wp_options']['mxroute_mailer_server']   = 'server.example.com';
 		$GLOBALS['wp_options']['mxroute_mailer_username'] = 'user@example.com';
@@ -120,6 +146,9 @@ class MXRoute_API_Edge_Test extends \PHPUnit\Framework\TestCase {
 		$this->assertStringContainsString( 'Invalid JSON', $result['message'] );
 	}
 
+	/**
+	 * Tests that send handles invalid JSON in the API response.
+	 */
 	public function test_send_api_returns_invalid_json() {
 		$GLOBALS['wp_options']['mxroute_mailer_server']   = 'server.example.com';
 		$GLOBALS['wp_options']['mxroute_mailer_username'] = 'user@example.com';
@@ -137,6 +166,9 @@ class MXRoute_API_Edge_Test extends \PHPUnit\Framework\TestCase {
 		$this->assertStringContainsString( 'Invalid JSON', $result['message'] );
 	}
 
+	/**
+	 * Tests that send handles JSON response missing the "success" key.
+	 */
 	public function test_send_api_returns_json_without_success_key() {
 		$GLOBALS['wp_options']['mxroute_mailer_server']   = 'server.example.com';
 		$GLOBALS['wp_options']['mxroute_mailer_username'] = 'user@example.com';
@@ -154,6 +186,9 @@ class MXRoute_API_Edge_Test extends \PHPUnit\Framework\TestCase {
 		$this->assertEquals( 'Queued', $result['message'] );
 	}
 
+	/**
+	 * Tests that send handles JSON response missing the "message" key.
+	 */
 	public function test_send_api_returns_json_without_message_key() {
 		$GLOBALS['wp_options']['mxroute_mailer_server']   = 'server.example.com';
 		$GLOBALS['wp_options']['mxroute_mailer_username'] = 'user@example.com';
@@ -171,6 +206,9 @@ class MXRoute_API_Edge_Test extends \PHPUnit\Framework\TestCase {
 		$this->assertNotEmpty( $result['message'] );
 	}
 
+	/**
+	 * Tests that the request and response logs never contain the password.
+	 */
 	public function test_send_request_log_excludes_password() {
 		$GLOBALS['wp_options']['mxroute_mailer_server']   = 'server.example.com';
 		$GLOBALS['wp_options']['mxroute_mailer_username'] = 'user@example.com';
@@ -197,6 +235,9 @@ class MXRoute_Mailer_Edge_Test extends \PHPUnit\Framework\TestCase {
 		$GLOBALS['wp_db_queries']       = array();
 	}
 
+	/**
+	 * Tests that intercept_wp_mail handles a null "to" value.
+	 */
 	public function test_intercept_handles_null_to() {
 		$mailer = MXRoute_Mailer::instance();
 		$args   = array(
@@ -208,6 +249,9 @@ class MXRoute_Mailer_Edge_Test extends \PHPUnit\Framework\TestCase {
 		$this->assertArrayHasKey( 'to', $result );
 	}
 
+	/**
+	 * Tests that intercept_wp_mail handles a null subject value.
+	 */
 	public function test_intercept_handles_null_subject() {
 		$mailer = MXRoute_Mailer::instance();
 		$args   = array(
@@ -219,6 +263,9 @@ class MXRoute_Mailer_Edge_Test extends \PHPUnit\Framework\TestCase {
 		$this->assertArrayHasKey( 'subject', $result );
 	}
 
+	/**
+	 * Tests that intercept_wp_mail handles a null message value.
+	 */
 	public function test_intercept_handles_null_message() {
 		$mailer = MXRoute_Mailer::instance();
 		$GLOBALS['wp_options']['mxroute_mailer_server']   = 'server.example.com';
@@ -235,6 +282,9 @@ class MXRoute_Mailer_Edge_Test extends \PHPUnit\Framework\TestCase {
 		$this->assertArrayHasKey( 'to', $result );
 	}
 
+	/**
+	 * Tests that intercept_wp_mail handles a completely empty args array.
+	 */
 	public function test_intercept_handles_completely_empty_args() {
 		$mailer = MXRoute_Mailer::instance();
 		$result = $mailer->intercept_wp_mail( array() );
@@ -242,12 +292,18 @@ class MXRoute_Mailer_Edge_Test extends \PHPUnit\Framework\TestCase {
 		$this->assertEquals( '', $result['to'] );
 	}
 
+	/**
+	 * Tests that intercept_wp_mail handles a non-array input gracefully.
+	 */
 	public function test_intercept_handles_non_array_input() {
 		$mailer = MXRoute_Mailer::instance();
 		$result = $mailer->intercept_wp_mail( 'not_an_array' );
 		$this->assertArrayHasKey( 'to', $result );
 	}
 
+	/**
+	 * Tests that From extraction handles array headers with non-string values.
+	 */
 	public function test_extract_from_with_array_headers_containing_non_strings() {
 		$mailer = MXRoute_Mailer::instance();
 		$GLOBALS['wp_options']['mxroute_mailer_username'] = 'default@example.com';
@@ -261,6 +317,9 @@ class MXRoute_Mailer_Edge_Test extends \PHPUnit\Framework\TestCase {
 		$this->assertArrayHasKey( 'to', $result );
 	}
 
+	/**
+	 * Tests that From extraction falls back when string headers have no From line.
+	 */
 	public function test_extract_from_with_string_headers_missing_from() {
 		$mailer = MXRoute_Mailer::instance();
 		$GLOBALS['wp_options']['mxroute_mailer_username'] = 'default@example.com';
@@ -274,6 +333,9 @@ class MXRoute_Mailer_Edge_Test extends \PHPUnit\Framework\TestCase {
 		$this->assertArrayHasKey( 'to', $result );
 	}
 
+	/**
+	 * Tests that From extraction parses a plain email without angle brackets.
+	 */
 	public function test_extract_from_plain_email_no_angle_brackets() {
 		$mailer = MXRoute_Mailer::instance();
 		$GLOBALS['wp_options']['mxroute_mailer_username'] = 'default@example.com';
@@ -287,6 +349,9 @@ class MXRoute_Mailer_Edge_Test extends \PHPUnit\Framework\TestCase {
 		$this->assertArrayHasKey( 'to', $result );
 	}
 
+	/**
+	 * Tests that From extraction uses the first From header when multiple are present.
+	 */
 	public function test_extract_from_with_multiple_from_headers() {
 		$mailer = MXRoute_Mailer::instance();
 		$GLOBALS['wp_options']['mxroute_mailer_username'] = 'default@example.com';
@@ -300,6 +365,9 @@ class MXRoute_Mailer_Edge_Test extends \PHPUnit\Framework\TestCase {
 		$this->assertArrayHasKey( 'to', $result );
 	}
 
+	/**
+	 * Tests that handle_test_email handles special characters in the subject.
+	 */
 	public function test_handle_test_email_with_special_characters_in_subject() {
 		$mailer = MXRoute_Mailer::instance();
 		$_POST  = array(
@@ -313,6 +381,9 @@ class MXRoute_Mailer_Edge_Test extends \PHPUnit\Framework\TestCase {
 		$this->assertArrayHasKey( 'mxroute_test_email_result', $GLOBALS['wp_transients'] );
 	}
 
+	/**
+	 * Tests that handle_test_email fails when both to and from are empty.
+	 */
 	public function test_handle_test_email_with_empty_to_and_from() {
 		$mailer = MXRoute_Mailer::instance();
 		$_POST  = array(
@@ -325,6 +396,9 @@ class MXRoute_Mailer_Edge_Test extends \PHPUnit\Framework\TestCase {
 		$this->assertFalse( $result['success'] );
 	}
 
+	/**
+	 * Tests that handle_test_email sets defaults for empty subject and body.
+	 */
 	public function test_handle_test_email_sets_defaults_for_empty_subject_and_body() {
 		$mailer = MXRoute_Mailer::instance();
 		$_POST  = array(
@@ -338,6 +412,9 @@ class MXRoute_Mailer_Edge_Test extends \PHPUnit\Framework\TestCase {
 		$this->assertArrayHasKey( 'mxroute_test_email_result', $GLOBALS['wp_transients'] );
 	}
 
+	/**
+	 * Tests that handle_test_email skips when user lacks manage_options capability.
+	 */
 	public function test_handle_test_email_skips_without_manage_options() {
 		$this->markTestSkipped(
 			'Test bootstrap mock always returns true for current_user_can(). '
@@ -358,6 +435,9 @@ class MXRoute_Logger_Edge_Test extends \PHPUnit\Framework\TestCase {
 		$GLOBALS['wp_db_queries']   = array();
 	}
 
+	/**
+	 * Tests that log handles an empty from address.
+	 */
 	public function test_log_handles_empty_from() {
 		$GLOBALS['wp_options']['mxroute_mailer_logging_enabled'] = 1;
 
@@ -368,6 +448,9 @@ class MXRoute_Logger_Edge_Test extends \PHPUnit\Framework\TestCase {
 		$this->assertEquals( '', $GLOBALS['wp_db_inserts'][0]['data']['from_email'] );
 	}
 
+	/**
+	 * Tests that log handles an empty subject.
+	 */
 	public function test_log_handles_empty_subject() {
 		$GLOBALS['wp_options']['mxroute_mailer_logging_enabled'] = 1;
 
@@ -378,6 +461,9 @@ class MXRoute_Logger_Edge_Test extends \PHPUnit\Framework\TestCase {
 		$this->assertEquals( '', $GLOBALS['wp_db_inserts'][0]['data']['subject'] );
 	}
 
+	/**
+	 * Tests that log handles an empty array as the "to" value.
+	 */
 	public function test_log_handles_array_to_with_empty_array() {
 		$GLOBALS['wp_options']['mxroute_mailer_logging_enabled'] = 1;
 
@@ -388,6 +474,9 @@ class MXRoute_Logger_Edge_Test extends \PHPUnit\Framework\TestCase {
 		$this->assertEquals( '', $GLOBALS['wp_db_inserts'][0]['data']['to_email'] );
 	}
 
+	/**
+	 * Tests that log handles an array "to" with a false first element.
+	 */
 	public function test_log_handles_array_to_with_false_first() {
 		$GLOBALS['wp_options']['mxroute_mailer_logging_enabled'] = 1;
 
@@ -398,6 +487,9 @@ class MXRoute_Logger_Edge_Test extends \PHPUnit\Framework\TestCase {
 		$this->assertEquals( '', $GLOBALS['wp_db_inserts'][0]['data']['to_email'] );
 	}
 
+	/**
+	 * Tests that log stores request and response as JSON strings.
+	 */
 	public function test_log_stores_request_and_response_as_json() {
 		$GLOBALS['wp_options']['mxroute_mailer_logging_enabled'] = 1;
 		$request  = array( 'server' => 'test', 'from' => 'a@b.com' );
@@ -413,6 +505,9 @@ class MXRoute_Logger_Edge_Test extends \PHPUnit\Framework\TestCase {
 		$this->assertEquals( $response, json_decode( $insert['data']['api_response'], true ) );
 	}
 
+	/**
+	 * Tests that delete_logs handles a non-array string input.
+	 */
 	public function test_delete_logs_handles_string_input() {
 		$logger = new MXRoute_Logger();
 		$logger->delete_logs( 'not_an_array' );
@@ -420,6 +515,9 @@ class MXRoute_Logger_Edge_Test extends \PHPUnit\Framework\TestCase {
 		$this->assertEmpty( $GLOBALS['wp_db_queries'] );
 	}
 
+	/**
+	 * Tests that delete_logs skips all invalid (non-integer) values.
+	 */
 	public function test_delete_logs_handles_all_invalid_values() {
 		$logger = new MXRoute_Logger();
 		$logger->delete_logs( array( 'abc', 'def', 0, '' ) );
@@ -427,6 +525,9 @@ class MXRoute_Logger_Edge_Test extends \PHPUnit\Framework\TestCase {
 		$this->assertEmpty( $GLOBALS['wp_db_queries'] );
 	}
 
+	/**
+	 * Tests that get_logs handles a negative page number.
+	 */
 	public function test_get_logs_handles_negative_page() {
 		$logger = new MXRoute_Logger();
 		$result = $logger->get_logs( 10, -1, array() );
@@ -435,6 +536,9 @@ class MXRoute_Logger_Edge_Test extends \PHPUnit\Framework\TestCase {
 		$this->assertArrayHasKey( 'logs', $result );
 	}
 
+	/**
+	 * Tests that get_logs handles a zero per-page value.
+	 */
 	public function test_get_logs_handles_zero_per_page() {
 		$logger = new MXRoute_Logger();
 		$result = $logger->get_logs( 0, 1, array() );
@@ -443,6 +547,9 @@ class MXRoute_Logger_Edge_Test extends \PHPUnit\Framework\TestCase {
 		$this->assertArrayHasKey( 'logs', $result );
 	}
 
+	/**
+	 * Tests that get_logs safely handles SQL injection attempts in search.
+	 */
 	public function test_get_logs_handles_sql_injection_in_search() {
 		$logger = new MXRoute_Logger();
 		$result = $logger->get_logs( 10, 1, array( "search" => "'; DROP TABLE wp_mxroute_mailer_logs; --" ) );
@@ -451,6 +558,9 @@ class MXRoute_Logger_Edge_Test extends \PHPUnit\Framework\TestCase {
 		$this->assertArrayHasKey( 'logs', $result );
 	}
 
+	/**
+	 * Tests that get_logs safely handles SQL injection attempts in date filters.
+	 */
 	public function test_get_logs_handles_sql_injection_in_date_filter() {
 		$logger = new MXRoute_Logger();
 		$result = $logger->get_logs( 10, 1, array(
@@ -462,6 +572,9 @@ class MXRoute_Logger_Edge_Test extends \PHPUnit\Framework\TestCase {
 		$this->assertArrayHasKey( 'logs', $result );
 	}
 
+	/**
+	 * Tests that get_logs handles an empty search string.
+	 */
 	public function test_get_logs_handles_empty_search() {
 		$logger = new MXRoute_Logger();
 		$result = $logger->get_logs( 10, 1, array( 'search' => '' ) );
@@ -470,6 +583,9 @@ class MXRoute_Logger_Edge_Test extends \PHPUnit\Framework\TestCase {
 		$this->assertArrayHasKey( 'logs', $result );
 	}
 
+	/**
+	 * Tests that get_logs handles an invalid success filter value.
+	 */
 	public function test_get_logs_handles_invalid_success_filter() {
 		$logger = new MXRoute_Logger();
 		$result = $logger->get_logs( 10, 1, array( 'success' => 'invalid' ) );
@@ -496,6 +612,9 @@ class MXRoute_Dashboard_Edge_Test extends \PHPUnit\Framework\TestCase {
 		$_POST = array();
 	}
 
+	/**
+	 * Tests that bulk delete rejects a non-array log_ids input.
+	 */
 	public function test_bulk_delete_handles_non_array_input() {
 		$_POST['log_ids'] = 'not_an_array';
 
@@ -510,6 +629,9 @@ class MXRoute_Dashboard_Edge_Test extends \PHPUnit\Framework\TestCase {
 		$this->assertTrue( $threw, 'Expected MXRouteJSONException to be thrown' );
 	}
 
+	/**
+	 * Tests that bulk delete rejects an array of non-integer string IDs.
+	 */
 	public function test_bulk_delete_handles_array_with_strings() {
 		$_POST['log_ids'] = array( 'abc', 'def', 'ghi' );
 
@@ -524,6 +646,9 @@ class MXRoute_Dashboard_Edge_Test extends \PHPUnit\Framework\TestCase {
 		$this->assertTrue( $threw, 'Expected MXRouteJSONException to be thrown' );
 	}
 
+	/**
+	 * Tests that bulk delete rejects zero-valued log IDs.
+	 */
 	public function test_bulk_delete_handles_zero_ids() {
 		$_POST['log_ids'] = array( 0, 0, 0 );
 
@@ -538,6 +663,9 @@ class MXRoute_Dashboard_Edge_Test extends \PHPUnit\Framework\TestCase {
 		$this->assertTrue( $threw, 'Expected MXRouteJSONException to be thrown' );
 	}
 
+	/**
+	 * Tests that bulk delete accepts negative log IDs.
+	 */
 	public function test_bulk_delete_handles_negative_ids() {
 		$_POST['log_ids'] = array( -1, -2, -3 );
 
@@ -552,6 +680,9 @@ class MXRoute_Dashboard_Edge_Test extends \PHPUnit\Framework\TestCase {
 		$this->assertTrue( $threw, 'Expected MXRouteJSONException to be thrown' );
 	}
 
+	/**
+	 * Tests that delete_log handles a zero log_id.
+	 */
 	public function test_delete_log_with_zero_id() {
 		$_POST['log_id'] = 0;
 
@@ -566,6 +697,9 @@ class MXRoute_Dashboard_Edge_Test extends \PHPUnit\Framework\TestCase {
 		$this->assertTrue( $threw, 'Expected MXRouteJSONException to be thrown' );
 	}
 
+	/**
+	 * Tests that delete_log handles missing log_id key in POST data.
+	 */
 	public function test_delete_log_without_log_id_key() {
 		$_POST = array();
 
@@ -592,6 +726,9 @@ class MXRoute_Settings_Edge_Test extends \PHPUnit\Framework\TestCase {
 		unset( $GLOBALS['title'] );
 	}
 
+	/**
+	 * Tests that sanitize_checkbox handles various string values.
+	 */
 	public function test_sanitize_checkbox_with_string_values() {
 		$settings = new MXRoute_Settings();
 		$this->assertEquals( 1, $settings->sanitize_checkbox( 'on' ) );
@@ -599,6 +736,9 @@ class MXRoute_Settings_Edge_Test extends \PHPUnit\Framework\TestCase {
 		$this->assertEquals( 0, $settings->sanitize_checkbox( '' ) );
 	}
 
+	/**
+	 * Tests that sanitize_checkbox handles various numeric values.
+	 */
 	public function test_sanitize_checkbox_with_numeric_values() {
 		$settings = new MXRoute_Settings();
 		$this->assertEquals( 1, $settings->sanitize_checkbox( 1 ) );
@@ -607,6 +747,9 @@ class MXRoute_Settings_Edge_Test extends \PHPUnit\Framework\TestCase {
 		$this->assertEquals( 1, $settings->sanitize_checkbox( -1 ) );
 	}
 
+	/**
+	 * Tests that sanitize_password preserves the existing password when empty is submitted.
+	 */
 	public function test_sanitize_password_preserves_existing_on_empty() {
 		$GLOBALS['wp_options']['mxroute_mailer_password'] = 'existing_pass';
 
@@ -615,12 +758,18 @@ class MXRoute_Settings_Edge_Test extends \PHPUnit\Framework\TestCase {
 		$this->assertEquals( 'existing_pass', $result );
 	}
 
+	/**
+	 * Tests that sanitize_password strips HTML tags from the password.
+	 */
 	public function test_sanitize_password_sanitizes_special_chars() {
 		$settings = new MXRoute_Settings();
 		$result   = $settings->sanitize_password( 'pass<script>word</script>' );
 		$this->assertStringNotContainsString( '<script>', $result );
 	}
 
+	/**
+	 * Tests that set_log_view_title sets the global title on the log view page.
+	 */
 	public function test_set_log_view_title_sets_global_for_log_view_page() {
 		$_GET['page'] = 'mxroute-log-view';
 
@@ -633,6 +782,9 @@ class MXRoute_Settings_Edge_Test extends \PHPUnit\Framework\TestCase {
 		unset( $_GET['page'] );
 	}
 
+	/**
+	 * Tests that set_log_view_title does not set the title on other pages.
+	 */
 	public function test_set_log_view_title_does_not_set_for_other_pages() {
 		$_GET['page'] = 'mxroute-logs';
 
@@ -644,6 +796,9 @@ class MXRoute_Settings_Edge_Test extends \PHPUnit\Framework\TestCase {
 		unset( $_GET['page'] );
 	}
 
+	/**
+	 * Tests that enqueue_assets returns early on non-plugin pages.
+	 */
 	public function test_enqueue_assets_returns_early_for_wrong_page() {
 		$settings = new MXRoute_Settings();
 		$settings->enqueue_assets( 'post.php' );
@@ -651,6 +806,9 @@ class MXRoute_Settings_Edge_Test extends \PHPUnit\Framework\TestCase {
 		$this->assertArrayNotHasKey( 'wp_enqueue_style', $GLOBALS['wp_function_calls'] );
 	}
 
+	/**
+	 * Tests that enqueue_assets loads CSS on the log view page.
+	 */
 	public function test_enqueue_assets_loads_on_log_view_page() {
 		$_GET['page'] = 'mxroute-log-view';
 
@@ -662,6 +820,9 @@ class MXRoute_Settings_Edge_Test extends \PHPUnit\Framework\TestCase {
 		unset( $_GET['page'] );
 	}
 
+	/**
+	 * Tests that add_menu_pages registers all three admin menu pages.
+	 */
 	public function test_add_menu_pages_registers_three_pages() {
 		$settings = new MXRoute_Settings();
 		$settings->add_menu_pages();

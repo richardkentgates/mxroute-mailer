@@ -1,6 +1,8 @@
 <?php
 /**
- * Tests for MXRoute_API class
+ * Tests for MXRoute_API class.
+ *
+ * @package MXRoute_Mailer
  */
 class MXRoute_API_Test extends \PHPUnit\Framework\TestCase {
 
@@ -10,6 +12,9 @@ class MXRoute_API_Test extends \PHPUnit\Framework\TestCase {
         $GLOBALS['wp_function_calls'] = array();
     }
 
+    /**
+     * Tests that send returns an error when no credentials are configured.
+     */
     public function test_send_returns_error_when_credentials_not_configured() {
         $api = new MXRoute_API();
         $result = $api->send('from@example.com', 'to@example.com', 'Test', 'Body');
@@ -20,6 +25,9 @@ class MXRoute_API_Test extends \PHPUnit\Framework\TestCase {
         $this->assertEmpty($result['response']);
     }
 
+    /**
+     * Tests that send returns an error when the server is not configured.
+     */
     public function test_send_returns_error_when_server_not_configured() {
         $GLOBALS['wp_options']['mxroute_mailer_username'] = 'user@example.com';
         $GLOBALS['wp_options']['mxroute_mailer_password'] = 'password123';
@@ -31,6 +39,9 @@ class MXRoute_API_Test extends \PHPUnit\Framework\TestCase {
         $this->assertEquals('MXRoute credentials not configured.', $result['message']);
     }
 
+    /**
+     * Tests that send returns an error when the username is not configured.
+     */
     public function test_send_returns_error_when_username_not_configured() {
         $GLOBALS['wp_options']['mxroute_mailer_server'] = 'server.example.com';
         $GLOBALS['wp_options']['mxroute_mailer_password'] = 'password123';
@@ -42,6 +53,9 @@ class MXRoute_API_Test extends \PHPUnit\Framework\TestCase {
         $this->assertEquals('MXRoute credentials not configured.', $result['message']);
     }
 
+    /**
+     * Tests that send returns an error when the password is not configured.
+     */
     public function test_send_returns_error_when_password_not_configured() {
         $GLOBALS['wp_options']['mxroute_mailer_server'] = 'server.example.com';
         $GLOBALS['wp_options']['mxroute_mailer_username'] = 'user@example.com';
@@ -53,6 +67,9 @@ class MXRoute_API_Test extends \PHPUnit\Framework\TestCase {
         $this->assertEquals('MXRoute credentials not configured.', $result['message']);
     }
 
+    /**
+     * Tests that send builds the correct API request payload.
+     */
     public function test_send_builds_correct_payload() {
         $GLOBALS['wp_options']['mxroute_mailer_server'] = 'server.example.com';
         $GLOBALS['wp_options']['mxroute_mailer_username'] = 'user@example.com';
@@ -71,6 +88,9 @@ class MXRoute_API_Test extends \PHPUnit\Framework\TestCase {
         $this->assertEquals('Test Subject', $result['request']['subject']);
     }
 
+    /**
+     * Tests that send correctly handles an array of recipients.
+     */
     public function test_send_handles_array_recipient() {
         $GLOBALS['wp_options']['mxroute_mailer_server'] = 'server.example.com';
         $GLOBALS['wp_options']['mxroute_mailer_username'] = 'user@example.com';
@@ -82,6 +102,9 @@ class MXRoute_API_Test extends \PHPUnit\Framework\TestCase {
         $this->assertEquals('to@example.com', $result['request']['to']);
     }
 
+    /**
+     * Tests that send includes all required fields in the request.
+     */
     public function test_send_includes_all_required_fields() {
         $GLOBALS['wp_options']['mxroute_mailer_server'] = 'server.example.com';
         $GLOBALS['wp_options']['mxroute_mailer_username'] = 'user@example.com';
@@ -97,6 +120,9 @@ class MXRoute_API_Test extends \PHPUnit\Framework\TestCase {
         $this->assertArrayHasKey('subject', $result['request']);
     }
 
+    /**
+     * Tests that send does not include the password in the request log.
+     */
     public function test_send_does_not_include_password_in_request_log() {
         $GLOBALS['wp_options']['mxroute_mailer_server'] = 'server.example.com';
         $GLOBALS['wp_options']['mxroute_mailer_username'] = 'user@example.com';
@@ -108,6 +134,9 @@ class MXRoute_API_Test extends \PHPUnit\Framework\TestCase {
         $this->assertArrayNotHasKey('password', $result['request']);
     }
 
+    /**
+     * Tests that send handles a WP_Error response from wp_remote_post.
+     */
     public function test_send_handles_remote_post_error() {
         $GLOBALS['wp_options']['mxroute_mailer_server'] = 'server.example.com';
         $GLOBALS['wp_options']['mxroute_mailer_username'] = 'user@example.com';

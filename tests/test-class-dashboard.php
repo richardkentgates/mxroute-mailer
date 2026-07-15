@@ -1,6 +1,8 @@
 <?php
 /**
- * Tests for MXRoute_Dashboard class
+ * Tests for MXRoute_Dashboard class.
+ *
+ * @package MXRoute_Mailer
  */
 class MXRoute_Dashboard_Test extends \PHPUnit\Framework\TestCase {
 
@@ -11,6 +13,9 @@ class MXRoute_Dashboard_Test extends \PHPUnit\Framework\TestCase {
         $GLOBALS['wp_db_queries'] = array();
     }
 
+    /**
+     * Tests that the constructor registers the expected AJAX action hooks.
+     */
     public function test_constructor_registers_hooks() {
         $dashboard = new MXRoute_Dashboard();
 
@@ -20,6 +25,9 @@ class MXRoute_Dashboard_Test extends \PHPUnit\Framework\TestCase {
         $this->assertContains('admin_ajax_mxroute_bulk_delete_logs', $hooks);
     }
 
+    /**
+     * Tests that ajax_clear_logs verifies the nonce before proceeding.
+     */
     public function test_ajax_clear_logs_verifies_nonce() {
         $dashboard = new MXRoute_Dashboard();
         try {
@@ -33,6 +41,9 @@ class MXRoute_Dashboard_Test extends \PHPUnit\Framework\TestCase {
         $this->assertEquals('mxroute_log_manage', $calls[0]['action']);
     }
 
+    /**
+     * Tests that ajax_clear_logs sends a success JSON response.
+     */
     public function test_ajax_clear_logs_sends_success() {
         $dashboard = new MXRoute_Dashboard();
         $threw = false;
@@ -45,6 +56,9 @@ class MXRoute_Dashboard_Test extends \PHPUnit\Framework\TestCase {
         $this->assertTrue($threw, 'Expected MXRouteJSONException to be thrown');
     }
 
+    /**
+     * Tests that ajax_delete_log verifies the nonce before proceeding.
+     */
     public function test_ajax_delete_log_verifies_nonce() {
         $dashboard = new MXRoute_Dashboard();
         try {
@@ -58,6 +72,9 @@ class MXRoute_Dashboard_Test extends \PHPUnit\Framework\TestCase {
         $this->assertEquals('mxroute_log_manage', $calls[0]['action']);
     }
 
+    /**
+     * Tests that ajax_delete_log sends a success JSON response.
+     */
     public function test_ajax_delete_log_sends_success() {
         $dashboard = new MXRoute_Dashboard();
         $threw = false;
@@ -70,6 +87,9 @@ class MXRoute_Dashboard_Test extends \PHPUnit\Framework\TestCase {
         $this->assertTrue($threw, 'Expected MXRouteJSONException to be thrown');
     }
 
+    /**
+     * Tests that ajax_bulk_delete_logs verifies the nonce before proceeding.
+     */
     public function test_ajax_bulk_delete_logs_verifies_nonce() {
         $dashboard = new MXRoute_Dashboard();
         try {
@@ -83,6 +103,9 @@ class MXRoute_Dashboard_Test extends \PHPUnit\Framework\TestCase {
         $this->assertEquals('mxroute_log_manage', $calls[0]['action']);
     }
 
+    /**
+     * Tests that ajax_bulk_delete_logs sends an error when no log IDs are provided.
+     */
     public function test_ajax_bulk_delete_logs_sends_error_when_no_ids() {
         $dashboard = new MXRoute_Dashboard();
         $threw = false;
@@ -95,6 +118,9 @@ class MXRoute_Dashboard_Test extends \PHPUnit\Framework\TestCase {
         $this->assertTrue($threw, 'Expected MXRouteJSONException to be thrown');
     }
 
+    /**
+     * Tests that ajax_bulk_delete_logs sends a success response when valid IDs are provided.
+     */
     public function test_ajax_bulk_delete_logs_sends_success_with_ids() {
         $GLOBALS['wp_function_calls']['wp_create_nonce'] = array( array( 'result' => 'nonce' ) );
         $_POST['log_ids'] = array( 1, 2, 3 );

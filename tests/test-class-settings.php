@@ -1,6 +1,8 @@
 <?php
 /**
- * Tests for MXRoute_Settings class
+ * Tests for MXRoute_Settings class.
+ *
+ * @package MXRoute_Mailer
  */
 class MXRoute_Settings_Test extends \PHPUnit\Framework\TestCase {
 
@@ -9,6 +11,9 @@ class MXRoute_Settings_Test extends \PHPUnit\Framework\TestCase {
         $GLOBALS['wp_function_calls'] = array();
     }
 
+    /**
+     * Tests that the constructor registers admin_menu, admin_init, and admin_enqueue_scripts hooks.
+     */
     public function test_constructor_registers_hooks() {
         $settings = new MXRoute_Settings();
 
@@ -19,6 +24,9 @@ class MXRoute_Settings_Test extends \PHPUnit\Framework\TestCase {
         $this->assertContains('admin_enqueue_scripts', $hooks);
     }
 
+    /**
+     * Tests that register_settings registers all expected option names.
+     */
     public function test_register_settings_registers_all_options() {
         $settings = new MXRoute_Settings();
         $settings->register_settings();
@@ -33,6 +41,9 @@ class MXRoute_Settings_Test extends \PHPUnit\Framework\TestCase {
         $this->assertContains('mxroute_mailer_keep_data', $option_names);
     }
 
+    /**
+     * Tests that all settings are grouped under the mxroute_mailer_settings option group.
+     */
     public function test_register_settings_groups_all_under_mxroute_mailer_settings() {
         $settings = new MXRoute_Settings();
         $settings->register_settings();
@@ -43,6 +54,9 @@ class MXRoute_Settings_Test extends \PHPUnit\Framework\TestCase {
         }
     }
 
+    /**
+     * Tests that sanitize_checkbox returns 1 for truthy values.
+     */
     public function test_sanitize_checkbox_returns_1_for_truthy() {
         $settings = new MXRoute_Settings();
         $this->assertEquals(1, $settings->sanitize_checkbox(true));
@@ -50,6 +64,9 @@ class MXRoute_Settings_Test extends \PHPUnit\Framework\TestCase {
         $this->assertEquals(1, $settings->sanitize_checkbox('yes'));
     }
 
+    /**
+     * Tests that sanitize_checkbox returns 0 for falsy values.
+     */
     public function test_sanitize_checkbox_returns_0_for_falsy() {
         $settings = new MXRoute_Settings();
         $this->assertEquals(0, $settings->sanitize_checkbox(false));
@@ -58,6 +75,9 @@ class MXRoute_Settings_Test extends \PHPUnit\Framework\TestCase {
         $this->assertEquals(0, $settings->sanitize_checkbox(null));
     }
 
+    /**
+     * Tests that enqueue_assets does not load assets on non-plugin pages.
+     */
     public function test_enqueue_assets_returns_early_on_wrong_hook() {
         $settings = new MXRoute_Settings();
         $settings->enqueue_assets('post.php');
@@ -66,6 +86,9 @@ class MXRoute_Settings_Test extends \PHPUnit\Framework\TestCase {
         $this->assertEmpty($GLOBALS['wp_function_calls']['wp_enqueue_script'] ?? array());
     }
 
+    /**
+     * Tests that enqueue_assets loads CSS on the settings page.
+     */
     public function test_enqueue_assets_loads_css_on_settings_page() {
         $settings = new MXRoute_Settings();
         $settings->enqueue_assets('settings_page_mxroute-mailer');
@@ -74,6 +97,9 @@ class MXRoute_Settings_Test extends \PHPUnit\Framework\TestCase {
         $this->assertEmpty($GLOBALS['wp_function_calls']['wp_enqueue_script'] ?? array());
     }
 
+    /**
+     * Tests that enqueue_assets loads both CSS and JS on the logs page.
+     */
     public function test_enqueue_assets_loads_on_logs_page() {
         $settings = new MXRoute_Settings();
         $settings->enqueue_assets('tools_page_mxroute-logs');
@@ -82,6 +108,9 @@ class MXRoute_Settings_Test extends \PHPUnit\Framework\TestCase {
         $this->assertArrayHasKey('wp_enqueue_script', $GLOBALS['wp_function_calls']);
     }
 
+    /**
+     * Tests that enqueue_assets localizes script data on the logs page.
+     */
     public function test_enqueue_assets_localizes_on_logs_page() {
         $settings = new MXRoute_Settings();
         $settings->enqueue_assets('tools_page_mxroute-logs');
@@ -95,6 +124,9 @@ class MXRoute_Settings_Test extends \PHPUnit\Framework\TestCase {
         $this->assertArrayHasKey('i18n', $calls[0]['l10n']);
     }
 
+    /**
+     * Tests that enqueue_assets uses the plugin version for cache busting.
+     */
     public function test_enqueue_assets_uses_plugin_version() {
         $settings = new MXRoute_Settings();
         $settings->enqueue_assets('settings_page_mxroute-mailer');
@@ -103,6 +135,9 @@ class MXRoute_Settings_Test extends \PHPUnit\Framework\TestCase {
         $this->assertEquals(MXROUTE_MAILER_VERSION, $style_calls[0]['ver']);
     }
 
+    /**
+     * Tests that add_menu_pages registers the MXRoute Mailer options page.
+     */
     public function test_add_menu_pages_calls_add_options_page() {
         $settings = new MXRoute_Settings();
         $settings->add_menu_pages();
@@ -114,6 +149,9 @@ class MXRoute_Settings_Test extends \PHPUnit\Framework\TestCase {
         $this->assertEquals('mxroute-mailer', $call['menu_slug']);
     }
 
+    /**
+     * Tests that add_menu_pages registers the email logs management page.
+     */
     public function test_add_menu_pages_calls_add_management_page() {
         $settings = new MXRoute_Settings();
         $settings->add_menu_pages();
