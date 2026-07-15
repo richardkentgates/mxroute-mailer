@@ -93,7 +93,11 @@ class MXRoute_Mailer {
 			return $args;
 		}
 
-		$from   = $this->extract_from_address( $args['headers'] );
+		$from     = get_option( 'mxroute_mailer_username', '' );
+		$reply_to = $this->extract_from_address( $args['headers'] );
+		if ( sanitize_email( $reply_to ) === sanitize_email( $from ) ) {
+			$reply_to = '';
+		}
 		$api    = new MXRoute_API();
 		$logger = new MXRoute_Logger();
 
@@ -107,7 +111,8 @@ class MXRoute_Mailer {
 				$from,
 				$recipient,
 				$args['subject'],
-				$args['message']
+				$args['message'],
+				$reply_to
 			);
 
 			$logger->log(

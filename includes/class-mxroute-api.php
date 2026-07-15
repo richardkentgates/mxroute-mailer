@@ -29,10 +29,11 @@ class MXRoute_API {
 	/**
 	 * Send an email via the MXRoute API using saved settings.
 	 *
-	 * @param string       $from    Sender email address.
-	 * @param string|array $to      Recipient email address(es).
-	 * @param string       $subject Email subject.
-	 * @param string       $body    Email body.
+	 * @param string       $from     Sender email address.
+	 * @param string|array $to       Recipient email address(es).
+	 * @param string       $subject  Email subject.
+	 * @param string       $body     Email body.
+	 * @param string       $reply_to Optional Reply-To email address.
 	 * @return array {
 	 *     Response data.
 	 *
@@ -42,7 +43,7 @@ class MXRoute_API {
 	 *     @type array  $response Raw API response.
 	 * }
 	 */
-	public function send( $from, $to, $subject, $body ) {
+	public function send( $from, $to, $subject, $body, $reply_to = '' ) {
 		$server   = get_option( 'mxroute_mailer_server', '' );
 		$username = get_option( 'mxroute_mailer_username', '' );
 		$password = get_option( 'mxroute_mailer_password', '' );
@@ -74,6 +75,10 @@ class MXRoute_API {
 			'subject'  => substr( $subject, 0, self::$max_field_length ),
 			'body'     => substr( $body, 0, self::$max_field_length * 10 ),
 		);
+
+		if ( ! empty( $reply_to ) ) {
+			$payload['headers'] = 'Reply-To: ' . substr( $reply_to, 0, self::$max_field_length );
+		}
 
 		$request = array(
 			'server'   => $server,
