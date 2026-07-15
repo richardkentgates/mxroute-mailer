@@ -92,7 +92,8 @@ class MXRoute_Mailer_Test extends \PHPUnit\Framework\TestCase {
             'message' => 'Body',
         );
         $result = $mailer->intercept_wp_mail($args);
-        $this->assertFalse($result);
+        $this->assertIsArray($result);
+        $this->assertArrayHasKey('to', $result);
     }
 
     public function test_intercept_wp_mail_fires_wp_mail_failed_on_api_failure() {
@@ -130,7 +131,7 @@ class MXRoute_Mailer_Test extends \PHPUnit\Framework\TestCase {
 
     public function test_extract_from_address_returns_default_when_no_headers() {
         $mailer = MXRoute_Mailer::instance();
-        $GLOBALS['wp_options']['mxroute_mailer_default_from'] = 'default@example.com';
+        $GLOBALS['wp_options']['mxroute_mailer_username'] = 'default@example.com';
         $result = $mailer->intercept_wp_mail(array(
             'to'      => 'to@example.com',
             'subject' => 'Test',
@@ -143,7 +144,7 @@ class MXRoute_Mailer_Test extends \PHPUnit\Framework\TestCase {
 
     public function test_extract_from_address_parses_string_headers() {
         $mailer = MXRoute_Mailer::instance();
-        $GLOBALS['wp_options']['mxroute_mailer_default_from'] = 'default@example.com';
+        $GLOBALS['wp_options']['mxroute_mailer_username'] = 'default@example.com';
         $args = array(
             'to'      => 'to@example.com',
             'subject' => 'Test',
@@ -156,7 +157,7 @@ class MXRoute_Mailer_Test extends \PHPUnit\Framework\TestCase {
 
     public function test_extract_from_address_parses_angle_bracket_format() {
         $mailer = MXRoute_Mailer::instance();
-        $GLOBALS['wp_options']['mxroute_mailer_default_from'] = 'default@example.com';
+        $GLOBALS['wp_options']['mxroute_mailer_username'] = 'default@example.com';
         $args = array(
             'to'      => 'to@example.com',
             'subject' => 'Test',
@@ -169,7 +170,7 @@ class MXRoute_Mailer_Test extends \PHPUnit\Framework\TestCase {
 
     public function test_extract_from_address_parses_array_headers() {
         $mailer = MXRoute_Mailer::instance();
-        $GLOBALS['wp_options']['mxroute_mailer_default_from'] = 'default@example.com';
+        $GLOBALS['wp_options']['mxroute_mailer_username'] = 'default@example.com';
         $args = array(
             'to'      => 'to@example.com',
             'subject' => 'Test',
@@ -182,7 +183,7 @@ class MXRoute_Mailer_Test extends \PHPUnit\Framework\TestCase {
 
     public function test_extract_from_address_falls_back_to_default_for_array_headers() {
         $mailer = MXRoute_Mailer::instance();
-        $GLOBALS['wp_options']['mxroute_mailer_default_from'] = 'default@example.com';
+        $GLOBALS['wp_options']['mxroute_mailer_username'] = 'default@example.com';
         $args = array(
             'to'      => 'to@example.com',
             'subject' => 'Test',
@@ -195,7 +196,7 @@ class MXRoute_Mailer_Test extends \PHPUnit\Framework\TestCase {
 
     public function test_extract_from_address_plain_string_header() {
         $mailer = MXRoute_Mailer::instance();
-        $GLOBALS['wp_options']['mxroute_mailer_default_from'] = 'default@example.com';
+        $GLOBALS['wp_options']['mxroute_mailer_username'] = 'default@example.com';
         $args = array(
             'to'      => 'to@example.com',
             'subject' => 'Test',
@@ -247,18 +248,15 @@ class MXRoute_Mailer_Test extends \PHPUnit\Framework\TestCase {
         $this->assertArrayHasKey('mxroute_test_email_result', $GLOBALS['wp_transients']);
     }
 
-    public function test_handle_test_email_redirects_after_send() {
+    public function test_handle_test_email_sets_transient_after_send() {
         $mailer = MXRoute_Mailer::instance();
         $_POST = array(
             'mxroute_test_email_nonce' => 'valid',
             'mxroute_test_to'          => 'to@example.com',
-            'mxroute_test_from'        => 'from@example.com',
         );
         $mailer->handle_test_email();
 
-        $calls = $GLOBALS['wp_function_calls']['wp_safe_redirect'] ?? array();
-        $this->assertCount(1, $calls);
-        $this->assertStringContainsString('test_sent=1', $calls[0]['location']);
+        $this->assertArrayHasKey('mxroute_test_email_result', $GLOBALS['wp_transients']);
     }
 
     public function test_init_hooks_registers_wp_mail_filter() {

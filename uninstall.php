@@ -22,6 +22,5 @@ $wpdb->query( "DROP TABLE IF EXISTS $table_name" );
 delete_option( 'mxroute_mailer_server' );
 delete_option( 'mxroute_mailer_username' );
 delete_option( 'mxroute_mailer_password' );
-delete_option( 'mxroute_mailer_default_from' );
 delete_option( 'mxroute_mailer_logging_enabled' );
 delete_option( 'mxroute_mailer_keep_data' );

@@ -61,7 +61,7 @@ class MXRoute_Mailer {
 	 */
 	private function init_hooks() {
 		add_filter( 'wp_mail', array( $this, 'intercept_wp_mail' ), 999 );
-		add_action( 'admin_init', array( $this, 'handle_test_email' ) );
+		add_action( 'load-settings_page_mxroute-mailer', array( $this, 'handle_test_email' ) );
 	}
 
 	/**
@@ -93,29 +93,41 @@ class MXRoute_Mailer {
 			return $args;
 		}
 
-		$from = $this->extract_from_address( $args['headers'] );
-
+		$from   = $this->extract_from_address( $args['headers'] );
 		$api    = new MXRoute_API();
-		$result = $api->send(
-			$from,
-			$args['to'],
-			$args['subject'],
-			$args['message']
-		);
-
 		$logger = new MXRoute_Logger();
-		$logger->log(
-			$from,
-			$args['to'],
-			$args['subject'],
-			$args['message'],
-			$result['request'],
-			$result['response'],
-			$result['success']
-		);
 
-		if ( ! $result['success'] ) {
-			$message = $result['message'];
+		$recipients = is_array( $args['to'] ) ? array_values( array_filter( $args['to'] ) ) : array( $args['to'] );
+
+		$all_success = true;
+		$messages    = array();
+
+		foreach ( $recipients as $recipient ) {
+			$result = $api->send(
+				$from,
+				$recipient,
+				$args['subject'],
+				$args['message']
+			);
+
+			$logger->log(
+				$from,
+				$recipient,
+				$args['subject'],
+				$args['message'],
+				$result['request'],
+				$result['response'],
+				$result['success']
+			);
+
+			if ( ! $result['success'] ) {
+				$all_success = false;
+				$messages[]  = $result['message'];
+			}
+		}
+
+		if ( ! $all_success ) {
+			$message = implode( '; ', $messages );
 			if ( empty( $message ) ) {
 				$message = __( 'MXRoute API send failed.', 'mxroute-mailer' );
 			}
@@ -127,7 +139,7 @@ class MXRoute_Mailer {
 			do_action( 'wp_mail_failed', $error );
 		}
 
-		return false;
+		return $args;
 	}
 
 	/**
@@ -138,7 +150,7 @@ class MXRoute_Mailer {
 	 */
 	private function extract_from_address( $headers ) {
 		$default_from = get_option(
-			'mxroute_mailer_default_from',
+			'mxroute_mailer_username',
 			get_option( 'admin_email', 'admin@example.com' )
 		);
 
@@ -195,7 +207,7 @@ class MXRoute_Mailer {
 		}
 
 		$to      = sanitize_email( wp_unslash( $_POST['mxroute_test_to'] ?? '' ) );
-		$from    = sanitize_email( wp_unslash( $_POST['mxroute_test_from'] ?? '' ) );
+		$from    = get_option( 'mxroute_mailer_username', '' );
 		$subject = sanitize_text_field( wp_unslash( $_POST['mxroute_test_subject'] ?? '' ) );
 		$body    = sanitize_textarea_field( wp_unslash( $_POST['mxroute_test_body'] ?? '' ) );
 
@@ -233,8 +245,5 @@ class MXRoute_Mailer {
 		);
 
 		set_transient( 'mxroute_test_email_result', $result, 60 );
-
-		wp_safe_redirect( admin_url( 'options-general.php?page=mxroute-mailer&test_sent=1' ) );
-		wp_die();
 	}
 }

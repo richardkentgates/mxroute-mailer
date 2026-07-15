@@ -66,7 +66,7 @@ $response = json_decode( $log->api_response, true );
 	</table>
 
 	<h4><?php esc_html_e( 'Message', 'mxroute-mailer' ); ?></h4>
-	<div class="mxroute-json"><?php echo wp_kses_post( $log->message ?? '' ); ?></div>
+	<div class="mxroute-json"><?php echo esc_html( $log->message ?? '' ); ?></div>
 
 	<h4><?php esc_html_e( 'API Request', 'mxroute-mailer' ); ?></h4>
 	<pre class="mxroute-json"><?php echo esc_html( wp_json_encode( $request, JSON_PRETTY_PRINT ) ); ?></pre>

@@ -51,10 +51,20 @@ defined( 'ABSPATH' ) || exit;
 			<tr>
 				<th scope="row"><label for="mxroute_mailer_username"><?php esc_html_e( 'Username', 'mxroute-mailer' ); ?></label></th>
 				<td>
-					<input type="text" id="mxroute_mailer_username" name="mxroute_mailer_username"
-							value="<?php echo esc_attr( get_option( 'mxroute_mailer_username', '' ) ); ?>"
-							class="regular-text" placeholder="<?php esc_attr_e( 'e.g. user@yourdomain.com', 'mxroute-mailer' ); ?>" />
-					<p class="description"><?php esc_html_e( 'Your full email address or SMTP username.', 'mxroute-mailer' ); ?></p>
+					<?php
+					$stored_username = get_option( 'mxroute_mailer_username', '' );
+					$username_local  = '';
+					if ( '' !== $stored_username && false !== strpos( $stored_username, '@' ) ) {
+						$username_local = substr( $stored_username, 0, strpos( $stored_username, '@' ) );
+					}
+					$site_host = wp_parse_url( home_url(), PHP_URL_HOST );
+					?>
+					<span class="mxroute-username-field">
+						<input type="text" id="mxroute_mailer_username_local" name="mxroute_mailer_username"
+								value="<?php echo esc_attr( $username_local ); ?>"
+								class="regular-text" placeholder="<?php esc_attr_e( 'e.g. mail', 'mxroute-mailer' ); ?>" /><span class="mxroute-username-domain">@<?php echo esc_html( $site_host ); ?></span>
+					</span>
+					<p class="description"><?php esc_html_e( 'Your MXRoute username (from control panel > Email Clients). The domain is pulled from your WordPress site URL.', 'mxroute-mailer' ); ?></p>
 				</td>
 			</tr>
 			<tr>
@@ -67,15 +77,6 @@ defined( 'ABSPATH' ) || exit;
 					<input type="password" id="mxroute_mailer_password" name="mxroute_mailer_password"
 							value="" class="regular-text"
 							placeholder="<?php echo esc_attr( $placeholder ); ?>" />
-				</td>
-			</tr>
-			<tr>
-				<th scope="row"><label for="mxroute_mailer_default_from"><?php esc_html_e( 'Default From Email', 'mxroute-mailer' ); ?></label></th>
-				<td>
-					<input type="email" id="mxroute_mailer_default_from" name="mxroute_mailer_default_from"
-							value="<?php echo esc_attr( get_option( 'mxroute_mailer_default_from', get_option( 'admin_email' ) ) ); ?>"
-							class="regular-text" />
-					<p class="description"><?php esc_html_e( 'Used when no From header is specified in wp_mail() calls.', 'mxroute-mailer' ); ?></p>
 				</td>
 			</tr>
 			<tr>
@@ -114,13 +115,6 @@ defined( 'ABSPATH' ) || exit;
 				<td>
 					<input type="email" id="mxroute_test_to" name="mxroute_test_to" required
 							class="regular-text" placeholder="<?php esc_attr_e( 'recipient@example.com', 'mxroute-mailer' ); ?>" />
-				</td>
-			</tr>
-			<tr>
-				<th scope="row"><label for="mxroute_test_from"><?php esc_html_e( 'From', 'mxroute-mailer' ); ?></label></th>
-				<td>
-					<input type="email" id="mxroute_test_from" name="mxroute_test_from" required
-							class="regular-text" placeholder="<?php esc_attr_e( 'sender@yourdomain.com', 'mxroute-mailer' ); ?>" />
 				</td>
 			</tr>
 			<tr>

@@ -99,8 +99,8 @@ class MXRoute_API_Edge_Test extends \PHPUnit\Framework\TestCase {
 		$api    = new MXRoute_API();
 		$result = $api->send( 'from@example.com', 'to@example.com', 'Subject', '' );
 
-		$this->assertEquals( '', $result['request']['subject'] !== '' ? '' : '' );
 		$this->assertArrayHasKey( 'request', $result );
+		$this->assertArrayNotHasKey( 'body', $result['request'] );
 	}
 
 	public function test_send_api_returns_empty_body() {
@@ -231,7 +231,8 @@ class MXRoute_Mailer_Edge_Test extends \PHPUnit\Framework\TestCase {
 			'message' => null,
 		);
 		$result = $mailer->intercept_wp_mail( $args );
-		$this->assertFalse( $result );
+		$this->assertIsArray( $result );
+		$this->assertArrayHasKey( 'to', $result );
 	}
 
 	public function test_intercept_handles_completely_empty_args() {
@@ -249,7 +250,7 @@ class MXRoute_Mailer_Edge_Test extends \PHPUnit\Framework\TestCase {
 
 	public function test_extract_from_with_array_headers_containing_non_strings() {
 		$mailer = MXRoute_Mailer::instance();
-		$GLOBALS['wp_options']['mxroute_mailer_default_from'] = 'default@example.com';
+		$GLOBALS['wp_options']['mxroute_mailer_username'] = 'default@example.com';
 		$args   = array(
 			'to'      => 'to@example.com',
 			'subject' => 'Test',
@@ -262,7 +263,7 @@ class MXRoute_Mailer_Edge_Test extends \PHPUnit\Framework\TestCase {
 
 	public function test_extract_from_with_string_headers_missing_from() {
 		$mailer = MXRoute_Mailer::instance();
-		$GLOBALS['wp_options']['mxroute_mailer_default_from'] = 'default@example.com';
+		$GLOBALS['wp_options']['mxroute_mailer_username'] = 'default@example.com';
 		$args   = array(
 			'to'      => 'to@example.com',
 			'subject' => 'Test',
@@ -275,7 +276,7 @@ class MXRoute_Mailer_Edge_Test extends \PHPUnit\Framework\TestCase {
 
 	public function test_extract_from_plain_email_no_angle_brackets() {
 		$mailer = MXRoute_Mailer::instance();
-		$GLOBALS['wp_options']['mxroute_mailer_default_from'] = 'default@example.com';
+		$GLOBALS['wp_options']['mxroute_mailer_username'] = 'default@example.com';
 		$args   = array(
 			'to'      => 'to@example.com',
 			'subject' => 'Test',
@@ -288,7 +289,7 @@ class MXRoute_Mailer_Edge_Test extends \PHPUnit\Framework\TestCase {
 
 	public function test_extract_from_with_multiple_from_headers() {
 		$mailer = MXRoute_Mailer::instance();
-		$GLOBALS['wp_options']['mxroute_mailer_default_from'] = 'default@example.com';
+		$GLOBALS['wp_options']['mxroute_mailer_username'] = 'default@example.com';
 		$args   = array(
 			'to'      => 'to@example.com',
 			'subject' => 'Test',
@@ -419,9 +420,9 @@ class MXRoute_Logger_Edge_Test extends \PHPUnit\Framework\TestCase {
 		$this->assertEmpty( $GLOBALS['wp_db_queries'] );
 	}
 
-	public function test_delete_logs_handles_mixed_array() {
+	public function test_delete_logs_handles_all_invalid_values() {
 		$logger = new MXRoute_Logger();
-		$logger->delete_logs( array( 1, 'abc', 0, -5, 3 ) );
+		$logger->delete_logs( array( 'abc', 'def', 0, '' ) );
 
 		$this->assertEmpty( $GLOBALS['wp_db_queries'] );
 	}

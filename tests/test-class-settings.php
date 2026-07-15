@@ -29,7 +29,6 @@ class MXRoute_Settings_Test extends \PHPUnit\Framework\TestCase {
         $this->assertContains('mxroute_mailer_server', $option_names);
         $this->assertContains('mxroute_mailer_username', $option_names);
         $this->assertContains('mxroute_mailer_password', $option_names);
-        $this->assertContains('mxroute_mailer_default_from', $option_names);
         $this->assertContains('mxroute_mailer_logging_enabled', $option_names);
         $this->assertContains('mxroute_mailer_keep_data', $option_names);
     }

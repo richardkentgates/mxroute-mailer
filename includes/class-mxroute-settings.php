@@ -20,6 +20,9 @@ class MXRoute_Settings {
 		add_action( 'admin_init', array( $this, 'register_settings' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 		add_action( 'admin_init', array( $this, 'set_log_view_title' ) );
+		add_action( 'load-settings_page_mxroute-mailer', array( $this, 'add_settings_help_tabs' ) );
+		add_action( 'load-tools_page_mxroute-logs', array( $this, 'add_logs_help_tabs' ) );
+		add_action( 'load-tools_page_mxroute-log-view', array( $this, 'add_log_view_help_tabs' ) );
 	}
 
 	/**
@@ -71,7 +74,7 @@ class MXRoute_Settings {
 			'mxroute_mailer_settings',
 			'mxroute_mailer_username',
 			array(
-				'sanitize_callback' => 'sanitize_text_field',
+				'sanitize_callback' => array( $this, 'sanitize_username_local' ),
 			)
 		);
 		register_setting(
@@ -79,13 +82,6 @@ class MXRoute_Settings {
 			'mxroute_mailer_password',
 			array(
 				'sanitize_callback' => array( $this, 'sanitize_password' ),
-			)
-		);
-		register_setting(
-			'mxroute_mailer_settings',
-			'mxroute_mailer_default_from',
-			array(
-				'sanitize_callback' => 'sanitize_email',
 			)
 		);
 		register_setting(
@@ -131,6 +127,18 @@ class MXRoute_Settings {
 			return get_option( 'mxroute_mailer_password', '' );
 		}
 		return $value;
+	}
+
+	/**
+	 * Sanitize username local part and combine with domain from From Email.
+	 *
+	 * @param string $value Local part of the username submitted by the form.
+	 * @return string Full username email address.
+	 */
+	public function sanitize_username_local( $value ) {
+		$local  = sanitize_text_field( $value );
+		$host   = wp_parse_url( home_url(), PHP_URL_HOST );
+		return sanitize_email( $local . '@' . $host );
 	}
 
 	/**
@@ -225,6 +233,150 @@ class MXRoute_Settings {
 	 */
 	public function render_log_view_page() {
 		include MXROUTE_MAILER_PLUGIN_DIR . 'admin/views/log-view.php';
+	}
+
+	/**
+	 * Add help tabs for the Settings page.
+	 *
+	 * @return void
+	 */
+	public function add_settings_help_tabs() {
+		$screen = get_current_screen();
+		if ( ! $screen ) {
+			return;
+		}
+
+		$screen->add_help_tab(
+			array(
+				'id'      => 'mxroute-overview',
+				'title'   => __( 'Overview', 'mxroute-mailer' ),
+				'content' => '<p>' . esc_html__( 'MXRoute Mailer intercepts all outgoing WordPress emails and routes them through MXRoute\'s HTTP API instead of SMTP. This bypasses port blocks on cloud hosting providers like Google Cloud.', 'mxroute-mailer' ) . '</p>'
+					. '<p>' . esc_html__( 'Enter your MXRoute API credentials below, then use the test form to verify your setup.', 'mxroute-mailer' ) . '</p>',
+			)
+		);
+
+		$screen->add_help_tab(
+			array(
+				'id'      => 'mxroute-credentials',
+				'title'   => __( 'Credentials', 'mxroute-mailer' ),
+				'content' => '<p><strong>' . esc_html__( 'Server Hostname:', 'mxroute-mailer' ) . '</strong> ' . esc_html__( 'Found in your MXRoute control panel under Email Clients. Example: tuesday.mxrouting.net', 'mxroute-mailer' ) . '</p>'
+					. '<p><strong>' . esc_html__( 'Username:', 'mxroute-mailer' ) . '</strong> ' . esc_html__( 'Enter only the local part of your email address. The domain is taken from your WordPress site URL.', 'mxroute-mailer' ) . '</p>'
+					. '<p><strong>' . esc_html__( 'Password:', 'mxroute-mailer' ) . '</strong> ' . esc_html__( 'Your MXRoute password. Leave blank when editing to keep the current value.', 'mxroute-mailer' ) . '</p>',
+			)
+		);
+
+		$screen->add_help_tab(
+			array(
+				'id'      => 'mxroute-test-email',
+				'title'   => __( 'Test Email', 'mxroute-mailer' ),
+				'content' => '<p>' . esc_html__( 'Use the test form at the bottom of this page to send a test email. Enter a recipient address, then click "Send Test Email". The sender address is automatically taken from your configured username.', 'mxroute-mailer' ) . '</p>'
+					. '<p>' . esc_html__( 'If the test succeeds, you\'ll see a green notice. If it fails, you\'ll see a red notice with the error details.', 'mxroute-mailer' ) . '</p>',
+			)
+		);
+
+		$screen->add_help_tab(
+			array(
+				'id'      => 'mxroute-options',
+				'title'   => __( 'Options', 'mxroute-mailer' ),
+				'content' => '<p><strong>' . esc_html__( 'Enable Logging:', 'mxroute-mailer' ) . '</strong> ' . esc_html__( 'When checked, all sent emails are logged with request and response data. You can view logs under Tools > MXRoute Logs.', 'mxroute-mailer' ) . '</p>'
+					. '<p><strong>' . esc_html__( 'Uninstall:', 'mxroute-mailer' ) . '</strong> ' . esc_html__( 'When checked, your logs and settings are preserved when the plugin is deleted. Uncheck to remove all data on uninstall.', 'mxroute-mailer' ) . '</p>',
+			)
+		);
+
+		$screen->set_help_sidebar(
+			'<p><strong>' . esc_html__( 'For more information:', 'mxroute-mailer' ) . '</strong></p>'
+			. '<p><a href="https://mxroute.com" target="_blank">' . esc_html__( 'MXRoute Documentation', 'mxroute-mailer' ) . '</a></p>'
+		);
+	}
+
+	/**
+	 * Add help tabs for the Logs page.
+	 *
+	 * @return void
+	 */
+	public function add_logs_help_tabs() {
+		$screen = get_current_screen();
+		if ( ! $screen ) {
+			return;
+		}
+
+		$screen->add_help_tab(
+			array(
+				'id'      => 'mxroute-logs-overview',
+				'title'   => __( 'Overview', 'mxroute-mailer' ),
+				'content' => '<p>' . esc_html__( 'This page displays a log of all emails sent through MXRoute Mailer. Each entry shows the timestamp, status, sender, recipient, and subject.', 'mxroute-mailer' ) . '</p>'
+					. '<p>' . esc_html__( 'Click "View" on any row to see the full API request and response data for that email.', 'mxroute-mailer' ) . '</p>',
+			)
+		);
+
+		$screen->add_help_tab(
+			array(
+				'id'      => 'mxroute-logs-filtering',
+				'title'   => __( 'Filtering', 'mxroute-mailer' ),
+				'content' => '<p>' . esc_html__( 'Use the filter controls above the table to narrow down results:', 'mxroute-mailer' ) . '</p>'
+					. '<ul>'
+					. '<li>' . esc_html__( 'Search: Filter by subject, sender, or recipient email address.', 'mxroute-mailer' ) . '</li>'
+					. '<li>' . esc_html__( 'Status: Show only successful or failed emails.', 'mxroute-mailer' ) . '</li>'
+					. '<li>' . esc_html__( 'From: Filter by a specific sender email address.', 'mxroute-mailer' ) . '</li>'
+					. '<li>' . esc_html__( 'Date range: Filter logs between two dates.', 'mxroute-mailer' ) . '</li>'
+					. '</ul>',
+			)
+		);
+
+		$screen->add_help_tab(
+			array(
+				'id'      => 'mxroute-logs-actions',
+				'title'   => __( 'Actions', 'mxroute-mailer' ),
+				'content' => '<p><strong>' . esc_html__( 'Clear All Logs:', 'mxroute-mailer' ) . '</strong> ' . esc_html__( 'Removes all log entries. This action cannot be undone.', 'mxroute-mailer' ) . '</p>'
+					. '<p><strong>' . esc_html__( 'Bulk Delete:', 'mxroute-mailer' ) . '</strong> ' . esc_html__( 'Select multiple entries using the checkboxes, choose "Delete" from the Bulk Actions dropdown, and click "Apply".', 'mxroute-mailer' ) . '</p>'
+					. '<p><strong>' . esc_html__( 'Delete Single Entry:', 'mxroute-mailer' ) . '</strong> ' . esc_html__( 'Click the "Delete" button on any row to remove that specific log entry.', 'mxroute-mailer' ) . '</p>',
+			)
+		);
+
+		$screen->set_help_sidebar(
+			'<p><strong>' . esc_html__( 'For more information:', 'mxroute-mailer' ) . '</strong></p>'
+			. '<p><a href="https://mxroute.com" target="_blank">' . esc_html__( 'MXRoute Documentation', 'mxroute-mailer' ) . '</a></p>'
+		);
+	}
+
+	/**
+	 * Add help tabs for the Log Detail page.
+	 *
+	 * @return void
+	 */
+	public function add_log_view_help_tabs() {
+		$screen = get_current_screen();
+		if ( ! $screen ) {
+			return;
+		}
+
+		$screen->add_help_tab(
+			array(
+				'id'      => 'mxroute-log-detail-overview',
+				'title'   => __( 'Overview', 'mxroute-mailer' ),
+				'content' => '<p>' . esc_html__( 'This page shows the full details for a single email log entry, including the message content, API request payload, and API response.', 'mxroute-mailer' ) . '</p>',
+			)
+		);
+
+		$screen->add_help_tab(
+			array(
+				'id'      => 'mxroute-log-detail-fields',
+				'title'   => __( 'Fields', 'mxroute-mailer' ),
+				'content' => '<ul>'
+					. '<li><strong>' . esc_html__( 'Timestamp:', 'mxroute-mailer' ) . '</strong> ' . esc_html__( 'When the email was sent.', 'mxroute-mailer' ) . '</li>'
+					. '<li><strong>' . esc_html__( 'Status:', 'mxroute-mailer' ) . '</strong> ' . esc_html__( 'Whether the API accepted the email (Sent) or rejected it (Fail).', 'mxroute-mailer' ) . '</li>'
+					. '<li><strong>' . esc_html__( 'From / To / Subject:', 'mxroute-mailer' ) . '</strong> ' . esc_html__( 'The email headers as passed to the API.', 'mxroute-mailer' ) . '</li>'
+					. '<li><strong>' . esc_html__( 'Message:', 'mxroute-mailer' ) . '</strong> ' . esc_html__( 'The email body content.', 'mxroute-mailer' ) . '</li>'
+					. '<li><strong>' . esc_html__( 'API Request:', 'mxroute-mailer' ) . '</strong> ' . esc_html__( 'The JSON payload sent to the MXRoute API (password excluded).', 'mxroute-mailer' ) . '</li>'
+					. '<li><strong>' . esc_html__( 'API Response:', 'mxroute-mailer' ) . '</strong> ' . esc_html__( 'The raw JSON response from the MXRoute API.', 'mxroute-mailer' ) . '</li>'
+					. '</ul>',
+			)
+		);
+
+		$screen->set_help_sidebar(
+			'<p><strong>' . esc_html__( 'For more information:', 'mxroute-mailer' ) . '</strong></p>'
+			. '<p><a href="https://mxroute.com" target="_blank">' . esc_html__( 'MXRoute Documentation', 'mxroute-mailer' ) . '</a></p>'
+		);
 	}
 }
 
