@@ -122,7 +122,8 @@ class MXRoute_Mailer {
 				$args['message'],
 				$result['request'],
 				$result['response'],
-				$result['success']
+				$result['success'],
+				$reply_to
 			);
 
 			if ( ! $result['success'] ) {

@@ -51,14 +51,20 @@ $response = json_decode( $log->api_response, true );
 				</span>
 			</td>
 		</tr>
-		<tr>
-			<th scope="row"><?php esc_html_e( 'From', 'mxroute-mailer' ); ?></th>
-			<td><?php echo esc_html( $log->from_email ); ?></td>
-		</tr>
-		<tr>
-			<th scope="row"><?php esc_html_e( 'To', 'mxroute-mailer' ); ?></th>
-			<td><?php echo esc_html( $log->to_email ); ?></td>
-		</tr>
+	<tr>
+		<th scope="row"><?php esc_html_e( 'From', 'mxroute-mailer' ); ?></th>
+		<td><?php echo esc_html( $log->from_email ); ?></td>
+	</tr>
+	<?php if ( ! empty( $log->reply_to ) ) : ?>
+	<tr>
+		<th scope="row"><?php esc_html_e( 'Reply-To', 'mxroute-mailer' ); ?></th>
+		<td><?php echo esc_html( $log->reply_to ); ?></td>
+	</tr>
+	<?php endif; ?>
+	<tr>
+		<th scope="row"><?php esc_html_e( 'To', 'mxroute-mailer' ); ?></th>
+		<td><?php echo esc_html( $log->to_email ); ?></td>
+	</tr>
 		<tr>
 			<th scope="row"><?php esc_html_e( 'Subject', 'mxroute-mailer' ); ?></th>
 			<td><?php echo esc_html( $log->subject ); ?></td>

@@ -41,6 +41,7 @@ class MXRoute_Logger {
             id bigint(20) NOT NULL AUTO_INCREMENT,
             timestamp datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
             from_email varchar(255) NOT NULL,
+            reply_to varchar(255) NOT NULL DEFAULT '',
             to_email varchar(255) NOT NULL,
             subject varchar(255) NOT NULL,
             message longtext,
@@ -81,9 +82,10 @@ class MXRoute_Logger {
 	 * @param array        $request  API request data.
 	 * @param array        $response API response data.
 	 * @param bool         $success  Whether the send was successful.
+	 * @param string       $reply_to Optional Reply-To email address.
 	 * @return void
 	 */
-	public function log( $from, $to, $subject, $body, $request, $response, $success ) {
+	public function log( $from, $to, $subject, $body, $request, $response, $success, $reply_to = '' ) {
 		if ( ! get_option( 'mxroute_mailer_logging_enabled', 1 ) ) {
 			return;
 		}
@@ -103,11 +105,14 @@ class MXRoute_Logger {
 		}
 		$to_address = sanitize_email( $to_address );
 
+		$reply_to_address = sanitize_email( $reply_to );
+
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Logging write, caching not applicable.
 		$wpdb->insert(
 			$this->table_name,
 			array(
 				'from_email'   => sanitize_email( $from ),
+				'reply_to'     => $reply_to_address,
 				'to_email'     => $to_address,
 				'subject'      => sanitize_text_field( $subject ),
 				'message'      => $body,
@@ -115,7 +120,7 @@ class MXRoute_Logger {
 				'api_response' => wp_json_encode( $response ),
 				'success'      => $success ? 1 : 0,
 			),
-			array( '%s', '%s', '%s', '%s', '%s', '%s', '%d' )
+			array( '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d' )
 		);
 	}
 
