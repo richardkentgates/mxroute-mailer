@@ -169,20 +169,20 @@ class MXRoute_Updater {
 		$plugin_data = get_plugin_data( $this->file, false, false );
 
 		return (object) array(
-			'name'          => $plugin_data['Name'] ?? 'MXRoute Mailer',
-			'slug'          => basename( dirname( $this->file ) ),
-			'version'       => ltrim( $release['tag_name'], 'v' ),
-			'author'        => $plugin_data['Author'] ?? 'MXRoute',
+			'name'           => $plugin_data['Name'] ?? 'MXRoute Mailer',
+			'slug'           => basename( dirname( $this->file ) ),
+			'version'        => ltrim( $release['tag_name'], 'v' ),
+			'author'         => $plugin_data['Author'] ?? 'MXRoute',
 			'author_profile' => 'https://github.com/' . explode( '/', $this->repo )[0],
-			'repository'    => 'https://github.com/' . $this->repo,
-			'requires'      => '5.0',
-			'tested'        => '7.0',
-			'requires_php'  => '7.3',
-			'sections'      => array(
-				'description'  => $release['body'] ?? $plugin_data['Description'] ?? '',
-				'changelog'    => $release['body'] ?? '',
+			'repository'     => 'https://github.com/' . $this->repo,
+			'requires'       => '5.0',
+			'tested'         => '7.0',
+			'requires_php'   => '7.3',
+			'sections'       => array(
+				'description' => $release['body'] ?? $plugin_data['Description'] ?? '',
+				'changelog'   => $release['body'] ?? '',
 			),
-			'download_link' => $this->get_zip_url( $release ),
+			'download_link'  => $this->get_zip_url( $release ),
 		);
 	}
 
@@ -209,13 +209,13 @@ class MXRoute_Updater {
 	 *
 	 * WordPress expects the extracted folder to match the plugin slug.
 	 *
-	 * @param string       $source        The source directory path.
-	 * @param string       $remote_source The remote source directory path.
-	 * @param object       $updater       The updater instance.
-	 * @param array        $args          Updater arguments.
+	 * @param string $source        The source directory path.
+	 * @param string $remote_source The remote source directory path.
+	 * @param object $updater       The updater instance.
+	 * @param array  $args          Updater arguments.
 	 * @return string|WP_Error Modified source path or error.
 	 */
-	public function fix_zip_folder( $source, $remote_source, $updater = null, $args = array() ) {
+	public function fix_zip_folder( $source, $remote_source, $updater = null, $args = array() ) { // phpcs:ignore Generic.UnusedFunctionParameter
 		$desired_folder = basename( dirname( $this->file ) );
 
 		$source_base = trailingslashit( $source );
@@ -230,7 +230,7 @@ class MXRoute_Updater {
 			$actual_folder = basename( $files[0] );
 			if ( $actual_folder !== $desired_folder ) {
 				$new_source = trailingslashit( $source ) . $desired_folder;
-				if ( @rename( $files[0], $new_source ) ) {
+				if ( function_exists( 'rename' ) && rename( $files[0], $new_source ) ) { // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions
 					return $new_source;
 				}
 			}
