@@ -6,160 +6,39 @@ on:
 permissions: {}
 
 jobs:
-  phpcs:
-    name: PHPCS
+  create-pr:
+    name: Create Promotion PR
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      pull-requests: write
 
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           ref: test
-
-      - name: Set up PHP
-        uses: shivammathur/setup-php@b604ade2a87db23f8871b7182e69ec5e75effb45 # v2
-        with:
-          php-version: '8.2'
-          tools: cs2pr
-
-      - name: Install PHPCS
-        run: |
-          composer global config --no-plugins allow-plugins.dealerdirect/phpcodesniffer-composer-installer true
-          composer global require wp-coding-standards/wpcs dealerdirect/phpcodesniffer-composer-installer phpcompatibility/phpcompatibility-wp
-          echo "$(composer global config bin-dir)" >> $GITHUB_PATH
-
-      - name: Run PHPCS
-        run: phpcs --standard=phpcs.xml.dist --extensions=php --ignore=vendor/*,tests/* --report=checkstyle mxroute-mailer.php includes/ admin/ uninstall.php | cs2pr
-
-  phpunit:
-    name: PHPUnit (PHP ${{ matrix.php }})
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    strategy:
-      matrix:
-        php: ['7.3', '7.4', '8.0', '8.1', '8.2', '8.3']
-
-    steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
-        with:
-          ref: test
-
-      - name: Set up PHP ${{ matrix.php }}
-        uses: shivammathur/setup-php@b604ade2a87db23f8871b7182e69ec5e75effb45 # v2
-        with:
-          php-version: ${{ matrix.php }}
-          coverage: none
-
-      - name: Install dependencies
-        run: composer install --no-progress --prefer-dist
-
-      - name: Run PHPUnit
-        run: vendor/bin/phpunit
-
-  codeql:
-    name: CodeQL Security Analysis
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      security-events: write
-
-    steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
-        with:
-          ref: test
-
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@02c5e83432fe5497fd85b873b6c9f16a8578e1d9 # v3
-        with:
-          languages: php
-
-      - name: Autobuild
-        uses: github/codeql-action/autobuild@02c5e83432fe5497fd85b873b6c9f16a8578e1d9 # v3
-
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@02c5e83432fe5497fd85b873b6c9f16a8578e1d9 # v3
-        with:
-          category: "/language:php"
-
-  scorecard:
-    name: OpenSSF Scorecard
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      security-events: write
-      id-token: write
-
-    steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
-        with:
-          ref: test
-          persist-credentials: false
-
-      - name: Run Scorecard
-        uses: ossf/scorecard-action@4eaacf0543bb3f2c246792bd56e8cdeffafb205a # v2.4.3
-        with:
-          results_file: results.sarif
-          results_format: sarif
-          publish_results: false
-
-      - name: Upload SARIF
-        uses: github/codeql-action/upload-sarif@02c5e83432fe5497fd85b873b6c9f16a8578e1d9 # v3
-        if: always()
-        with:
-          sarif_file: results.sarif
-
-  promote:
-    name: Promote test → main
-    runs-on: ubuntu-latest
-    needs: [phpcs, phpunit, codeql, scorecard]
-    permissions:
-      contents: write
-
-    steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
-        with:
-          ref: main
           fetch-depth: 0
 
-      - name: Merge test into main
+      - name: Check for existing PR
+        id: check
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git merge origin/test --no-edit
+          existing=$(gh pr list --repo "${{ github.repository }}" --head test --base main --state open --json number --jq '.[0].number')
+          echo "existing=$existing" >> "$GITHUB_OUTPUT"
 
-      - name: Push to main
-        run: git push origin main
-
-  build:
-    name: Build Main Artifact
-    runs-on: ubuntu-latest
-    needs: [promote]
-    permissions:
-      contents: read
-
-    steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
-        with:
-          ref: main
-
-      - name: Build zip
+      - name: Create PR test → main
+        if: steps.check.outputs.existing == ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          zip -r mxroute-mailer-main.zip . \
-            -x ".git/*" \
-            -x "tests/*" \
-            -x "vendor/*" \
-            -x "composer.*" \
-            -x "phpunit.xml" \
-            -x "phpcs.xml.dist" \
-            -x ".github/*" \
-            -x ".phpunit.result.cache" \
-            -x "*.zip"
+          gh pr create \
+            --repo "${{ github.repository }}" \
+            --head test \
+            --base main \
+            --title "Promote test → main" \
+            --body "Automated promotion from test to main.
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: mxroute-mailer-main-${{ github.run_id }}
-          path: mxroute-mailer-main.zip
-          retention-days: 30
+          **Checks required before merge:**
+          - PHPCS passes
+          - PHPUnit passes (PHP 7.3–8.3)
+
+          This PR was created by the promotion workflow."
