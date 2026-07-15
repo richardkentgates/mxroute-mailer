@@ -21,8 +21,8 @@ defined( 'ABSPATH' ) || exit;
 	$test_result = get_transient( 'mxroute_test_email_result' );
 	if ( $test_result ) :
 		?>
-		<div class="notice <?php echo esc_attr( $test_result['success'] ? 'notice-success' : 'notice-error' ); ?> is-dismissible">
-			<p><strong><?php echo esc_html( $test_result['success'] ? __( 'Sent', 'mxroute-mailer' ) : __( 'Failed', 'mxroute-mailer' ) ); ?>:</strong> <?php echo esc_html( $test_result['message'] ); ?></p>
+		<div class="notice <?php echo esc_attr( ( $test_result['success'] ?? false ) ? 'notice-success' : 'notice-error' ); ?> is-dismissible">
+			<p><strong><?php echo esc_html( ( $test_result['success'] ?? false ) ? __( 'Sent', 'mxroute-mailer' ) : __( 'Failed', 'mxroute-mailer' ) ); ?>:</strong> <?php echo esc_html( $test_result['message'] ?? '' ); ?></p>
 			<?php if ( ! empty( $test_result['response'] ) ) : ?>
 				<pre class="mxroute-json"><?php echo esc_html( wp_json_encode( $test_result['response'], JSON_PRETTY_PRINT ) ); ?></pre>
 			<?php endif; ?>

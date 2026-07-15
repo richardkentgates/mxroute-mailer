@@ -242,12 +242,12 @@ class MXRoute_Logger {
 		if ( empty( $ids ) ) {
 			return;
 		}
-		$placeholders = array_fill( 0, count( $ids ), '%d' );
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Delete by primary keys, caching not applicable.
-		$wpdb->delete(
+		$ids    = array_values( $ids );
+		$format = array_fill( 0, count( $ids ), '%d' ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Delete by primary keys, caching not applicable.
+		$wpdb->delete( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$this->table_name,
 			array( 'id' => $ids ),
-			array( $placeholders )
+			$format
 		);
 	}
 
