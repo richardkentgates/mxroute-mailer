@@ -61,6 +61,10 @@ class MXRoute_API {
 			$to_single = '';
 		}
 
+		if ( preg_match( '/<(.+?)>/', $to_single, $matches ) ) {
+			$to_single = $matches[1];
+		}
+
 		$payload = array(
 			'server'   => $server,
 			'username' => $username,
