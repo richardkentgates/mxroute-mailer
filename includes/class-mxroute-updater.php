@@ -215,7 +215,7 @@ class MXRoute_Updater {
 	 * @param array  $args          Updater arguments.
 	 * @return string|WP_Error Modified source path or error.
 	 */
-	public function fix_zip_folder( $source, $remote_source, $updater = null, $args = array() ) { // phpcs:ignore Generic.UnusedFunctionParameter
+	public function fix_zip_folder( $source, $remote_source, $updater, $args ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter
 		$desired_folder = basename( dirname( $this->file ) );
 
 		$source_base = trailingslashit( $source );
@@ -230,9 +230,12 @@ class MXRoute_Updater {
 			$actual_folder = basename( $files[0] );
 			if ( $actual_folder !== $desired_folder ) {
 				$new_source = trailingslashit( $source ) . $desired_folder;
-				if ( function_exists( 'rename' ) && rename( $files[0], $new_source ) ) { // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions
+				if ( function_exists( 'wp_move_file' ) ) {
+					wp_move_file( $files[0], $new_source );
 					return $new_source;
 				}
+				rename( $files[0], $new_source ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions, WordPress.WP.AlternativeFunctions
+				return $new_source;
 			}
 		}
 

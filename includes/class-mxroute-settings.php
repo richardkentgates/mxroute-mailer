@@ -136,8 +136,8 @@ class MXRoute_Settings {
 	 * @return string Full username email address.
 	 */
 	public function sanitize_username_local( $value ) {
-		$local  = sanitize_text_field( $value );
-		$host   = wp_parse_url( home_url(), PHP_URL_HOST );
+		$local = sanitize_text_field( $value );
+		$host  = wp_parse_url( home_url(), PHP_URL_HOST );
 		return sanitize_email( $local . '@' . $host );
 	}
 
