@@ -86,6 +86,7 @@ The plugin fires a `wp_mail_failed` action so other plugins can handle the failu
 
 = 1.2.5 =
 * Formalize PR-based promotion workflow
+* Consolidate CI/CD from 7 workflow files to 4
 * Add branch protection on test and main branches
 * Fix CodeQL workflow to analyze GitHub Actions instead of unsupported PHP
 * Update Scorecard action SHA to fix imposter commit error
