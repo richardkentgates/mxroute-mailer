@@ -191,6 +191,9 @@ class MXRoute_Settings {
 						'failedClear'       => __( 'Failed to clear logs.', 'mxroute-mailer' ),
 						'failedBulkDelete'  => __( 'Failed to delete logs.', 'mxroute-mailer' ),
 						'noSelection'       => __( 'No logs selected.', 'mxroute-mailer' ),
+						'logDeleted'        => __( 'Log entry deleted.', 'mxroute-mailer' ),
+						'logsCleared'       => __( 'All logs cleared.', 'mxroute-mailer' ),
+						'logsBulkDeleted'   => __( 'Selected logs deleted.', 'mxroute-mailer' ),
 					),
 				)
 			);

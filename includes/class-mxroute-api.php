@@ -50,7 +50,7 @@ class MXRoute_API {
 		if ( empty( $server ) || empty( $username ) || empty( $password ) ) {
 			return array(
 				'success'  => false,
-				'message'  => 'MXRoute credentials not configured.',
+				'message'  => __( 'MXRoute credentials not configured.', 'mxroute-mailer' ),
 				'request'  => array(),
 				'response' => array(),
 			);
@@ -97,7 +97,7 @@ class MXRoute_API {
 		if ( is_wp_error( $response ) ) {
 			return array(
 				'success'  => false,
-				'message'  => 'HTTP request failed.',
+				'message'  => __( 'HTTP request failed.', 'mxroute-mailer' ),
 				'request'  => $request,
 				'response' => array( 'error' => 'request_failed' ),
 			);
@@ -110,7 +110,7 @@ class MXRoute_API {
 		if ( json_last_error() !== JSON_ERROR_NONE ) {
 			return array(
 				'success'  => false,
-				'message'  => 'Invalid JSON response from API.',
+				'message'  => __( 'Invalid JSON response from API.', 'mxroute-mailer' ),
 				'request'  => $request,
 				'response' => array(
 					'error'     => 'invalid_json',
@@ -121,7 +121,7 @@ class MXRoute_API {
 
 		return array(
 			'success'  => ! empty( $json_data['success'] ),
-			'message'  => $json_data['message'] ?? 'Unknown response.',
+			'message'  => $json_data['message'] ?? __( 'Unknown response.', 'mxroute-mailer' ),
 			'request'  => $request,
 			'response' => $json_data,
 		);

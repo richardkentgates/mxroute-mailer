@@ -28,26 +28,34 @@ $total_pages = $result['pages'];
 
 <div class="wrap mxroute-logs-wrap">
 	<h1 class="wp-heading-inline"><?php esc_html_e( 'MXRoute Email Logs', 'mxroute-mailer' ); ?></h1>
-	<button type="button" class="page-title-action mxroute-clear-logs"><?php esc_html_e( 'Clear All Logs', 'mxroute-mailer' ); ?></button>
+	<span id="mxroute-clear-warning" class="screen-reader-text"><?php esc_html_e( 'This will permanently delete all log entries and cannot be undone.', 'mxroute-mailer' ); ?></span>
+	<button type="button" class="page-title-action mxroute-clear-logs" aria-describedby="mxroute-clear-warning"><?php esc_html_e( 'Clear All Logs', 'mxroute-mailer' ); ?></button>
+
+	<div id="mxroute-status-announcer" class="screen-reader-text" aria-live="polite"></div>
 
 	<form method="get" class="mxroute-filters-form">
 		<input type="hidden" name="page" value="mxroute-logs" />
 
 		<div class="mxroute-filters">
-			<input type="search" name="s" value="<?php echo esc_attr( $filters['search'] ); ?>"
+			<label for="mxroute-filter-search" class="screen-reader-text"><?php esc_html_e( 'Search subject, from, to...', 'mxroute-mailer' ); ?></label>
+			<input type="search" id="mxroute-filter-search" name="s" value="<?php echo esc_attr( $filters['search'] ); ?>"
 					placeholder="<?php esc_attr_e( 'Search subject, from, to...', 'mxroute-mailer' ); ?>" />
 
-			<select name="status">
+			<label for="mxroute-filter-status" class="screen-reader-text"><?php esc_html_e( 'Filter by status', 'mxroute-mailer' ); ?></label>
+			<select id="mxroute-filter-status" name="status">
 				<option value=""><?php esc_html_e( 'All Status', 'mxroute-mailer' ); ?></option>
 				<option value="1" <?php selected( $filters['success'], '1' ); ?>><?php esc_html_e( 'Success', 'mxroute-mailer' ); ?></option>
 				<option value="0" <?php selected( $filters['success'], '0' ); ?>><?php esc_html_e( 'Failed', 'mxroute-mailer' ); ?></option>
 			</select>
 
-			<input type="email" name="from" value="<?php echo esc_attr( $filters['from_email'] ); ?>"
+			<label for="mxroute-filter-from" class="screen-reader-text"><?php esc_html_e( 'From email...', 'mxroute-mailer' ); ?></label>
+			<input type="email" id="mxroute-filter-from" name="from" value="<?php echo esc_attr( $filters['from_email'] ); ?>"
 					placeholder="<?php esc_attr_e( 'From email...', 'mxroute-mailer' ); ?>" />
 
-			<input type="date" name="date_from" value="<?php echo esc_attr( $filters['date_from'] ); ?>" />
-			<input type="date" name="date_to" value="<?php echo esc_attr( $filters['date_to'] ); ?>" />
+			<label for="mxroute-date-from" class="screen-reader-text"><?php esc_html_e( 'Date from', 'mxroute-mailer' ); ?></label>
+			<input type="date" id="mxroute-date-from" name="date_from" value="<?php echo esc_attr( $filters['date_from'] ); ?>" />
+			<label for="mxroute-date-to" class="screen-reader-text"><?php esc_html_e( 'Date to', 'mxroute-mailer' ); ?></label>
+			<input type="date" id="mxroute-date-to" name="date_to" value="<?php echo esc_attr( $filters['date_to'] ); ?>" />
 
 			<button type="submit" class="button"><?php esc_html_e( 'Filter', 'mxroute-mailer' ); ?></button>
 		</div>
@@ -79,40 +87,49 @@ $total_pages = $result['pages'];
 			<thead>
 				<tr>
 					<th class="check-column" style="width:40px;">
+						<label for="mxroute-select-all" class="screen-reader-text"><?php esc_html_e( 'Select all logs', 'mxroute-mailer' ); ?></label>
 						<input type="checkbox" id="mxroute-select-all" />
 					</th>
-					<th style="width:50px;"><?php esc_html_e( 'ID', 'mxroute-mailer' ); ?></th>
-					<th style="width:80px;"><?php esc_html_e( 'Status', 'mxroute-mailer' ); ?></th>
-					<th style="width:160px;"><?php esc_html_e( 'Timestamp', 'mxroute-mailer' ); ?></th>
-					<th><?php esc_html_e( 'From', 'mxroute-mailer' ); ?></th>
-					<th><?php esc_html_e( 'To', 'mxroute-mailer' ); ?></th>
-					<th><?php esc_html_e( 'Subject', 'mxroute-mailer' ); ?></th>
-					<th style="width:80px;"><?php esc_html_e( 'Actions', 'mxroute-mailer' ); ?></th>
+					<th scope="col" style="width:50px;"><?php esc_html_e( 'ID', 'mxroute-mailer' ); ?></th>
+					<th scope="col" style="width:80px;"><?php esc_html_e( 'Status', 'mxroute-mailer' ); ?></th>
+					<th scope="col" style="width:160px;"><?php esc_html_e( 'Timestamp', 'mxroute-mailer' ); ?></th>
+					<th scope="col"><?php esc_html_e( 'From', 'mxroute-mailer' ); ?></th>
+					<th scope="col"><?php esc_html_e( 'To', 'mxroute-mailer' ); ?></th>
+					<th scope="col"><?php esc_html_e( 'Subject', 'mxroute-mailer' ); ?></th>
+					<th scope="col" style="width:80px;"><?php esc_html_e( 'Actions', 'mxroute-mailer' ); ?></th>
 				</tr>
 			</thead>
-			<tbody>
-				<?php foreach ( $logs as $log ) : ?>
-					<tr class="mxroute-log-row" data-log-id="<?php echo esc_attr( $log->id ); ?>">
-						<td class="check-column">
-							<input type="checkbox" name="log_ids[]" value="<?php echo esc_attr( $log->id ); ?>" class="mxroute-log-checkbox" />
-						</td>
-						<td><?php echo esc_html( $log->id ); ?></td>
-						<td>
-							<span class="mxroute-status-badge <?php echo esc_attr( $log->success ? 'mxroute-success' : 'mxroute-fail' ); ?>">
-								<?php echo esc_html( $log->success ? __( 'Sent', 'mxroute-mailer' ) : __( 'Fail', 'mxroute-mailer' ) ); ?>
-							</span>
-						</td>
-						<td><?php echo esc_html( $log->timestamp ); ?></td>
-						<td><?php echo esc_html( $log->from_email ); ?></td>
-						<td><?php echo esc_html( $log->to_email ); ?></td>
-						<td><?php echo esc_html( wp_trim_words( $log->subject, 8 ) ); ?></td>
-						<td>
-							<a href="<?php echo esc_url( admin_url( 'tools.php?page=mxroute-log-view&id=' . $log->id ) ); ?>" class="button button-small"><?php esc_html_e( 'View', 'mxroute-mailer' ); ?></a>
-							<button class="button button-small mxroute-delete-log" data-log-id="<?php echo esc_attr( $log->id ); ?>"><?php esc_html_e( 'Delete', 'mxroute-mailer' ); ?></button>
-						</td>
-					</tr>
-				<?php endforeach; ?>
-			</tbody>
+		<tbody>
+			<?php foreach ( $logs as $log ) : ?>
+				<?php
+				// translators: %d: log entry ID.
+				$select_label = sprintf( __( 'Select log %d', 'mxroute-mailer' ), $log->id );
+				// translators: %d: log entry ID.
+				$view_label = sprintf( __( 'View log %d', 'mxroute-mailer' ), $log->id );
+				// translators: %d: log entry ID.
+				$delete_label = sprintf( __( 'Delete log %d', 'mxroute-mailer' ), $log->id );
+				?>
+				<tr class="mxroute-log-row" data-log-id="<?php echo esc_attr( $log->id ); ?>">
+					<td class="check-column">
+						<input type="checkbox" name="log_ids[]" value="<?php echo esc_attr( $log->id ); ?>" class="mxroute-log-checkbox" aria-label="<?php echo esc_attr( $select_label ); ?>" />
+					</td>
+					<td><?php echo esc_html( $log->id ); ?></td>
+					<td>
+						<span class="mxroute-status-badge <?php echo esc_attr( $log->success ? 'mxroute-success' : 'mxroute-fail' ); ?>" role="status">
+							<?php echo esc_html( $log->success ? __( 'Sent', 'mxroute-mailer' ) : __( 'Fail', 'mxroute-mailer' ) ); ?>
+						</span>
+					</td>
+					<td><?php echo esc_html( $log->timestamp ); ?></td>
+					<td><?php echo esc_html( $log->from_email ); ?></td>
+					<td><?php echo esc_html( $log->to_email ); ?></td>
+					<td><?php echo esc_html( wp_trim_words( $log->subject, 8 ) ); ?></td>
+					<td>
+						<a href="<?php echo esc_url( admin_url( 'tools.php?page=mxroute-log-view&id=' . $log->id ) ); ?>" class="button button-small" aria-label="<?php echo esc_attr( $view_label ); ?>"><?php esc_html_e( 'View', 'mxroute-mailer' ); ?></a>
+						<button class="button button-small mxroute-delete-log" data-log-id="<?php echo esc_attr( $log->id ); ?>" aria-label="<?php echo esc_attr( $delete_label ); ?>"><?php esc_html_e( 'Delete', 'mxroute-mailer' ); ?></button>
+					</td>
+				</tr>
+			<?php endforeach; ?>
+		</tbody>
 		</table>
 
 		<div class="tablenav bottom">

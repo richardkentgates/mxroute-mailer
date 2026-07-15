@@ -17,7 +17,7 @@ if ( ! $log ) {
 		<h1><?php esc_html_e( 'Log Entry Not Found', 'mxroute-mailer' ); ?></h1>
 		<p>
 			<a href="<?php echo esc_url( admin_url( 'tools.php?page=mxroute-logs' ) ); ?>">
-				<?php esc_html_e( '&laquo; Back to Logs', 'mxroute-mailer' ); ?>
+				<span aria-hidden="true">&laquo;</span> <?php esc_html_e( 'Back to Logs', 'mxroute-mailer' ); ?>
 			</a>
 		</p>
 	</div>
@@ -34,33 +34,33 @@ $response = json_decode( $log->api_response, true );
 
 	<p>
 		<a href="<?php echo esc_url( admin_url( 'tools.php?page=mxroute-logs' ) ); ?>">
-			<?php esc_html_e( '&laquo; Back to Logs', 'mxroute-mailer' ); ?>
+			<span aria-hidden="true">&laquo;</span> <?php esc_html_e( 'Back to Logs', 'mxroute-mailer' ); ?>
 		</a>
 	</p>
 
 	<table class="widefat">
 		<tr>
-			<th style="width:150px;"><?php esc_html_e( 'Timestamp', 'mxroute-mailer' ); ?></th>
+			<th scope="row" style="width:150px;"><?php esc_html_e( 'Timestamp', 'mxroute-mailer' ); ?></th>
 			<td><?php echo esc_html( $log->timestamp ); ?></td>
 		</tr>
 		<tr>
-			<th><?php esc_html_e( 'Status', 'mxroute-mailer' ); ?></th>
+			<th scope="row"><?php esc_html_e( 'Status', 'mxroute-mailer' ); ?></th>
 			<td>
-				<span class="mxroute-status-badge <?php echo esc_attr( $log->success ? 'mxroute-success' : 'mxroute-fail' ); ?>">
+				<span class="mxroute-status-badge <?php echo esc_attr( $log->success ? 'mxroute-success' : 'mxroute-fail' ); ?>" role="status">
 					<?php echo esc_html( $log->success ? __( 'Success', 'mxroute-mailer' ) : __( 'Failed', 'mxroute-mailer' ) ); ?>
 				</span>
 			</td>
 		</tr>
 		<tr>
-			<th><?php esc_html_e( 'From', 'mxroute-mailer' ); ?></th>
+			<th scope="row"><?php esc_html_e( 'From', 'mxroute-mailer' ); ?></th>
 			<td><?php echo esc_html( $log->from_email ); ?></td>
 		</tr>
 		<tr>
-			<th><?php esc_html_e( 'To', 'mxroute-mailer' ); ?></th>
+			<th scope="row"><?php esc_html_e( 'To', 'mxroute-mailer' ); ?></th>
 			<td><?php echo esc_html( $log->to_email ); ?></td>
 		</tr>
 		<tr>
-			<th><?php esc_html_e( 'Subject', 'mxroute-mailer' ); ?></th>
+			<th scope="row"><?php esc_html_e( 'Subject', 'mxroute-mailer' ); ?></th>
 			<td><?php echo esc_html( $log->subject ); ?></td>
 		</tr>
 	</table>

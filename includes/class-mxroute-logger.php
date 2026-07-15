@@ -185,7 +185,7 @@ class MXRoute_Logger {
 		return array(
 			'logs'  => $results,
 			'total' => $total,
-			'pages' => ceil( $total / $per_page ),
+			'pages' => $per_page > 0 ? (int) ceil( $total / $per_page ) : 0,
 		);
 	}
 
@@ -237,8 +237,7 @@ class MXRoute_Logger {
 	 */
 	public function delete_logs( $ids ) {
 		global $wpdb;
-		$ids = array_map( 'intval', $ids );
-		$ids = array_filter( $ids );
+		$ids = array_filter( array_map( 'intval', (array) $ids ) );
 		if ( empty( $ids ) ) {
 			return;
 		}

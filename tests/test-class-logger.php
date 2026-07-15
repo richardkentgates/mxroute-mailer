@@ -126,7 +126,7 @@ class MXRoute_Logger_Test extends \PHPUnit\Framework\TestCase {
         $this->assertArrayHasKey('pages', $result);
         $this->assertIsArray($result['logs']);
         $this->assertIsInt($result['total']);
-        $this->assertIsFloat($result['pages']);
+        $this->assertIsInt($result['pages']);
     }
 
     public function test_get_logs_handles_search_filter() {

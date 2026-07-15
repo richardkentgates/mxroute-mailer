@@ -1,6 +1,13 @@
 (function ($) {
     'use strict';
 
+    function mxrouteAnnounce(message) {
+        var $announcer = $('#mxroute-status-announcer');
+        if ($announcer.length) {
+            $announcer.text(message);
+        }
+    }
+
     $(document).on('click', '.mxroute-delete-log', function (e) {
         e.preventDefault();
         if (!confirm(mxrouteMailer.i18n.confirmDelete)) {
@@ -15,7 +22,16 @@
             log_id: logId
         }, function (response) {
             if (response.success) {
-                $row.fadeOut(300, function () { $(this).remove(); });
+                $row.fadeOut(300, function () {
+                    $(this).remove();
+                    var $next = $('.mxroute-log-checkbox').first();
+                    if ($next.length) {
+                        $next.focus();
+                    } else {
+                        $('.mxroute-logs-wrap h1').attr('tabindex', '-1').focus();
+                    }
+                    mxrouteAnnounce(response.data.message);
+                });
             } else {
                 alert(response.data && response.data.message ? response.data.message : mxrouteMailer.i18n.failedDelete);
             }
@@ -36,7 +52,8 @@
         }, function (response) {
             if (response.success) {
                 $('.mxroute-logs-table tbody').empty();
-                alert(response.data.message);
+                $('.mxroute-logs-wrap h1').attr('tabindex', '-1').focus();
+                mxrouteAnnounce(response.data.message);
             } else {
                 alert(response.data && response.data.message ? response.data.message : mxrouteMailer.i18n.failedClear);
             }
@@ -76,9 +93,17 @@
             log_ids: ids
         }, function (response) {
             if (response.success) {
-                $('.mxroute-log-checkbox:checked').closest('tr').fadeOut(300, function () { $(this).remove(); });
+                $('.mxroute-log-checkbox:checked').closest('tr').fadeOut(300, function () {
+                    $(this).remove();
+                    var $next = $('.mxroute-log-checkbox').first();
+                    if ($next.length) {
+                        $next.focus();
+                    } else {
+                        $('.mxroute-logs-wrap h1').attr('tabindex', '-1').focus();
+                    }
+                });
                 $('#mxroute-select-all').prop('checked', false);
-                alert(response.data.message);
+                mxrouteAnnounce(response.data.message);
             } else {
                 alert(response.data && response.data.message ? response.data.message : mxrouteMailer.i18n.failedBulkDelete);
             }
