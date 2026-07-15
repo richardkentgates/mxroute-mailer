@@ -4,7 +4,7 @@ Tags: email, smtp, mxroute, mail
 Requires at least: 5.0
 Tested up to: 7.0
 Requires PHP: 7.3
-Stable tag: 1.1.2
+Stable tag: 1.2.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -28,6 +28,15 @@ Features:
 3. Go to Settings > MXRoute Mailer to configure
 
 == Changelog ==
+
+= 1.2.0 =
+* Added GitHub-based automatic updates
+* Audit fixes: critical bugs, security hardening, settings alignment
+* Username field now derives domain from WordPress site URL
+* Test email uses configured username as sender address
+* Fixed stored XSS vulnerability in email log viewer
+* Fixed intercept_wp_mail to fall back to WP mailer on API failure
+* Removed debug logging from production code
 
 = 1.1.2 =
 * Added branching strategy with dev/test/main workflow
