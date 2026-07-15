@@ -4,7 +4,7 @@ Tags: email, smtp, mxroute, mail
 Requires at least: 5.0
 Tested up to: 7.0
 Requires PHP: 7.3
-Stable tag: 1.2.0
+Stable tag: 1.2.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -28,6 +28,9 @@ Features:
 3. Go to Settings > MXRoute Mailer to configure
 
 == Changelog ==
+
+= 1.2.1 =
+* Fix username sanitizer to strip full email addresses entered in local-part field
 
 = 1.2.0 =
 * Added GitHub-based automatic updates

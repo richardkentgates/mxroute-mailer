@@ -137,6 +137,9 @@ class MXRoute_Settings {
 	 */
 	public function sanitize_username_local( $value ) {
 		$local = sanitize_text_field( $value );
+		if ( false !== strpos( $local, '@' ) ) {
+			$local = substr( $local, 0, strpos( $local, '@' ) );
+		}
 		$host  = wp_parse_url( home_url(), PHP_URL_HOST );
 		return sanitize_email( $local . '@' . $host );
 	}
