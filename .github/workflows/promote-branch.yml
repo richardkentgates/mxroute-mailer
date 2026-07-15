@@ -47,7 +47,7 @@ jobs:
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
-          ref: ${{ inputs.target }}
+          ref: ${{ github.ref_name }}
           fetch-depth: 0
 
       - name: Find or create promotion PR
@@ -59,7 +59,7 @@ jobs:
           REPO: ${{ github.repository }}
         run: |
           existing=$(gh pr list --repo "$REPO" --head "$HEAD" --base "$TARGET" --state open --json number --jq '.[0].number')
-          if [[ -n "$existing" ]]; then
+          if [[ -n "$existing" && "$existing" != "null" ]]; then
             echo "number=$existing" >> "$GITHUB_OUTPUT"
             echo "Using existing PR #$existing"
           else
@@ -68,53 +68,49 @@ jobs:
               --head "$HEAD" \
               --base "$TARGET" \
               --title "Promote $HEAD to $TARGET" \
-              --body "Automated promotion from \`$HEAD\` to \`$TARGET\`.
-
-            **Required checks before merge:**
-            - PHPCS
-            - PHPUnit (PHP 7.3-8.3)")
+              --body "Automated promotion from \`$HEAD\` to \`$TARGET\`.")
             number=$(echo "$pr_url" | sed 's/.*\/pull\/\([0-9]*\)$/\1/')
             echo "number=$number" >> "$GITHUB_OUTPUT"
             echo "Created PR #$number"
           fi
 
-      - name: Wait for checks and merge
+      - name: Merge promotion PR
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ steps.pr.outputs.number }}
           REPO: ${{ github.repository }}
         run: |
-          max_attempts=60
-          sleep_seconds=30
+          gh pr merge "$PR_NUMBER" --repo "$REPO" --merge
+          echo "PR #$PR_NUMBER merged. Promotion complete."
 
-          for ((i=1; i<=max_attempts; i++)); do
-            status=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json mergeStateStatus --jq '.mergeStateStatus')
-            echo "Attempt $i/$max_attempts - PR #$PR_NUMBER mergeStateStatus: $status"
+  build-test:
+    name: Build Test Artifact
+    runs-on: ubuntu-latest
+    needs: promote
+    if: github.ref_name == 'dev' && inputs.target == 'test'
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          ref: test
 
-            case "$status" in
-              CLEAN)
-                gh pr merge "$PR_NUMBER" --repo "$REPO" --merge
-                echo "PR #$PR_NUMBER merged. Promotion complete."
-                exit 0
-                ;;
-              BEHIND)
-                echo "::error::PR #$PR_NUMBER is behind $TARGET. Update $HEAD and retry."
-                exit 1
-                ;;
-              DIRTY)
-                echo "::error::PR #$PR_NUMBER has merge conflicts. Resolve manually."
-                exit 1
-                ;;
-              BLOCKED)
-                echo "PR #$PR_NUMBER is blocked (checks pending or failed). Waiting..."
-                ;;
-              *)
-                echo "PR #$PR_STATUS status: $status. Waiting..."
-                ;;
-            esac
+      - name: Build test zip
+        run: |
+          zip -r mxroute-mailer-test.zip . \
+            -x ".git/*" \
+            -x "tests/*" \
+            -x "vendor/*" \
+            -x "composer.*" \
+            -x "phpunit.xml" \
+            -x "phpcs.xml.dist" \
+            -x ".github/*" \
+            -x ".phpunit.result.cache" \
+            -x "*.zip"
 
-            sleep "$sleep_seconds"
-          done
-
-          echo "::error::Timed out waiting for PR #$PR_NUMBER to become mergeable."
-          exit 1
+      - name: Upload test artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: mxroute-mailer-test-${{ github.run_id }}
+          path: mxroute-mailer-test.zip
+          retention-days: 30

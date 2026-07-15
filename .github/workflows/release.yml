@@ -1,41 +1,57 @@
 name: Release
 
 on:
-  push:
-    tags:
-      - 'v*'
+  workflow_dispatch:
 
-permissions: {}
+permissions:
+  contents: write
+  security-events: write
+  id-token: write
 
 jobs:
-  release:
-    name: Create Release
+  scorecard:
+    name: Security - Scorecard Audit
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
-
-      - name: Set up PHP
-        uses: shivammathur/setup-php@b604ade2a87db23f8871b7182e69ec5e75effb45 # v2
         with:
-          php-version: '8.2'
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
 
-      - name: Run PHPCS
-        run: |
-          composer global config --no-plugins allow-plugins.dealerdirect/phpcodesniffer-composer-installer true
-          composer global require wp-coding-standards/wpcs dealerdirect/phpcodesniffer-composer-installer phpcompatibility/phpcompatibility-wp
-          phpcs --standard=phpcs.xml.dist --extensions=php --ignore=vendor/*,tests/* mxroute-mailer.php includes/ admin/ uninstall.php
+      - name: Run Scorecard
+        uses: ossf/scorecard-action@4eaacf0543bb3f2c246792bd56e8cdeffafb205a # v2.4.3
+        with:
+          results_file: results.sarif
+          results_format: sarif
+          publish_results: true
 
-      - name: Run PHPUnit
+      - name: Upload SARIF
+        uses: github/codeql-action/upload-sarif@02c5e83432fe5497fd85b873b6c9f16a8578e1d9 # v3
+        if: always()
+        with:
+          sarif_file: results.sarif
+
+  release:
+    name: Tag and Release
+    runs-on: ubuntu-latest
+    needs: scorecard
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Read plugin version
+        id: version
         run: |
-          composer install --no-progress --prefer-dist
-          vendor/bin/phpunit
+          version=$(grep -oP "Version:\s*\K[0-9.]+" mxroute-mailer.php | head -1)
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "tag=v$version" >> "$GITHUB_OUTPUT"
 
       - name: Build zip
         run: |
-          zip -r mxroute-mailer-${{ github.ref_name }}.zip . \
+          zip -r mxroute-mailer-${{ steps.version.outputs.tag }}.zip . \
             -x ".git/*" \
             -x "tests/*" \
             -x "vendor/*" \
@@ -46,10 +62,20 @@ jobs:
             -x ".phpunit.result.cache" \
             -x "*.zip"
 
+      - name: Create tag
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "$TAG" -m "Release $TAG"
+          git push origin "$TAG"
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
-          files: mxroute-mailer-${{ github.ref_name }}.zip
+          tag_name: ${{ steps.version.outputs.tag }}
+          files: mxroute-mailer-${{ steps.version.outputs.tag }}.zip
           generate_release_notes: true
           draft: false
           prerelease: false
