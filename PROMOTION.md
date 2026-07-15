@@ -20,11 +20,9 @@ This document records the exact promotion workflow. Do not modify or expand thes
    - Green means promoted. Red means not promoted.
 
 4. **If green, promote `test` to `main`.**
-   - One workflow action must accomplish validation and merge.
+   - One workflow action must accomplish validation, merge, and tag creation.
+   - The tag automatically triggers the release workflow.
    - Checks are not re-run because `test` already contains only promoted, checked code.
-
-5. **If green, tag a release.**
-   - A release workflow tags `main` and creates a GitHub release with the plugin zip.
 
 ## Constraints
 
