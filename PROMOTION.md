@@ -16,11 +16,13 @@ This document records the exact promotion workflow. Do not modify or expand thes
    - If any check fails, stop. Fix on `dev` and restart from step 1.
 
 3. **If green, promote `dev` to `test`.**
-   - One workflow action must accomplish validation, checks, and merge.
+   - Run the **Promote to Test** workflow from the `dev` branch.
+   - This workflow merges `dev` into `test` and builds the test artifact.
    - Green means promoted. Red means not promoted.
 
 4. **If green, promote `test` to `main`.**
-   - One workflow action must accomplish validation, merge, and tag creation.
+   - Run the **Promote to Main** workflow from the `test` branch.
+   - This workflow merges `test` into `main` and creates the release tag.
    - The tag automatically triggers the release workflow.
    - Checks are not re-run because `test` already contains only promoted, checked code.
 
