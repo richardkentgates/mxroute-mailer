@@ -92,6 +92,10 @@ jobs:
           git checkout main
           version=$(grep -oP "Version:\\s*\\K[0-9.]+" mxroute-mailer.php | head -1)
           tag="v$version"
+          if git rev-parse "$tag" >/dev/null 2>&1; then
+            echo "Tag $tag already exists. Skipping."
+            exit 0
+          fi
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git tag -a "$tag" -m "Release $tag"
