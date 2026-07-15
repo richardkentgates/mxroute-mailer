@@ -8,7 +8,7 @@ Stable tag: 1.2.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Route all WordPress email through MXRoute's HTTP API to bypass SMTP port blocks.
+Route all WordPress email through MXRoute's HTTP API with logging and automatic updates.
 
 == Description ==
 

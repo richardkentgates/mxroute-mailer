@@ -1,10 +1,11 @@
 <?php
 /**
  * Plugin Name: MXRoute Mailer
- * Plugin URI: https://mxroute.com
- * Description: Routes all WordPress email through MXRoute's HTTP API. Works on Google Cloud where SMTP ports are blocked.
+ * Plugin URI: https://richardkentgates.com
+ * Description: Sends WordPress email through MXRoute's HTTP API over port 443. Includes logging, test tools, and automatic updates.
  * Version: 1.2.4
- * Author: MXRoute
+ * Author: Richard Kent Gates
+ * Author URI: https://richardkentgates.com
  * License: GPL v2 or later
  * Text Domain: mxroute-mailer
  * Requires PHP: 7.3
