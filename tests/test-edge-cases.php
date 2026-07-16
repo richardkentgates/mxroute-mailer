@@ -278,8 +278,7 @@ class MXRoute_Mailer_Edge_Test extends \PHPUnit\Framework\TestCase {
 			'message' => null,
 		);
 		$result = $mailer->intercept_wp_mail( $args );
-		$this->assertIsArray( $result );
-		$this->assertArrayHasKey( 'to', $result );
+		$this->assertFalse( $result );
 	}
 
 	/**
