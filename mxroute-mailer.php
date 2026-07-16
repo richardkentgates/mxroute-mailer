@@ -3,7 +3,7 @@
  * Plugin Name: MXRoute Mailer
  * Plugin URI: https://richardkentgates.com
  * Description: Sends WordPress email through MXRoute's HTTP API over port 443. Includes logging, test tools, and automatic updates.
- * Version: 1.2.17
+ * Version: 1.2.18
  * Author: Richard Kent Gates
  * Author URI: https://richardkentgates.com
  * License: GPL v2 or later
@@ -21,7 +21,7 @@ defined( 'ABSPATH' ) || exit;
  *
  * @var string
  */
-define( 'MXROUTE_MAILER_VERSION', '1.2.17' );
+define( 'MXROUTE_MAILER_VERSION', '1.2.18' );
 
 /**
  * Absolute path to the plugin directory.
@@ -46,6 +46,7 @@ function mxroute_mailer() {
 	return MXRoute_Mailer::instance();
 }
 
+require_once MXROUTE_MAILER_PLUGIN_DIR . 'includes/class-mxroute-crypto.php';
 require_once MXROUTE_MAILER_PLUGIN_DIR . 'includes/class-mxroute-mailer.php';
 require_once MXROUTE_MAILER_PLUGIN_DIR . 'includes/class-mxroute-updater.php';
 
@@ -70,6 +71,16 @@ function mxroute_mailer_db_upgrade() {
 		if ( ! $column_exists ) {
 			$wpdb->query( "ALTER TABLE `$table_name` ADD COLUMN `reply_to` varchar(255) NOT NULL DEFAULT '' AFTER `from_email`" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Schema upgrade.
 		}
+
+		// Encrypt any existing plaintext password once.
+		if ( ! get_option( 'mxroute_mailer_password_encrypted' ) ) {
+			$password = get_option( 'mxroute_mailer_password', '' );
+			if ( '' !== $password ) {
+				update_option( 'mxroute_mailer_password', MXRoute_Crypto::encrypt( $password ) );
+			}
+			update_option( 'mxroute_mailer_password_encrypted', 1 );
+		}
+
 		update_option( 'mxroute_mailer_db_version', MXROUTE_MAILER_VERSION );
 	}
 }

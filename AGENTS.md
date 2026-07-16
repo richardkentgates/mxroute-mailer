@@ -13,6 +13,7 @@ mxroute-mailer/
 ├── mxroute-mailer.php              # Plugin header, constants, activation hook
 ├── includes/
 │   ├── class-mxroute-api.php       # MXRoute HTTP API client
+│   ├── class-mxroute-crypto.php    # Reversible encryption for sensitive options
 │   ├── class-mxroute-mailer.php    # Core mail interception and routing
 │   ├── class-mxroute-settings.php  # Admin settings pages and help tabs
 │   ├── class-mxroute-logger.php    # Database email logging
