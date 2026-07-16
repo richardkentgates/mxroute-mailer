@@ -6,6 +6,7 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  actions: write
 
 jobs:
   validate:
@@ -80,3 +81,13 @@ jobs:
           git tag -a "$tag" -m "Release $tag"
           git push origin "$tag"
           echo "Created release tag $tag"
+
+      - name: Trigger Release workflow
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          version=$(grep -oP "Version:\\s*\\K[0-9.]+" mxroute-mailer.php | head -1)
+          tag="v$version"
+          gh workflow run Release --repo "$REPO" --ref "$tag"
+          echo "Triggered Release workflow for $tag"
