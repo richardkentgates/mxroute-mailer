@@ -149,6 +149,10 @@ class MXRoute_Settings {
 		if ( $value === $old_value ) {
 			return $value;
 		}
+		// Avoid double-encrypting a value that is already encrypted.
+		if ( MXRoute_Crypto::decrypt( $value ) !== $value ) {
+			return $value;
+		}
 		update_option( 'mxroute_mailer_password_encrypted', 1 );
 		return MXRoute_Crypto::encrypt( $value );
 	}
