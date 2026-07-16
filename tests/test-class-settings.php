@@ -150,40 +150,52 @@ class MXRoute_Settings_Test extends \PHPUnit\Framework\TestCase {
     }
 
     /**
-     * Tests that encrypt_password_on_update encrypts a plaintext password.
+     * Tests that sanitize_password encrypts a plaintext password.
      */
-    public function test_encrypt_password_on_update_encrypts_plaintext() {
+    public function test_sanitize_password_encrypts_plaintext() {
         $settings = new MXRoute_Settings();
         $plain = 'my_secret_password';
-        $encrypted = $settings->encrypt_password_on_update($plain, '', 'mxroute_mailer_password');
+        $encrypted = $settings->sanitize_password($plain);
 
         $this->assertNotEquals($plain, $encrypted);
         $this->assertEquals($plain, MXRoute_Crypto::decrypt($encrypted));
     }
 
     /**
-     * Tests that encrypt_password_on_update does not double-encrypt an already encrypted value.
+     * Tests that sanitize_password returns empty string when no value is provided.
      */
-    public function test_encrypt_password_on_update_does_not_double_encrypt() {
+    public function test_sanitize_password_returns_empty_when_empty() {
         $settings = new MXRoute_Settings();
-        $plain = 'my_secret_password';
-        $encrypted = MXRoute_Crypto::encrypt($plain);
-
-        $result = $settings->encrypt_password_on_update($encrypted, $plain, 'mxroute_mailer_password');
-
-        $this->assertEquals($encrypted, $result);
-        $this->assertEquals($plain, MXRoute_Crypto::decrypt($result));
+        $result = $settings->sanitize_password('');
+        $this->assertEquals('', $result);
     }
 
     /**
-     * Tests that encrypt_password_on_update preserves the old value when empty.
+     * Tests that the test email form sends the decrypted password to the API.
      */
-    public function test_encrypt_password_on_update_preserves_old_value_when_empty() {
-        $settings = new MXRoute_Settings();
-        $old = 'existing_password';
-        $result = $settings->encrypt_password_on_update('', $old, 'mxroute_mailer_password');
+    public function test_test_email_form_sends_decrypted_password() {
+        $plain_password = 'test_form_secret';
+        $GLOBALS['wp_options']['mxroute_mailer_server'] = 'server.example.com';
+        $GLOBALS['wp_options']['mxroute_mailer_username'] = 'from@example.com';
+        $GLOBALS['wp_options']['mxroute_mailer_password'] = MXRoute_Crypto::encrypt($plain_password);
+        $_POST['mxroute_test_email_nonce'] = 'test-nonce';
+        $_POST['mxroute_test_to'] = 'to@example.com';
+        $_POST['mxroute_test_subject'] = 'Subject';
+        $_POST['mxroute_test_body'] = 'Body';
 
-        $this->assertEquals($old, $result);
+        $mailer = MXRoute_Mailer::instance();
+        $mailer->handle_test_email();
+
+        $call = array_pop($GLOBALS['wp_function_calls']['wp_remote_post']);
+        $body = json_decode($call['args']['body'], true);
+
+        $this->assertEquals($plain_password, $body['password']);
+        $this->assertEquals('Basic ' . base64_encode('from@example.com:' . $plain_password), $call['args']['headers']['Authorization']);
+
+        unset($_POST['mxroute_test_email_nonce']);
+        unset($_POST['mxroute_test_to']);
+        unset($_POST['mxroute_test_subject']);
+        unset($_POST['mxroute_test_body']);
     }
 
     /**

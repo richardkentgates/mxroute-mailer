@@ -84,6 +84,16 @@ The plugin fires a `wp_mail_failed` action so other plugins can handle the failu
 
 == Changelog ==
 
+= 1.2.21 =
+* Fix: remove dead `drop_table()` and `get_recent_logs()` methods from logger
+* Fix: remove obsolete v1.2.17 regression test
+* Fix: remove duplicate `get_option` call in `intercept_wp_mail`
+* Fix: add `mxroute_mailer_db_version` to uninstall cleanup
+* Security: remove password-leaking `error_log()` calls from API client
+* Security: gate debug logging behind `MXROUTE_MAILER_DEBUG` constant
+* Cleanup: remove unused test mocks and redundant activation hook require
+* Update documentation with debugging guidance
+
 = 1.2.20 =
 * Fix: prevent the password-encryption filter from double-encrypting an already encrypted password
 

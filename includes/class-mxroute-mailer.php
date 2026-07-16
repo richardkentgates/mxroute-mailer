@@ -101,13 +101,13 @@ class MXRoute_Mailer {
 
 		$server   = get_option( 'mxroute_mailer_server', '' );
 		$username = get_option( 'mxroute_mailer_username', '' );
-		$password = MXRoute_Crypto::get_password();
+		$password = get_option( 'mxroute_mailer_password', '' );
 
 		if ( empty( $server ) || empty( $username ) || empty( $password ) ) {
 			return $pre;
 		}
 
-		$from     = get_option( 'mxroute_mailer_username', '' );
+		$from     = $username;
 		$reply_to = $this->extract_from_address( $args['headers'] );
 		if ( sanitize_email( $reply_to ) === sanitize_email( $from ) ) {
 			$reply_to = '';

@@ -35,14 +35,6 @@ if (!function_exists('add_action')) {
     }
 }
 
-if (!function_exists('apply_filters')) {
-    function apply_filters($hook, $value) {
-        $args = array_slice(func_get_args(), 2);
-        $GLOBALS['wp_function_calls']['apply_filters'][] = compact('hook', 'value', 'args');
-        return $value;
-    }
-}
-
 if (!function_exists('do_action')) {
     function do_action($hook) {
         $args = array_slice(func_get_args(), 1);
@@ -266,13 +258,6 @@ if (!function_exists('get_site_transient')) {
     }
 }
 
-if (!function_exists('delete_site_transient')) {
-    function delete_site_transient($name) {
-        unset($GLOBALS['wp_transients'][$name]);
-        return true;
-    }
-}
-
 if (!function_exists('wp_salt')) {
     function wp_salt($scheme = 'auth') {
         return 'mock-salt-' . $scheme . '-123456789012345678901234567890';
@@ -282,20 +267,6 @@ if (!function_exists('wp_salt')) {
 if (!function_exists('hash_equals')) {
     function hash_equals($known_string, $user_string) {
         return $known_string === $user_string;
-    }
-}
-
-if (!function_exists('wp_redirect')) {
-    function wp_redirect($location, $status = 302) {
-        $GLOBALS['wp_function_calls']['wp_redirect'][] = compact('location', 'status');
-        return true;
-    }
-}
-
-if (!function_exists('wp_safe_redirect')) {
-    function wp_safe_redirect($location, $status = 302) {
-        $GLOBALS['wp_function_calls']['wp_safe_redirect'][] = compact('location', 'status');
-        return true;
     }
 }
 
@@ -374,12 +345,6 @@ if (!function_exists('checked')) {
             return 'checked="checked" ';
         }
         return '';
-    }
-}
-
-if (!function_exists('human_time_diff')) {
-    function human_time_diff($from, $to = 0) {
-        return '5 mins';
     }
 }
 
@@ -606,6 +571,7 @@ if (!function_exists('is_wp_error')) {
 }
 
 // Load the plugin files
+require_once $plugin_dir . '/includes/class-mxroute-crypto.php';
 require_once $plugin_dir . '/mxroute-mailer.php';
 require_once $plugin_dir . '/includes/class-mxroute-mailer.php';
 require_once $plugin_dir . '/includes/class-mxroute-api.php';

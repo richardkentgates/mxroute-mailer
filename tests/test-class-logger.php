@@ -89,15 +89,6 @@ class MXRoute_Logger_Test extends \PHPUnit\Framework\TestCase {
     }
 
     /**
-     * Tests that get_recent_logs returns an array.
-     */
-    public function test_get_recent_logs_returns_array() {
-        $logger = new MXRoute_Logger();
-        $result = $logger->get_recent_logs(5);
-        $this->assertIsArray($result);
-    }
-
-    /**
      * Tests that get_log returns null for a nonexistent log ID.
      */
     public function test_get_log_returns_null_for_nonexistent_id() {
