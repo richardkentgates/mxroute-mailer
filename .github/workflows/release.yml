@@ -18,16 +18,25 @@ jobs:
 
       - name: Build zip
         run: |
-          zip -r mxroute-mailer-${{ github.ref_name }}.zip . \
-            -x ".git/*" \
-            -x "tests/*" \
-            -x "vendor/*" \
-            -x "composer.*" \
-            -x "phpunit.xml" \
-            -x "phpcs.xml.dist" \
-            -x ".github/*" \
-            -x ".phpunit.result.cache" \
-            -x "*.zip"
+          mkdir -p build/mxroute-mailer
+          cp -r . build/mxroute-mailer/
+          rm -rf build/mxroute-mailer/.git \
+                 build/mxroute-mailer/tests \
+                 build/mxroute-mailer/vendor \
+                 build/mxroute-mailer/.github \
+                 build/mxroute-mailer/wiki \
+                 build/mxroute-mailer/PROMOTION.md \
+                 build/mxroute-mailer/.gitignore \
+                 build/mxroute-mailer/composer.* \
+                 build/mxroute-mailer/phpunit.xml \
+                 build/mxroute-mailer/phpcs.xml.dist \
+                 build/mxroute-mailer/.phpunit.result.cache \
+                 build/mxroute-mailer/*.zip \
+                 build/mxroute-mailer/build
+          cd build
+          zip -r ../mxroute-mailer-${{ github.ref_name }}.zip mxroute-mailer/
+          cd ..
+          rm -rf build
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
