@@ -43,11 +43,17 @@ jobs:
           sha256sum "mxroute-mailer-${{ github.ref_name }}.zip" > "mxroute-mailer-${{ github.ref_name }}.zip.sha256"
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
-        with:
-          files: |
-            mxroute-mailer-${{ github.ref_name }}.zip
-            mxroute-mailer-${{ github.ref_name }}.zip.sha256
-          generate_release_notes: true
-          draft: false
-          prerelease: false
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          tag="${{ github.ref_name }}"
+          if ! gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release create "$tag" \
+              --repo "$GITHUB_REPOSITORY" \
+              --title "$tag" \
+              --generate-notes \
+              "mxroute-mailer-$tag.zip" \
+              "mxroute-mailer-$tag.zip.sha256"
+          else
+            echo "Release $tag already exists. Skipping creation."
+          fi
