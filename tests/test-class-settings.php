@@ -150,6 +150,43 @@ class MXRoute_Settings_Test extends \PHPUnit\Framework\TestCase {
     }
 
     /**
+     * Tests that encrypt_password_on_update encrypts a plaintext password.
+     */
+    public function test_encrypt_password_on_update_encrypts_plaintext() {
+        $settings = new MXRoute_Settings();
+        $plain = 'my_secret_password';
+        $encrypted = $settings->encrypt_password_on_update($plain, '', 'mxroute_mailer_password');
+
+        $this->assertNotEquals($plain, $encrypted);
+        $this->assertEquals($plain, MXRoute_Crypto::decrypt($encrypted));
+    }
+
+    /**
+     * Tests that encrypt_password_on_update does not double-encrypt an already encrypted value.
+     */
+    public function test_encrypt_password_on_update_does_not_double_encrypt() {
+        $settings = new MXRoute_Settings();
+        $plain = 'my_secret_password';
+        $encrypted = MXRoute_Crypto::encrypt($plain);
+
+        $result = $settings->encrypt_password_on_update($encrypted, $plain, 'mxroute_mailer_password');
+
+        $this->assertEquals($encrypted, $result);
+        $this->assertEquals($plain, MXRoute_Crypto::decrypt($result));
+    }
+
+    /**
+     * Tests that encrypt_password_on_update preserves the old value when empty.
+     */
+    public function test_encrypt_password_on_update_preserves_old_value_when_empty() {
+        $settings = new MXRoute_Settings();
+        $old = 'existing_password';
+        $result = $settings->encrypt_password_on_update('', $old, 'mxroute_mailer_password');
+
+        $this->assertEquals($old, $result);
+    }
+
+    /**
      * Tests that add_menu_pages registers the email logs management page.
      */
     public function test_add_menu_pages_calls_add_management_page() {
