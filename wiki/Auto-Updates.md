@@ -108,6 +108,7 @@ curl -I https://api.github.com/repos/richardkentgates/mxroute-mailer/releases/la
 - Each push to `dev` runs PHP syntax lint, PHPUnit, zizmor workflow analysis, Semgrep PHP security scan, CodeQL analysis, and a pinned-Actions check
 - The zip file is attached to the GitHub release, not hosted externally
 - Version comparison prevents accidental downgrades
+- Starting with `v1.2.19`, each release includes a SHA-256 checksum file; the plugin verifies the downloaded zip against this checksum before WordPress installs the update
 
 ## Disabling Auto-Updates
 
