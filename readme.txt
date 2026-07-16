@@ -4,7 +4,7 @@ Tags: email, smtp, mxroute, mail
 Requires at least: 5.0
 Tested up to: 6.7
 Requires PHP: 7.3
-Stable tag: 1.2.5
+Stable tag: 1.2.14
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -84,6 +84,44 @@ The plugin fires a `wp_mail_failed` action so other plugins can handle the failu
 
 == Changelog ==
 
+= 1.2.14 =
+* Fix release zip build to avoid workspace self-copy failure
+* Clean top-level `mxroute-mailer/` folder in release asset
+
+= 1.2.13 =
+* Build release zip with a top-level `mxroute-mailer/` folder so WordPress extracts into the correct plugin directory
+
+= 1.2.12 =
+* Remove composer dependency; use PHPUnit PHAR and PHP syntax lint
+* Replace OSSF Scorecard with zizmor, Semgrep, CodeQL, and pinned-action checks
+* Auto-bump patch version on human pushes to `dev`
+* Harden CI security checks
+
+= 1.2.11 =
+* Pin Semgrep action SHA and tighten unpinned-action check
+* Fix zizmor SARIF output redirection
+
+= 1.2.10 =
+* Harden Scorecard replacement job with zizmor and pinned-action checks
+* Use correct setup-python action reference
+
+= 1.2.9 =
+* Replace OSSF Scorecard with dev-branch-compatible security checks
+* Move security checks to CI on `dev` push only
+
+= 1.2.8 =
+* Add `workflow_dispatch` trigger to Release workflow
+* Remove legacy Promote workflow and trigger Release after tag creation
+* Prevent WordPress from also sending via server mailer when plugin is configured
+* Update tests to expect the `wp_mail` filter to return false when configured
+
+= 1.2.7 =
+* Split promotion into Promote to Test and Promote to Main workflows
+* Skip tag creation if release tag already exists
+
+= 1.2.6 =
+* Add Promote to Test and Promote to Main workflows
+
 = 1.2.5 =
 * Formalize PR-based promotion workflow
 * Consolidate CI/CD from 7 workflow files to 4
@@ -130,6 +168,12 @@ The plugin fires a `wp_mail_failed` action so other plugins can handle the failu
 * Initial release
 
 == Upgrade Notice ==
+
+= 1.2.14 =
+Release packaging fix. WordPress now installs updates into the correct `mxroute-mailer/` folder.
+
+= 1.2.8 =
+Plugin now prevents WordPress from also sending via server mailer when configured.
 
 = 1.2.5 =
 CI/CD improvements. No functional changes.
