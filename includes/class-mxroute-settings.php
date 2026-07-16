@@ -286,8 +286,23 @@ class MXRoute_Settings {
 			)
 		);
 
+		$screen->add_help_tab(
+			array(
+				'id'      => 'mxroute-docs',
+				'title'   => __( 'Documentation', 'mxroute-mailer' ),
+				'content' => '<p>' . esc_html__( 'For setup details, configuration help, and troubleshooting, see the MXRoute Mailer wiki:', 'mxroute-mailer' ) . '</p>'
+					. '<ul>'
+					. '<li><a href="https://github.com/richardkentgates/mxroute-mailer/wiki/Installation" target="_blank">' . esc_html__( 'Installation', 'mxroute-mailer' ) . '</a></li>'
+					. '<li><a href="https://github.com/richardkentgates/mxroute-mailer/wiki/Configuration" target="_blank">' . esc_html__( 'Configuration', 'mxroute-mailer' ) . '</a></li>'
+					. '<li><a href="https://github.com/richardkentgates/mxroute-mailer/wiki/Troubleshooting" target="_blank">' . esc_html__( 'Troubleshooting', 'mxroute-mailer' ) . '</a></li>'
+					. '<li><a href="https://github.com/richardkentgates/mxroute-mailer/wiki/Auto-Updates" target="_blank">' . esc_html__( 'Auto-Updates', 'mxroute-mailer' ) . '</a></li>'
+					. '</ul>',
+			)
+		);
+
 		$screen->set_help_sidebar(
 			'<p><strong>' . esc_html__( 'For more information:', 'mxroute-mailer' ) . '</strong></p>'
+			. '<p><a href="https://github.com/richardkentgates/mxroute-mailer/wiki" target="_blank">' . esc_html__( 'MXRoute Mailer Wiki', 'mxroute-mailer' ) . '</a></p>'
 			. '<p><a href="https://mxroute.com" target="_blank">' . esc_html__( 'MXRoute Documentation', 'mxroute-mailer' ) . '</a></p>'
 		);
 	}
@@ -336,8 +351,22 @@ class MXRoute_Settings {
 			)
 		);
 
+		$screen->add_help_tab(
+			array(
+				'id'      => 'mxroute-logs-docs',
+				'title'   => __( 'Documentation', 'mxroute-mailer' ),
+				'content' => '<p>' . esc_html__( 'Learn more about logging, configuration, and troubleshooting in the wiki:', 'mxroute-mailer' ) . '</p>'
+					. '<ul>'
+					. '<li><a href="https://github.com/richardkentgates/mxroute-mailer/wiki/Configuration" target="_blank">' . esc_html__( 'Configuration', 'mxroute-mailer' ) . '</a></li>'
+					. '<li><a href="https://github.com/richardkentgates/mxroute-mailer/wiki/Troubleshooting" target="_blank">' . esc_html__( 'Troubleshooting', 'mxroute-mailer' ) . '</a></li>'
+					. '<li><a href="https://github.com/richardkentgates/mxroute-mailer/wiki/Auto-Updates" target="_blank">' . esc_html__( 'Auto-Updates', 'mxroute-mailer' ) . '</a></li>'
+					. '</ul>',
+			)
+		);
+
 		$screen->set_help_sidebar(
 			'<p><strong>' . esc_html__( 'For more information:', 'mxroute-mailer' ) . '</strong></p>'
+			. '<p><a href="https://github.com/richardkentgates/mxroute-mailer/wiki" target="_blank">' . esc_html__( 'MXRoute Mailer Wiki', 'mxroute-mailer' ) . '</a></p>'
 			. '<p><a href="https://mxroute.com" target="_blank">' . esc_html__( 'MXRoute Documentation', 'mxroute-mailer' ) . '</a></p>'
 		);
 	}
@@ -378,6 +407,7 @@ class MXRoute_Settings {
 
 		$screen->set_help_sidebar(
 			'<p><strong>' . esc_html__( 'For more information:', 'mxroute-mailer' ) . '</strong></p>'
+			. '<p><a href="https://github.com/richardkentgates/mxroute-mailer/wiki" target="_blank">' . esc_html__( 'MXRoute Mailer Wiki', 'mxroute-mailer' ) . '</a></p>'
 			. '<p><a href="https://mxroute.com" target="_blank">' . esc_html__( 'MXRoute Documentation', 'mxroute-mailer' ) . '</a></p>'
 		);
 	}

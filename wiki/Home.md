@@ -44,6 +44,12 @@ If your hosting provider blocks SMTP ports, standard WordPress email and SMTP pl
 - [Auto-Updates](https://github.com/richardkentgates/mxroute-mailer/wiki/Auto-Updates) - How GitHub-based updates work
 - [Development](https://github.com/richardkentgates/mxroute-mailer/wiki/Development) - Contributing, testing, CI/CD
 
+Repository reference files:
+
+- [README.md](https://github.com/richardkentgates/mxroute-mailer/blob/main/README.md) - Project overview and quick links
+- [CONTRIBUTING.md](https://github.com/richardkentgates/mxroute-mailer/blob/main/.github/CONTRIBUTING.md) - Contribution guidelines
+- [AGENTS.md](https://github.com/richardkentgates/mxroute-mailer/blob/main/AGENTS.md) - Guidance for AI agents and maintainers
+
 ## Support
 
 - [GitHub Issues](https://github.com/richardkentgates/mxroute-mailer/issues) - Bug reports and feature requests
