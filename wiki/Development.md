@@ -6,10 +6,11 @@ This guide covers contributing to MXRoute Mailer, setting up a development envir
 
 ### Prerequisites
 
-- PHP 7.3+ with required extensions
-- [Composer](https://getcomposer.org/)
+- PHP 7.3+ with the `curl`, `json`, and `mbstring` extensions
 - [Git](https://git-scm.com/)
-- [Node.js](https://nodejs.org/) (optional, for build tools)
+- [WP-CLI](https://wp-cli.org/) (optional, for local WordPress testing)
+
+No Composer or Node.js is required. The project uses the official PHPUnit PHAR and PHP's built-in lint command.
 
 ### Clone and Setup
 
@@ -20,71 +21,67 @@ cd mxroute-mailer
 
 # Switch to the dev branch
 git checkout dev
-
-# Install dependencies
-composer install
 ```
 
-### Run Tests
+## Running Tests
+
+Tests are run with the official PHPUnit PHAR. The CI workflow downloads the PHAR automatically, but locally you can do the same:
 
 ```bash
+# Download a PHPUnit PHAR compatible with PHP 7.3+
+curl -Lo phpunit.phar https://phar.phpunit.de/phpunit-9.phar
+chmod +x phpunit.phar
+
 # Run all tests
-vendor/bin/phpunit
+./phpunit.phar --configuration phpunit.xml
 
 # Run a specific test file
-vendor/bin/phpunit tests/test-class-settings.php
+./phpunit.phar --configuration phpunit.xml tests/test-class-settings.php
 
-# Run with coverage report
-vendor/bin/phpunit --coverage-html coverage/
-```
-
-### Run Code Style Checks
-
-```bash
-# Check for violations
-vendor/bin/phpcs --standard=phpcs.xml.dist --extensions=php --ignore=vendor/*,tests/*
-
-# Auto-fix violations
-vendor/bin/phpcbf --standard=phpcs.xml.dist --extensions=php --ignore=vendor/*,tests/*
+# Run PHP syntax lint on all plugin files
+find . -type f -name '*.php' ! -path './vendor/*' ! -path './tests/*' -print0 | xargs -0 -n1 php -l
 ```
 
 ## Project Structure
 
 ```
 mxroute-mailer/
-├── mxroute-mailer.php          # Main plugin file, constants, activation hook
+├── mxroute-mailer.php              # Main plugin file, constants, activation hook
 ├── includes/
 │   ├── class-mxroute-api.php       # MXRoute HTTP API client
 │   ├── class-mxroute-mailer.php    # Core mail interception and routing
-│   ├── class-mxroute-settings.php  # Settings page, menus, sanitization
+│   ├── class-mxroute-settings.php  # Settings page, menus, help tabs
 │   ├── class-mxroute-logger.php    # Email logging to database
 │   ├── class-mxroute-dashboard.php # AJAX handlers for log management
 │   └── class-mxroute-updater.php   # GitHub-based auto-updater
 ├── admin/
 │   ├── views/
-│   │   ├── settings.php        # Settings page template
-│   │   ├── logs.php            # Logs list page template
-│   │   └── log-view.php        # Single log detail template
-│   └── css/
-│       └── admin.css           # Admin styles
+│   │   ├── settings.php            # Settings page template
+│   │   ├── logs.php                # Logs list page template
+│   │   └── log-view.php            # Single log detail template
+│   ├── css/admin.css               # Admin styles
+│   └── js/admin.js                 # Admin scripts
 ├── tests/
-│   ├── bootstrap.php           # Test bootstrap with mocks
-│   ├── test-mxroute-mailer.php # Core mailer tests
-│   ├── test-class-settings.php # Settings tests
-│   ├── test-class-logger.php   # Logger tests
-│   ├── test-class-dashboard.php # Dashboard AJAX tests
-│   ├── test-class-mxroute-api.php # API client tests
-│   └── test-edge-cases.php     # Edge case and boundary tests
+│   ├── bootstrap.php               # Test bootstrap with mocks
+│   ├── test-mxroute-mailer.php     # Core mailer tests
+│   ├── test-class-settings.php     # Settings tests
+│   ├── test-class-logger.php       # Logger tests
+│   ├── test-class-dashboard.php    # Dashboard AJAX tests
+│   ├── test-class-mxroute-api.php  # API client tests
+│   └── test-edge-cases.php         # Edge case and boundary tests
 ├── .github/
-│   └── workflows/
-│       ├── ci.yml              # CI pipeline (PHPCS + PHPUnit)
-│       ├── release.yml         # Release build and publish
-│       ├── promote-dev-to-test.yml  # Dev → Test promotion
-│       └── promote-test-to-main.yml # Test → Main promotion
-├── wiki/                       # GitHub wiki pages (local copies)
-├── readme.txt                  # WordPress plugin readme
-├── LICENSE                     # GPLv2 license
-└── phpunit.xml                 # PHPUnit configuration
+│   ├── workflows/
+│   │   ├── ci.yml                  # Quality and security checks
+│   │   ├── version-bump.yml        # Auto patch-version bump on dev push
+│   │   ├── promote-to-test.yml     # Dev → Test promotion
+│   │   ├── promote-to-main.yml     # Test → Main promotion
+│   │   └── release.yml             # Release build and publish
+│   └── CONTRIBUTING.md             # Contribution guidelines
+├── wiki/                           # GitHub wiki pages (local copies)
+├── readme.txt                      # WordPress plugin readme
+├── LICENSE                         # GPLv2 license
+├── phpunit.xml                     # PHPUnit configuration
+└── PROMOTION.md                    # Exact promotion workflow directive
 ```
 
 ## Branch Strategy
@@ -92,8 +89,8 @@ mxroute-mailer/
 ### Branches
 
 - **`dev`** - Active development. All new work targets this branch.
-- **`test`** - Testing and CI validation. Merged from `dev`.
-- **`main`** - Production-ready code. Only merged from `test` after all checks pass.
+- **`test`** - Testing branch. Merged from `dev` through the Promote to Test workflow.
+- **`main`** - Production branch. Merged from `test` through the Promote to Main workflow.
 
 ### Workflow
 
@@ -109,73 +106,93 @@ mxroute-mailer/
    git commit -m "Add my feature"
    ```
 
-3. Push and create a pull request targeting `dev`
+3. Push and create a pull request targeting `dev`.
 
-4. After merge, promote through the pipeline:
-   - Dev → Test (CI runs automatically)
-   - Test → Main (after CI passes)
+4. After the PR is merged, the code is promoted through the pipeline manually:
+   - Dev → Test
+   - Test → Main
 
-### Promotion Workflows
+## Promotion Workflows
 
-The promotion workflows are triggered via GitHub Actions `workflow_dispatch`:
+The promotion workflows are triggered manually via `workflow_dispatch`. Always run them from the correct source branch.
 
-1. **Dev → Test**: Runs PHPCS and PHPUnit on all PHP versions (7.3, 7.4, 8.0, 8.1, 8.2, 8.3)
-2. **Test → Main**: Same CI checks, then merges to main and builds a zip artifact
+### Dev → Test
+
+```bash
+gh workflow run "Promote to Test" --repo richardkentgates/mxroute-mailer --ref dev
+```
+
+This merges `dev` into `test` and uploads a test artifact.
+
+### Test → Main
+
+```bash
+gh workflow run "Promote to Main" --repo richardkentgates/mxroute-mailer --ref test
+```
+
+This merges `test` into `main`, creates the release tag, and triggers the Release workflow.
+
+### Version Bump
+
+Every human push to `dev` automatically increments the patch version in `mxroute-mailer.php`. The bump commit is made by `github-actions[bot]` with `[version] [skip ci]` in the message so it does not re-trigger CI.
 
 ## CI/CD Pipeline
 
-### GitHub Actions Workflows
+### Quality and Security Checks (`ci.yml`)
 
-#### CI Pipeline (`ci.yml`)
-- **Trigger**: Push to dev, test, or main branches
-- **Jobs**:
-  - PHPCS: Code style checks
-  - PHPUnit: Tests on PHP 7.3, 7.4, 8.0, 8.1, 8.2, 8.3
+**Trigger:** Push to `dev`.
 
-#### Release Pipeline (`release.yml`)
-- **Trigger**: Push of a `v*` tag
-- **Jobs**:
-  - PHPCS + PHPUnit checks
-  - Build zip archive
-  - Create GitHub release with zip attached
+**Jobs:**
 
-#### Dev → Test Promotion (`promote-dev-to-test.yml`)
-- **Trigger**: Manual dispatch
-- **Jobs**:
-  - CI checks (PHPCS + PHPUnit)
-  - Merge dev into test
-  - Build test artifact
+- **PHP Syntax Lint** - `php -l` on all PHP files
+- **PHPUnit** - Unit tests on PHP 7.3, 7.4, 8.0, 8.1, 8.2, and 8.3 using the official PHPUnit PHAR
+- **Security - OSSF Scorecard Replacement** - Runs `zizmor` on workflow files and verifies all Actions references are pinned to a SHA
+- **Security - CodeQL & PHP Vulnerability Scan** - Runs CodeQL analysis and a Semgrep PHP security scan
+- **Build Artifact** - Builds a test zip with a top-level `mxroute-mailer/` folder
 
-#### Test → Main Promotion (`promote-test-to-main.yml`)
-- **Trigger**: Manual dispatch
-- **Jobs**:
-  - CI checks (PHPCS + PHPUnit)
-  - Merge test into main
-  - Build main artifact
+### Auto Bump Version (`version-bump.yml`)
 
-### Releasing a New Version
+**Trigger:** Push to `dev`.
 
-1. Update version in:
-   - `mxroute-mailer.php` (Plugin header and `MXROUTE_MAILER_VERSION` constant)
-   - `readme.txt` (Stable tag and changelog)
+Bumps the patch version in `mxroute-mailer.php` and pushes the change back to `dev`.
 
-2. Merge through the pipeline:
-   ```bash
-   git checkout test && git merge dev && git push origin test
-   # Wait for CI to pass
-   git checkout main && git merge test && git push origin main
-   ```
+### Promote to Test (`promote-to-test.yml`)
 
-3. Create and push a release tag:
-   ```bash
-   git tag v1.2.5
-   git push origin v1.2.5
-   ```
+**Trigger:** Manual dispatch from the `dev` branch.
 
-4. The release workflow automatically:
-   - Runs final CI checks
-   - Builds the zip file
-   - Creates a GitHub release with the zip attached
+- Validates the source branch is `dev`
+- Creates or finds an open PR from `dev` to `test`
+- Merges the PR
+- Builds a test zip artifact
+
+### Promote to Main (`promote-to-main.yml`)
+
+**Trigger:** Manual dispatch from the `test` branch.
+
+- Validates the source branch is `test`
+- Creates or finds an open PR from `test` to `main`
+- Merges the PR
+- Checks out `origin/main` and creates the release tag
+- Triggers the Release workflow for the new tag
+
+### Release (`release.yml`)
+
+**Trigger:** Push of a `v*` tag, or manual dispatch.
+
+- Builds the release zip in `/tmp` with a top-level `mxroute-mailer/` folder
+- Creates a GitHub release and attaches the zip
+
+## Releasing a New Version
+
+There is no manual version-editing step for patch releases. The pipeline handles it:
+
+1. Merge your feature PR into `dev`.
+2. The Auto Bump Version workflow increments the patch version (e.g., `1.2.14` → `1.2.15`).
+3. Run Promote to Test from `dev`.
+4. Run Promote to Main from `test`.
+5. The Release workflow creates the GitHub release with the zip attached.
+
+If you need a minor or major version bump, update the version manually in `mxroute-mailer.php` before pushing to `dev`.
 
 ## Coding Standards
 
@@ -277,4 +294,4 @@ When adding new database columns:
 
 ## Contributing
 
-See [CONTRIBUTING.md](.github/CONTRIBUTING.md) for detailed contribution guidelines.
+See [CONTRIBUTING.md](../.github/CONTRIBUTING.md) for detailed contribution guidelines.

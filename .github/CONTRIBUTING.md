@@ -9,15 +9,17 @@ Thank you for your interest in contributing to MXRoute Mailer! This document pro
 3. Create a feature branch from `dev`
 4. Make your changes
 5. Run tests and linting
-6. Submit a pull request
+6. Submit a pull request targeting `dev`
 
 ## Development Setup
 
 ### Prerequisites
 
 - PHP 7.3 or higher
-- [Composer](https://getcomposer.org/)
+- [Git](https://git-scm.com/)
 - [WP-CLI](https://wp-cli.org/) (optional, for local WordPress testing)
+
+No Composer or Node.js is required. Tests run with the official PHPUnit PHAR, and code style is enforced through PHP syntax lint plus manual WordPress Coding Standards review.
 
 ### Installation
 
@@ -26,14 +28,25 @@ Thank you for your interest in contributing to MXRoute Mailer! This document pro
 git clone https://github.com/YOUR_USERNAME/mxroute-mailer.git
 cd mxroute-mailer
 
-# Install dependencies
-composer install
+# Switch to dev
+git checkout dev
+```
 
-# Run tests
-vendor/bin/phpunit
+## Running Tests
 
-# Run code style checks
-./vendor/bin/phpcs --standard=phpcs.xml.dist
+```bash
+# Download PHPUnit PHAR
+curl -Lo phpunit.phar https://phar.phpunit.de/phpunit-9.phar
+chmod +x phpunit.phar
+
+# Run all tests
+./phpunit.phar --configuration phpunit.xml
+
+# Run a specific test file
+./phpunit.phar --configuration phpunit.xml tests/test-class-settings.php
+
+# Run PHP syntax lint
+find . -type f -name '*.php' ! -path './vendor/*' ! -path './tests/*' -print0 | xargs -0 -n1 php -l
 ```
 
 ## Branch Strategy
@@ -41,8 +54,8 @@ vendor/bin/phpunit
 We use a three-branch workflow:
 
 - **`dev`** - Development branch. All new work goes here first.
-- **`test`** - Testing branch. Merged from `dev` for CI validation.
-- **`main`** - Production branch. Only merged from `test` after all checks pass.
+- **`test`** - Testing branch. Merged from `dev` through the Promote to Test workflow.
+- **`main`** - Production branch. Only merged from `test` through the Promote to Main workflow.
 
 ### Workflow
 
@@ -50,30 +63,29 @@ We use a three-branch workflow:
 2. Make your changes and commit
 3. Push to your fork
 4. Open a pull request targeting `dev`
-5. After review and CI passes, `dev` is promoted to `test`
-6. After `test` CI passes, `test` is promoted to `main`
-7. A release tag triggers the build and deploy workflow
+5. After merge, the repository owner promotes `dev` to `test`, then `test` to `main`
+6. The Release workflow automatically builds the zip and creates a GitHub release
 
 ## Code Standards
 
 ### PHP
 
-- Follow [WordPress Coding Standards](https://developer.wordpress.org/coding-standards/wordpress-coding-standards/)
-- Use the provided `phpcs.xml.dist` configuration
-- All code must pass PHPCS checks
-- All code must pass PHPUnit tests
+- Follow the [WordPress Coding Standards](https://developer.wordpress.org/coding-standards/wordpress-coding-standards/)
+- Use tabs for indentation
+- Use Yoda conditions (`if ( true === $var )`)
+- Use snake_case for functions and variables
+- Use PascalCase for class names
+- All code must pass PHP syntax lint
+- All PHPUnit tests must pass
 
 ### Running Checks
 
 ```bash
-# Run PHPCS
-vendor/bin/phpcs --standard=phpcs.xml.dist --extensions=php --ignore=vendor/*,tests/*
+# PHP syntax lint
+find . -type f -name '*.php' ! -path './vendor/*' ! -path './tests/*' -print0 | xargs -0 -n1 php -l
 
-# Run PHPUnit
-vendor/bin/phpunit
-
-# Auto-fix PHPCS issues
-vendor/bin/phpcbf --standard=phpcs.xml.dist --extensions=php --ignore=vendor/*,tests/*
+# PHPUnit
+./phpunit.phar --configuration phpunit.xml
 ```
 
 ### Docblocks
@@ -104,25 +116,26 @@ vendor/bin/phpcbf --standard=phpcs.xml.dist --extensions=php --ignore=vendor/*,t
 
 ```bash
 # Run all tests
-vendor/bin/phpunit
+./phpunit.phar --configuration phpunit.xml
 
 # Run a specific test file
-vendor/bin/phpunit tests/test-class-settings.php
-
-# Run with coverage
-vendor/bin/phpunit --coverage-html coverage/
+./phpunit.phar --configuration phpunit.xml tests/test-class-settings.php
 ```
+
+### Mock System
+
+The test bootstrap mocks WordPress functions to allow testing without a full WordPress installation.
 
 ## Pull Request Guidelines
 
 ### Before Submitting
 
 - [ ] Code follows WordPress Coding Standards
-- [ ] All PHPCS checks pass
+- [ ] PHP syntax lint passes
 - [ ] All PHPUnit tests pass
 - [ ] New tests added for new functionality
-- [ ] Documentation updated (readme.txt, wiki if applicable)
-- [ ] Version number bumped in `mxroute-mailer.php` and `readme.txt`
+- [ ] Documentation updated (`readme.txt`, wiki if applicable)
+- [ ] Do not bump the version number manually; the Auto Bump Version workflow handles patch bumps on `dev`
 
 ### PR Description
 
@@ -160,11 +173,15 @@ Include:
 
 ## Release Process
 
-1. Update version in `mxroute-mailer.php` and `readme.txt`
-2. Update changelog in `readme.txt`
-3. Merge `dev` -> `test` -> `main`
-4. Create a GitHub release with a `v*` tag (e.g., `v1.2.5`)
-5. The CI/CD pipeline automatically builds and attaches the zip
+Patch releases are automated:
+
+1. Merge changes into `dev`
+2. The Auto Bump Version workflow increments the patch version in `mxroute-mailer.php`
+3. Run the Promote to Test workflow from `dev`
+4. Run the Promote to Main workflow from `test`
+5. The Release workflow automatically builds the zip and creates the GitHub release
+
+For minor or major releases, update the version manually in `mxroute-mailer.php` before pushing to `dev`.
 
 ## Questions?
 

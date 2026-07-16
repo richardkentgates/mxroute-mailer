@@ -101,6 +101,21 @@ If you see database errors about missing `reply_to` column:
    ALTER TABLE {prefix}_mxroute_mailer_logs ADD COLUMN reply_to varchar(255) NOT NULL DEFAULT '' AFTER from_email;
    ```
 
+### Plugin Deactivated After an Update
+
+**Symptoms**: After clicking "Update Now", MXRoute Mailer disappears from the active plugins list and is replaced by a folder like `mxroute-mailer-v1.2.x/`.
+
+**Cause**: An older release zip was missing a top-level `mxroute-mailer/` folder. WordPress extracted the files into a versioned folder and deactivated the plugin.
+
+**Fix**:
+
+1. Go to **Plugins** and deactivate the old `mxroute-mailer-v1.2.x/` entry if it exists
+2. Delete the versioned folder from `/wp-content/plugins/`
+3. Install the latest release from [GitHub Releases](https://github.com/richardkentgates/mxroute-mailer/releases)
+4. Activate MXRoute Mailer
+
+This issue is fixed in `v1.2.13` and later releases.
+
 ## Getting Help
 
 If your issue isn't listed here:
