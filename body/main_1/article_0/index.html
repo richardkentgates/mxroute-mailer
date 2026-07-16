@@ -1,0 +1,45 @@
+<h3>What is MXRoute Mailer?</h3>
+<p>
+    MXRoute Mailer is a WordPress plugin that intercepts <code>wp_mail()</code> and sends email through
+    <a href="https://mxroute.com" target="_blank">MXRoute</a>'s HTTP API on port 443 instead of SMTP.
+    This solves the common problem of hosting providers blocking outbound SMTP ports (25, 465, 587),
+    which causes WordPress emails to silently fail on cloud platforms like Google Cloud and AWS.
+</p>
+
+<h3 id="features">Features</h3>
+<ul>
+    <li>Automatic email routing through MXRoute's HTTPS API</li>
+    <li>Email logging with search, filtering, and pagination</li>
+    <li>Reply-To support for contact forms</li>
+    <li>Built-in test email tool</li>
+    <li>GitHub-based automatic updates</li>
+    <li>Works with any plugin or theme that uses <code>wp_mail()</code></li>
+</ul>
+
+<h3 id="install">Installation</h3>
+<ol>
+    <li>Download the latest release from the <a href="https://github.com/richardkentgates/mxroute-mailer/releases" target="_blank">Releases</a> page.</li>
+    <li>Upload and activate the plugin in WordPress.</li>
+    <li>Go to <strong>Settings &gt; MXRoute Mailer</strong> and enter your MXRoute server, username, and password.</li>
+    <li>Send a test email to verify the configuration.</li>
+</ol>
+
+<h3 id="how">How it works</h3>
+<p>
+    When a plugin or theme calls <code>wp_mail()</code>, MXRoute Mailer uses the WordPress
+    <code>pre_wp_mail</code> filter to send the message through MXRoute's API before the default
+    server mailer runs. The server mailer is skipped, so you get exactly one send per email.
+</p>
+
+<h3 id="docs">Documentation</h3>
+<p>
+    Full documentation is available on the
+    <a href="https://github.com/richardkentgates/mxroute-mailer/wiki" target="_blank">GitHub Wiki</a>.
+    For setup help, configuration details, and troubleshooting, see:
+</p>
+<ul>
+    <li><a href="https://github.com/richardkentgates/mxroute-mailer/wiki/Installation" target="_blank">Installation Guide</a></li>
+    <li><a href="https://github.com/richardkentgates/mxroute-mailer/wiki/Configuration" target="_blank">Configuration</a></li>
+    <li><a href="https://github.com/richardkentgates/mxroute-mailer/wiki/Troubleshooting" target="_blank">Troubleshooting</a></li>
+    <li><a href="https://github.com/richardkentgates/mxroute-mailer/wiki/Auto-Updates" target="_blank">Auto-Updates</a></li>
+</ul>
