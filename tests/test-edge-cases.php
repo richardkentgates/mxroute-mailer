@@ -246,7 +246,7 @@ class MXRoute_Mailer_Edge_Test extends \PHPUnit\Framework\TestCase {
 			'message' => 'Body',
 		);
 		$result = $mailer->intercept_wp_mail( $args );
-		$this->assertArrayHasKey( 'to', $result );
+		$this->assertNull( $result );
 	}
 
 	/**
@@ -260,7 +260,7 @@ class MXRoute_Mailer_Edge_Test extends \PHPUnit\Framework\TestCase {
 			'message' => 'Body',
 		);
 		$result = $mailer->intercept_wp_mail( $args );
-		$this->assertArrayHasKey( 'subject', $result );
+		$this->assertNull( $result );
 	}
 
 	/**
@@ -278,7 +278,7 @@ class MXRoute_Mailer_Edge_Test extends \PHPUnit\Framework\TestCase {
 			'message' => null,
 		);
 		$result = $mailer->intercept_wp_mail( $args );
-		$this->assertFalse( $result );
+		$this->assertTrue( $result );
 	}
 
 	/**
@@ -287,8 +287,7 @@ class MXRoute_Mailer_Edge_Test extends \PHPUnit\Framework\TestCase {
 	public function test_intercept_handles_completely_empty_args() {
 		$mailer = MXRoute_Mailer::instance();
 		$result = $mailer->intercept_wp_mail( array() );
-		$this->assertArrayHasKey( 'to', $result );
-		$this->assertEquals( '', $result['to'] );
+		$this->assertNull( $result );
 	}
 
 	/**
@@ -297,7 +296,7 @@ class MXRoute_Mailer_Edge_Test extends \PHPUnit\Framework\TestCase {
 	public function test_intercept_handles_non_array_input() {
 		$mailer = MXRoute_Mailer::instance();
 		$result = $mailer->intercept_wp_mail( 'not_an_array' );
-		$this->assertArrayHasKey( 'to', $result );
+		$this->assertNull( $result );
 	}
 
 	/**
@@ -313,7 +312,7 @@ class MXRoute_Mailer_Edge_Test extends \PHPUnit\Framework\TestCase {
 			'headers' => array( 123, null, false, '' ),
 		);
 		$result = $mailer->intercept_wp_mail( $args );
-		$this->assertArrayHasKey( 'to', $result );
+		$this->assertNull( $result );
 	}
 
 	/**
@@ -329,7 +328,7 @@ class MXRoute_Mailer_Edge_Test extends \PHPUnit\Framework\TestCase {
 			'headers' => "Content-Type: text/html\nX-Custom: value",
 		);
 		$result = $mailer->intercept_wp_mail( $args );
-		$this->assertArrayHasKey( 'to', $result );
+		$this->assertNull( $result );
 	}
 
 	/**
@@ -345,7 +344,7 @@ class MXRoute_Mailer_Edge_Test extends \PHPUnit\Framework\TestCase {
 			'headers' => 'From: noreply@example.com',
 		);
 		$result = $mailer->intercept_wp_mail( $args );
-		$this->assertArrayHasKey( 'to', $result );
+		$this->assertNull( $result );
 	}
 
 	/**
@@ -361,7 +360,7 @@ class MXRoute_Mailer_Edge_Test extends \PHPUnit\Framework\TestCase {
 			'headers' => "From: first@example.com\nFrom: second@example.com",
 		);
 		$result = $mailer->intercept_wp_mail( $args );
-		$this->assertArrayHasKey( 'to', $result );
+		$this->assertNull( $result );
 	}
 
 	/**

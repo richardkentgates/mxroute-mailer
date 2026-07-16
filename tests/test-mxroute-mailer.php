@@ -24,9 +24,9 @@ class MXRoute_Mailer_Test extends \PHPUnit\Framework\TestCase {
     }
 
     /**
-     * Tests that intercept_wp_mail returns args unchanged when no "to" is provided.
+     * Tests that intercept_wp_mail returns null when no "to" is provided.
      */
-    public function test_intercept_wp_mail_returns_args_when_no_to() {
+    public function test_intercept_wp_mail_returns_null_when_no_to() {
         $mailer = MXRoute_Mailer::instance();
         $args = array(
             'to'      => '',
@@ -34,16 +34,13 @@ class MXRoute_Mailer_Test extends \PHPUnit\Framework\TestCase {
             'message' => 'Body',
         );
         $result = $mailer->intercept_wp_mail($args);
-        $this->assertArrayHasKey('to', $result);
-        $this->assertEquals('', $result['to']);
-        $this->assertArrayHasKey('subject', $result);
-        $this->assertEquals('Test', $result['subject']);
+        $this->assertNull($result);
     }
 
     /**
-     * Tests that intercept_wp_mail returns args unchanged when subject is empty.
+     * Tests that intercept_wp_mail returns null when subject is empty.
      */
-    public function test_intercept_wp_mail_returns_args_when_no_subject() {
+    public function test_intercept_wp_mail_returns_null_when_no_subject() {
         $mailer = MXRoute_Mailer::instance();
         $args = array(
             'to'      => 'to@example.com',
@@ -51,16 +48,13 @@ class MXRoute_Mailer_Test extends \PHPUnit\Framework\TestCase {
             'message' => 'Body',
         );
         $result = $mailer->intercept_wp_mail($args);
-        $this->assertArrayHasKey('to', $result);
-        $this->assertEquals('to@example.com', $result['to']);
-        $this->assertArrayHasKey('subject', $result);
-        $this->assertEquals('', $result['subject']);
+        $this->assertNull($result);
     }
 
     /**
-     * Tests that intercept_wp_mail returns args when both "to" and subject are missing.
+     * Tests that intercept_wp_mail returns null when both "to" and subject are missing.
      */
-    public function test_intercept_wp_mail_returns_args_when_both_missing() {
+    public function test_intercept_wp_mail_returns_null_when_both_missing() {
         $mailer = MXRoute_Mailer::instance();
         $args = array(
             'to'      => '',
@@ -68,44 +62,39 @@ class MXRoute_Mailer_Test extends \PHPUnit\Framework\TestCase {
             'message' => 'Body',
         );
         $result = $mailer->intercept_wp_mail($args);
-        $this->assertArrayHasKey('to', $result);
-        $this->assertEquals('', $result['to']);
-        $this->assertArrayHasKey('subject', $result);
-        $this->assertEquals('', $result['subject']);
+        $this->assertNull($result);
     }
 
     /**
-     * Tests that intercept_wp_mail fills in default empty values for missing fields.
+     * Tests that intercept_wp_mail returns null when required fields are missing.
      */
-    public function test_intercept_wp_mail_fills_defaults() {
+    public function test_intercept_wp_mail_returns_null_when_fields_missing() {
         $mailer = MXRoute_Mailer::instance();
         $args = array('message' => 'Body');
         $result = $mailer->intercept_wp_mail($args);
-        $this->assertEquals('', $result['to']);
-        $this->assertEquals('', $result['subject']);
+        $this->assertNull($result);
     }
 
     /**
-     * Tests that intercept_wp_mail returns args early when no API credentials are configured.
+     * Tests that intercept_wp_mail returns null early when no API credentials are configured.
      */
-    public function test_intercept_wp_mail_returns_args_when_no_credentials() {
+    public function test_intercept_wp_mail_returns_null_when_no_credentials() {
         $mailer = MXRoute_Mailer::instance();
         $args = array(
             'to'      => 'to@example.com',
             'subject' => 'Test Subject',
             'message' => 'Body',
         );
-        // No credentials configured -> early return with args (no API call)
+        // No credentials configured -> let default mailer run.
         $result = $mailer->intercept_wp_mail($args);
-        $this->assertArrayHasKey('to', $result);
-        $this->assertEquals('to@example.com', $result['to']);
+        $this->assertNull($result);
     }
 
     /**
-     * Tests that intercept_wp_mail returns false after a successful API send
+     * Tests that intercept_wp_mail returns true after a successful API send
      * so WordPress does not also invoke the default mailer.
      */
-    public function test_intercept_wp_mail_returns_false_after_api_send() {
+    public function test_intercept_wp_mail_returns_true_after_api_send() {
         $mailer = MXRoute_Mailer::instance();
         $GLOBALS['wp_options']['mxroute_mailer_server'] = 'server.example.com';
         $GLOBALS['wp_options']['mxroute_mailer_username'] = 'user@example.com';
@@ -116,7 +105,7 @@ class MXRoute_Mailer_Test extends \PHPUnit\Framework\TestCase {
             'message' => 'Body',
         );
         $result = $mailer->intercept_wp_mail($args);
-        $this->assertFalse($result);
+        $this->assertTrue($result);
     }
 
     /**
@@ -167,8 +156,8 @@ class MXRoute_Mailer_Test extends \PHPUnit\Framework\TestCase {
             'message' => 'Body',
             'headers' => '',
         ));
-        // No credentials -> returns args (not false)
-        $this->assertArrayHasKey('to', $result);
+        // No credentials -> returns null to let default mailer run.
+        $this->assertNull($result);
     }
 
     /**
@@ -184,7 +173,7 @@ class MXRoute_Mailer_Test extends \PHPUnit\Framework\TestCase {
             'headers' => "From: Sender <sender@example.com>\nContent-Type: text/html",
         );
         $result = $mailer->intercept_wp_mail($args);
-        $this->assertArrayHasKey('to', $result);
+        $this->assertNull($result);
     }
 
     /**
@@ -200,7 +189,7 @@ class MXRoute_Mailer_Test extends \PHPUnit\Framework\TestCase {
             'headers' => "From: display name <sender@example.com>",
         );
         $result = $mailer->intercept_wp_mail($args);
-        $this->assertArrayHasKey('to', $result);
+        $this->assertNull($result);
     }
 
     /**
@@ -216,7 +205,7 @@ class MXRoute_Mailer_Test extends \PHPUnit\Framework\TestCase {
             'headers' => array("From: sender@example.com", "Content-Type: text/html"),
         );
         $result = $mailer->intercept_wp_mail($args);
-        $this->assertArrayHasKey('to', $result);
+        $this->assertNull($result);
     }
 
     /**
@@ -232,7 +221,7 @@ class MXRoute_Mailer_Test extends \PHPUnit\Framework\TestCase {
             'headers' => array("Content-Type: text/html"),
         );
         $result = $mailer->intercept_wp_mail($args);
-        $this->assertArrayHasKey('to', $result);
+        $this->assertNull($result);
     }
 
     /**
@@ -248,7 +237,7 @@ class MXRoute_Mailer_Test extends \PHPUnit\Framework\TestCase {
             'headers' => "From: plain@example.com",
         );
         $result = $mailer->intercept_wp_mail($args);
-        $this->assertArrayHasKey('to', $result);
+        $this->assertNull($result);
     }
 
     /**

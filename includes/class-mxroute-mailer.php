@@ -54,26 +54,37 @@ class MXRoute_Mailer {
 	/**
 	 * Initialize WordPress hooks.
 	 *
-	 * Priority 999 ensures this runs after all other wp_mail filters so the
-	 * final API call replaces any earlier modifications.
+	 * Priority 999 ensures this runs after other pre_wp_mail handlers so the
+	 * MXRoute send takes precedence when the plugin is configured.
 	 *
 	 * @return void
 	 */
 	private function init_hooks() {
-		add_filter( 'wp_mail', array( $this, 'intercept_wp_mail' ), 999 );
+		add_filter( 'pre_wp_mail', array( $this, 'intercept_wp_mail' ), 999, 2 );
 		add_action( 'load-settings_page_mxroute-mailer', array( $this, 'handle_test_email' ) );
 	}
 
 	/**
 	 * Intercept wp_mail to route through MXRoute API.
 	 *
-	 * Returning false prevents WordPress from also sending through the
-	 * server mailer (e.g. sendmail/ssmtp) after the API send.
+	 * This is attached to the `pre_wp_mail` filter. Returning a non-null value
+	 * short-circuits WordPress's default mailer, preventing duplicate sends
+	 * through server mailers such as sendmail or ssmtp.
 	 *
+	 * The method signature supports both the WordPress filter (null, array) and
+	 * direct calls with a single args array for backward compatibility/tests.
+	 *
+	 * @param mixed $pre  Value passed to pre_wp_mail, normally null.
 	 * @param array $args wp_mail arguments.
-	 * @return array|false Array of args to let default mailer run, false to stop it.
+	 * @return mixed|null true on success, false on failure, $pre to let default mailer run.
 	 */
-	public function intercept_wp_mail( $args ) {
+	public function intercept_wp_mail( $pre, $args = null ) {
+		// Support direct calls with a single args array.
+		if ( null === $args ) {
+			$args = $pre;
+			$pre  = null;
+		}
+
 		$defaults = array(
 			'to'          => '',
 			'subject'     => '',
@@ -85,7 +96,7 @@ class MXRoute_Mailer {
 		$args = wp_parse_args( $args, $defaults );
 
 		if ( empty( $args['to'] ) || empty( $args['subject'] ) ) {
-			return $args;
+			return $pre;
 		}
 
 		$server   = get_option( 'mxroute_mailer_server', '' );
@@ -93,7 +104,7 @@ class MXRoute_Mailer {
 		$password = get_option( 'mxroute_mailer_password', '' );
 
 		if ( empty( $server ) || empty( $username ) || empty( $password ) ) {
-			return $args;
+			return $pre;
 		}
 
 		$from     = get_option( 'mxroute_mailer_username', '' );
@@ -146,9 +157,10 @@ class MXRoute_Mailer {
 				$args
 			);
 			do_action( 'wp_mail_failed', $error );
+			return false;
 		}
 
-		return false;
+		return true;
 	}
 
 	/**
