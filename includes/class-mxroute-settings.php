@@ -288,6 +288,16 @@ class MXRoute_Settings {
 
 		$screen->add_help_tab(
 			array(
+				'id'      => 'mxroute-duplicate-sends',
+				'title'   => __( 'Duplicate Sends', 'mxroute-mailer' ),
+				'content' => '<p>' . esc_html__( 'If you are seeing two copies of every email, make sure you are running MXRoute Mailer 1.2.16 or later.', 'mxroute-mailer' ) . '</p>'
+					. '<p>' . esc_html__( 'Starting with 1.2.16, the plugin uses the WordPress pre_wp_mail filter to stop the default server mailer (sendmail/ssmtp) before it runs, so only the MXRoute API send is delivered.', 'mxroute-mailer' ) . '</p>'
+					. '<p>' . esc_html__( 'If you still see duplicates after updating, check for another active mail plugin that is also sending emails.', 'mxroute-mailer' ) . '</p>',
+			)
+		);
+
+		$screen->add_help_tab(
+			array(
 				'id'      => 'mxroute-docs',
 				'title'   => __( 'Documentation', 'mxroute-mailer' ),
 				'content' => '<p>' . esc_html__( 'For setup details, configuration help, and troubleshooting, see the MXRoute Mailer wiki:', 'mxroute-mailer' ) . '</p>'

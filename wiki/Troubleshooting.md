@@ -48,12 +48,13 @@ The test email form shows the full API response. Look for:
 
 **Symptoms**: Recipients receive two copies of each email.
 
-**Cause**: Another plugin is also modifying `wp_mail()` at a different priority.
+**Cause**: In versions before `1.2.16`, the plugin used the `wp_mail` filter to try to stop the default mailer, which did not fully short-circuit WordPress on all setups. As a result, the MXRoute API send and the server mailer (sendmail/ssmtp) could both send the same message.
 
 **Fix**:
+- Update to MXRoute Mailer `1.2.16` or later, which uses the `pre_wp_mail` filter to stop the default mailer before it runs.
 - Check if you have multiple mail plugins active
 - Disable other mail plugins one at a time to identify the conflict
-- MXRoute Mailer runs at priority 999 (after all other filters)
+- MXRoute Mailer runs at priority 999 on `pre_wp_mail` so it takes precedence when configured
 
 ### Log Viewer Shows "No logs found"
 
