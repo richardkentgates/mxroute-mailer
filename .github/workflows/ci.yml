@@ -99,13 +99,22 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Set up PHP
+        uses: shivammathur/setup-php@b604ade2a87db23f8871b7182e69ec5e75effb45 # v2
         with:
-          python-version: '3.12'
+          php-version: '8.2'
+          coverage: none
+
+      - name: Install PHP dependencies (no-dev)
+        run: composer install --no-dev --no-progress --prefer-dist
 
       - name: Audit PHP dependencies
-        run: composer audit --locked --no-dev
+        run: composer audit --no-dev
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
 
       - name: Install zizmor
         run: pip install zizmor
@@ -115,7 +124,7 @@ jobs:
 
       - name: Check for unpinned Actions references
         run: |
-          unpinned=$(grep -R "uses:" .github/workflows | grep -vE '# v[0-9]' || true)
+          unpinned=$(grep -R "uses:" .github/workflows | grep -vE '@[0-9a-f]{40}' || true)
           if [[ -n "$unpinned" ]]; then
             echo "::error::Unpinned Actions references found:"
             echo "$unpinned"
@@ -124,7 +133,7 @@ jobs:
 
       - name: Upload SARIF
         uses: github/codeql-action/upload-sarif@02c5e83432fe5497fd85b873b6c9f16a8578e1d9 # v3
-        if: always()
+        if: always() && hashFiles('results.sarif') != ''
         with:
           sarif_file: results.sarif
 
