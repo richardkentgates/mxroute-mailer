@@ -3,7 +3,7 @@
  * Plugin Name: MXRoute Mailer
  * Plugin URI: https://richardkentgates.com
  * Description: Sends WordPress email through MXRoute's HTTP API over port 443. Includes logging, test tools, and automatic updates.
- * Version: 1.2.20
+ * Version: 1.2.21
  * Author: Richard Kent Gates
  * Author URI: https://richardkentgates.com
  * License: GPL v2 or later
@@ -21,7 +21,19 @@ defined( 'ABSPATH' ) || exit;
  *
  * @var string
  */
-define( 'MXROUTE_MAILER_VERSION', '1.2.20' );
+define( 'MXROUTE_MAILER_VERSION', '1.2.21' );
+
+/**
+ * Enable debug logging for API calls.
+ *
+ * Set to true in wp-config.php to log MXRoute API requests and responses
+ * to the WordPress debug log. Do not leave enabled in production.
+ *
+ * @var bool
+ */
+if ( ! defined( 'MXROUTE_MAILER_DEBUG' ) ) {
+	define( 'MXROUTE_MAILER_DEBUG', false );
+}
 
 /**
  * Absolute path to the plugin directory.
@@ -53,7 +65,6 @@ require_once MXROUTE_MAILER_PLUGIN_DIR . 'includes/class-mxroute-updater.php';
 register_activation_hook(
 	__FILE__,
 	static function () {
-		require_once MXROUTE_MAILER_PLUGIN_DIR . 'includes/class-mxroute-logger.php';
 		MXRoute_Logger::create_table();
 	}
 );
@@ -70,15 +81,6 @@ function mxroute_mailer_db_upgrade() {
 		$column_exists = $wpdb->get_var( "SHOW COLUMNS FROM `$table_name` LIKE 'reply_to'" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Schema upgrade.
 		if ( ! $column_exists ) {
 			$wpdb->query( "ALTER TABLE `$table_name` ADD COLUMN `reply_to` varchar(255) NOT NULL DEFAULT '' AFTER `from_email`" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Schema upgrade.
-		}
-
-		// Encrypt any existing plaintext password once.
-		if ( ! get_option( 'mxroute_mailer_password_encrypted' ) ) {
-			$password = get_option( 'mxroute_mailer_password', '' );
-			if ( '' !== $password ) {
-				update_option( 'mxroute_mailer_password', MXRoute_Crypto::encrypt( $password ) );
-			}
-			update_option( 'mxroute_mailer_password_encrypted', 1 );
 		}
 
 		update_option( 'mxroute_mailer_db_version', MXROUTE_MAILER_VERSION );

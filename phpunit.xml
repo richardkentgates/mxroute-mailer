@@ -11,6 +11,7 @@
             <file>./tests/test-class-mxroute-api.php</file>
             <file>./tests/test-class-logger.php</file>
             <file>./tests/test-class-settings.php</file>
+            <file>./tests/test-class-updater.php</file>
             <file>./tests/test-class-dashboard.php</file>
             <file>./tests/test-mxroute-mailer.php</file>
             <file>./tests/test-edge-cases.php</file>

@@ -157,6 +157,45 @@ class MXRoute_API_Test extends \PHPUnit\Framework\TestCase {
     }
 
     /**
+     * Tests that send includes the password in both the JSON body and Basic Auth header.
+     */
+    public function test_send_includes_password_in_body_and_auth_header() {
+        $GLOBALS['wp_options']['mxroute_mailer_server'] = 'server.example.com';
+        $GLOBALS['wp_options']['mxroute_mailer_username'] = 'user@example.com';
+        $GLOBALS['wp_options']['mxroute_mailer_password'] = 'password123';
+
+        $api = new MXRoute_API();
+        $api->send('from@example.com', 'to@example.com', 'Test', 'Body');
+
+        $this->assertArrayHasKey('wp_remote_post', $GLOBALS['wp_function_calls']);
+        $call = $GLOBALS['wp_function_calls']['wp_remote_post'][0];
+        $body = json_decode($call['args']['body'], true);
+
+        $this->assertEquals('password123', $body['password']);
+        $this->assertArrayHasKey('Authorization', $call['args']['headers']);
+        $this->assertEquals('Basic ' . base64_encode('user@example.com:password123'), $call['args']['headers']['Authorization']);
+    }
+
+    /**
+     * Tests that send decrypts the stored password before sending it.
+     */
+    public function test_send_decrypts_stored_password_before_sending() {
+        $GLOBALS['wp_options']['mxroute_mailer_server'] = 'server.example.com';
+        $GLOBALS['wp_options']['mxroute_mailer_username'] = 'user@example.com';
+        $plain_password = 'secret_password';
+        $GLOBALS['wp_options']['mxroute_mailer_password'] = MXRoute_Crypto::encrypt($plain_password);
+
+        $api = new MXRoute_API();
+        $api->send('from@example.com', 'to@example.com', 'Test', 'Body');
+
+        $call = $GLOBALS['wp_function_calls']['wp_remote_post'][0];
+        $body = json_decode($call['args']['body'], true);
+
+        $this->assertEquals($plain_password, $body['password']);
+        $this->assertEquals('Basic ' . base64_encode('user@example.com:' . $plain_password), $call['args']['headers']['Authorization']);
+    }
+
+    /**
      * Tests that send handles a WP_Error response from wp_remote_post.
      */
     public function test_send_handles_remote_post_error() {

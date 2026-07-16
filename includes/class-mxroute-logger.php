@@ -61,18 +61,6 @@ class MXRoute_Logger {
 	}
 
 	/**
-	 * Drop the logging database table.
-	 *
-	 * @return void
-	 */
-	public static function drop_table() {
-		global $wpdb;
-		$table_name = $wpdb->prefix . 'mxroute_mailer_logs';
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table drop, cannot use prepare.
-		$wpdb->query( "DROP TABLE IF EXISTS $table_name" );
-	}
-
-	/**
 	 * Log an email sent via the MXRoute API.
 	 *
 	 * @param string       $from     Sender email address.
@@ -260,20 +248,4 @@ class MXRoute_Logger {
 		);
 	}
 
-	/**
-	 * Get the most recent log entries.
-	 *
-	 * @param int $count Number of logs to retrieve.
-	 * @return array Array of log objects.
-	 */
-	public function get_recent_logs( $count = 10 ) {
-		global $wpdb;
-
-		return $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Recent logs query, caching not applicable.
-			$wpdb->prepare(
-				"SELECT * FROM {$this->table_name} ORDER BY timestamp DESC LIMIT %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-				$count
-			)
-		);
-	}
 }
