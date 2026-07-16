@@ -102,7 +102,8 @@ class MXRoute_Mailer_Test extends \PHPUnit\Framework\TestCase {
     }
 
     /**
-     * Tests that intercept_wp_mail returns args array after a successful API send.
+     * Tests that intercept_wp_mail returns false after a successful API send
+     * so WordPress does not also invoke the default mailer.
      */
     public function test_intercept_wp_mail_returns_false_after_api_send() {
         $mailer = MXRoute_Mailer::instance();
@@ -115,8 +116,7 @@ class MXRoute_Mailer_Test extends \PHPUnit\Framework\TestCase {
             'message' => 'Body',
         );
         $result = $mailer->intercept_wp_mail($args);
-        $this->assertIsArray($result);
-        $this->assertArrayHasKey('to', $result);
+        $this->assertFalse($result);
     }
 
     /**
