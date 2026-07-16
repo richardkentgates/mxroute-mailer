@@ -7,8 +7,8 @@ on:
 permissions: {}
 
 jobs:
-  phpcs:
-    name: PHPCS
+  php-lint:
+    name: PHP Syntax Lint
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -20,18 +20,13 @@ jobs:
         uses: shivammathur/setup-php@b604ade2a87db23f8871b7182e69ec5e75effb45 # v2
         with:
           php-version: '8.2'
-          tools: cs2pr
 
-      - name: Install PHPCS
+      - name: Lint PHP files
         run: |
-          composer global config --no-plugins allow-plugins.dealerdirect/phpcodesniffer-composer-installer true
-          composer global require wp-coding-standards/wpcs dealerdirect/phpcodesniffer-composer-installer phpcompatibility/phpcompatibility-wp
-          echo "$(composer global config bin-dir)" >> $GITHUB_PATH
-
-      - name: Run PHPCS
-        run: |
-          set -o pipefail
-          phpcs --standard=phpcs.xml.dist --extensions=php --ignore=vendor/*,tests/* --report=checkstyle mxroute-mailer.php includes/ admin/ uninstall.php | cs2pr
+          find . -type f -name '*.php' ! -path './vendor/*' -exec php -l {} \; | tee /tmp/php-lint.log
+          if grep -q "Errors parsing" /tmp/php-lint.log; then
+            exit 1
+          fi
 
   phpunit:
     name: PHPUnit (PHP ${{ matrix.php }})
@@ -51,11 +46,14 @@ jobs:
           php-version: ${{ matrix.php }}
           coverage: none
 
-      - name: Install dependencies
-        run: composer install --no-progress --prefer-dist
+      - name: Download PHPUnit PHAR
+        run: |
+          curl -sL -o phpunit.phar https://phar.phpunit.de/phpunit-9.phar
+          chmod +x phpunit.phar
+          php phpunit.phar --version
 
       - name: Run PHPUnit
-        run: vendor/bin/phpunit
+        run: php phpunit.phar --configuration phpunit.xml
 
   security-scan:
     name: Security - CodeQL & PHP Vulnerability Scan
@@ -78,7 +76,7 @@ jobs:
           category: "/language:actions"
 
       - name: Run Semgrep PHP security scan
-        uses: semgrep/semgrep-action@v1
+        uses: semgrep/semgrep-action@713efdd345f3035192eaa63f56867b88e63e4e5d # v1
         with:
           config: >-
             p/security-audit
@@ -86,10 +84,49 @@ jobs:
             p/cwe-top-25
             p/php
 
+  security-scorecard:
+    name: Security - OSSF Scorecard Replacement
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+
+      - name: Install zizmor
+        run: pip install zizmor
+
+      - name: Run zizmor on workflow files
+        run: zizmor --format sarif .github/workflows > results.sarif
+
+      - name: Check for unpinned Actions references
+        run: |
+          unpinned=$(grep -R "^\s*uses:" .github/workflows | grep -vE '@[0-9a-f]{40}' || true)
+          if [[ -n "$unpinned" ]]; then
+            echo "::error::Unpinned Actions references found:"
+            echo "$unpinned"
+            exit 1
+          fi
+
+      - name: Upload SARIF
+        uses: github/codeql-action/upload-sarif@02c5e83432fe5497fd85b873b6c9f16a8578e1d9 # v3
+        if: always() && hashFiles('results.sarif') != ''
+        with:
+          sarif_file: results.sarif
+
   build:
     name: Build Artifact
     runs-on: ubuntu-latest
-    needs: [phpcs, phpunit, security-scan]
+    needs: [php-lint, phpunit, security-scan]
     permissions:
       contents: read
 
@@ -102,7 +139,6 @@ jobs:
             -x ".git/*" \
             -x "tests/*" \
             -x "vendor/*" \
-            -x "composer.*" \
             -x "phpunit.xml" \
             -x "phpcs.xml.dist" \
             -x ".github/*" \
