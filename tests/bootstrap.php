@@ -565,9 +565,6 @@ if (!function_exists('is_wp_error')) {
     }
 }
 
-// PHPUnit classes
-require_once dirname(__DIR__) . '/vendor/autoload.php';
-
 // Load the plugin files
 require_once $plugin_dir . '/mxroute-mailer.php';
 require_once $plugin_dir . '/includes/class-mxroute-mailer.php';
