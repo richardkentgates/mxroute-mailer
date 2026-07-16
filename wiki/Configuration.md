@@ -22,7 +22,7 @@ The username field displays your full email address (e.g., `you@example.com`) wi
 
 ### Password
 
-Your MXRoute account password. Stored encrypted in the WordPress database.
+Your MXRoute account password. It is encrypted with AES-256-GCM using your site's WordPress auth salt before being stored in the WordPress database. The password is only decrypted when the plugin sends an email.
 
 ## Test Email
 
@@ -71,11 +71,12 @@ Click **Clear All Logs** to delete all log entries. This action cannot be undone
 When any WordPress plugin or theme calls `wp_mail()`, MXRoute Mailer:
 
 1. Intercepts the email via the `pre_wp_mail` filter before WordPress invokes the default mailer
-2. Extracts the `From` header (if any) and sets it as `Reply-To`
+2. Extracts the `From` header (if any), sanitizes it, and sets it as `Reply-To`
 3. Uses your MXRoute username as the `From` address
-4. Sends the email through MXRoute's HTTP API
-5. Logs the full request and response
-6. Returns `true` to WordPress so the default mailer (sendmail/ssmtp/PHPMailer) is not also invoked
+4. Sanitizes the recipient (`To`) address before building the API request
+5. Sends the email through MXRoute's HTTP API
+6. Logs the full request and response
+7. Returns `true` to WordPress so the default mailer (sendmail/ssmtp/PHPMailer) is not also invoked
 
 If the MXRoute API call fails, the plugin returns `false` and fires the `wp_mail_failed` action. If MXRoute Mailer is not configured, the plugin returns `null` and lets WordPress fall back to the default mailer.
 

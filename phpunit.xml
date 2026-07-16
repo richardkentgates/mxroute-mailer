@@ -7,6 +7,7 @@
 >
     <testsuites>
         <testsuite name="MXRoute Mailer Tests">
+            <file>./tests/test-class-crypto.php</file>
             <file>./tests/test-class-mxroute-api.php</file>
             <file>./tests/test-class-logger.php</file>
             <file>./tests/test-class-settings.php</file>

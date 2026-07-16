@@ -135,6 +135,28 @@ class MXRoute_API_Test extends \PHPUnit\Framework\TestCase {
     }
 
     /**
+     * Tests that send sanitizes email addresses that contain newlines.
+     */
+    public function test_send_sanitizes_email_addresses() {
+        $GLOBALS['wp_options']['mxroute_mailer_server'] = 'server.example.com';
+        $GLOBALS['wp_options']['mxroute_mailer_username'] = 'user@example.com';
+        $GLOBALS['wp_options']['mxroute_mailer_password'] = 'password123';
+
+        $api = new MXRoute_API();
+        $result = $api->send(
+            "from@example.com\r\nBcc: evil@example.com",
+            "to@example.com\r\nBcc: evil@example.com",
+            'Test',
+            'Body',
+            "reply@example.com\r\nBcc: evil@example.com"
+        );
+
+        $this->assertTrue($result['success']);
+        $this->assertStringNotContainsString("\r\n", $result['request']['from']);
+        $this->assertStringNotContainsString("\r\n", $result['request']['to']);
+    }
+
+    /**
      * Tests that send handles a WP_Error response from wp_remote_post.
      */
     public function test_send_handles_remote_post_error() {

@@ -106,7 +106,12 @@ if (!function_exists('wp_parse_args')) {
 
 if (!function_exists('sanitize_email')) {
     function sanitize_email($email) {
-        return is_string($email) ? trim(strip_tags($email)) : '';
+        if (!is_string($email)) {
+            return '';
+        }
+        $email = trim(strip_tags($email));
+        $email = preg_replace('/[^a-zA-Z0-9._%+-@]/', '', $email);
+        return $email;
     }
 }
 
@@ -245,6 +250,38 @@ if (!function_exists('delete_transient')) {
     function delete_transient($name) {
         unset($GLOBALS['wp_transients'][$name]);
         return true;
+    }
+}
+
+if (!function_exists('set_site_transient')) {
+    function set_site_transient($name, $value, $expiration = 0) {
+        $GLOBALS['wp_transients'][$name] = $value;
+        return true;
+    }
+}
+
+if (!function_exists('get_site_transient')) {
+    function get_site_transient($name) {
+        return isset($GLOBALS['wp_transients'][$name]) ? $GLOBALS['wp_transients'][$name] : false;
+    }
+}
+
+if (!function_exists('delete_site_transient')) {
+    function delete_site_transient($name) {
+        unset($GLOBALS['wp_transients'][$name]);
+        return true;
+    }
+}
+
+if (!function_exists('wp_salt')) {
+    function wp_salt($scheme = 'auth') {
+        return 'mock-salt-' . $scheme . '-123456789012345678901234567890';
+    }
+}
+
+if (!function_exists('hash_equals')) {
+    function hash_equals($known_string, $user_string) {
+        return $known_string === $user_string;
     }
 }
 
@@ -454,6 +491,9 @@ if (!defined('ARRAY_N')) {
 }
 if (!defined('WP_UNINSTALL_PLUGIN')) {
     // Not defined during normal test runs
+}
+if (!defined('DAY_IN_SECONDS')) {
+    define('DAY_IN_SECONDS', 86400);
 }
 
 // Mock dbDelta

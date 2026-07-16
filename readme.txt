@@ -4,7 +4,7 @@ Tags: email, smtp, mxroute, mail
 Requires at least: 5.0
 Tested up to: 6.7
 Requires PHP: 7.3
-Stable tag: 1.2.17
+Stable tag: 1.2.19
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -83,6 +83,12 @@ The plugin fires a `wp_mail_failed` action so other plugins can handle the failu
 3. Individual log detail view with API request and response data
 
 == Changelog ==
+
+= 1.2.19 =
+* Security: encrypt the stored MXRoute password with AES-256-GCM
+* Security: sanitize From, To, and Reply-To email addresses before sending to the MXRoute API
+* Security: verify release zip checksums during automatic updates
+* Update documentation to reflect security improvements
 
 = 1.2.17 =
 * Update help tabs with documentation links and duplicate-send guidance

@@ -101,7 +101,7 @@ class MXRoute_Mailer {
 
 		$server   = get_option( 'mxroute_mailer_server', '' );
 		$username = get_option( 'mxroute_mailer_username', '' );
-		$password = get_option( 'mxroute_mailer_password', '' );
+		$password = MXRoute_Crypto::get_password();
 
 		if ( empty( $server ) || empty( $username ) || empty( $password ) ) {
 			return $pre;
@@ -184,10 +184,10 @@ class MXRoute_Mailer {
 			foreach ( $lines as $line ) {
 				if ( 0 === stripos( $line, 'From:' ) ) {
 					$from = trim( substr( $line, 5 ) );
-					if ( preg_match( '/<(.+?)>/', $from, $matches ) ) {
-						return $matches[1];
-					}
-					return $from;
+				if ( preg_match( '/<(.+?)>/', $from, $matches ) ) {
+					return sanitize_email( $matches[1] );
+				}
+				return sanitize_email( $from );
 				}
 			}
 		}
@@ -196,15 +196,15 @@ class MXRoute_Mailer {
 			foreach ( $headers as $header ) {
 				if ( is_string( $header ) && 0 === stripos( $header, 'From:' ) ) {
 					$from = trim( substr( $header, 5 ) );
-					if ( preg_match( '/<(.+?)>/', $from, $matches ) ) {
-						return $matches[1];
-					}
-					return $from;
+				if ( preg_match( '/<(.+?)>/', $from, $matches ) ) {
+					return sanitize_email( $matches[1] );
+				}
+				return sanitize_email( $from );
 				}
 			}
 		}
 
-		return $default_from;
+		return sanitize_email( $default_from );
 	}
 
 	/**

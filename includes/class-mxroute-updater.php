@@ -58,6 +58,7 @@ class MXRoute_Updater {
 		add_filter( 'pre_set_site_transient_update_plugins', array( $this, 'check_update' ) );
 		add_filter( 'plugins_api', array( $this, 'plugins_api' ), 10, 3 );
 		add_filter( 'upgrader_source_selection', array( $this, 'fix_zip_folder' ), 10, 4 );
+		add_filter( 'http_response', array( $this, 'verify_download_response' ), 10, 3 );
 	}
 
 	/**
@@ -126,6 +127,10 @@ class MXRoute_Updater {
 		if ( ! $zip_url ) {
 			$zip_url = 'https://github.com/' . $this->repo . '/archive/refs/tags/' . $release['tag_name'] . '.zip';
 		}
+
+		$expected_hash = $this->get_expected_hash( $release );
+		set_site_transient( 'mxroute_mailer_package_url', $zip_url, DAY_IN_SECONDS );
+		set_site_transient( 'mxroute_mailer_package_hash', $expected_hash, DAY_IN_SECONDS );
 
 		$plugin_data = get_plugin_data( $this->file, false, false );
 
@@ -202,6 +207,101 @@ class MXRoute_Updater {
 		}
 
 		return 'https://github.com/' . $this->repo . '/archive/refs/tags/' . $release['tag_name'] . '.zip';
+	}
+
+	/**
+	 * Get the expected SHA-256 hash for a release zip.
+	 *
+	 * Looks for a release asset named like `mxroute-mailer-vX.Y.Z.zip.sha256`
+	 * and returns the hex hash string. Returns false if no checksum asset is
+	 * found, allowing updates to continue for older releases.
+	 *
+	 * @param array $release GitHub release data.
+	 * @return string|false Expected hash or false.
+	 */
+	private function get_expected_hash( $release ) {
+		if ( empty( $release['assets'] ) ) {
+			return false;
+		}
+
+		$hash_url = null;
+		foreach ( $release['assets'] as $asset ) {
+			if ( ! empty( $asset['name'] ) && false !== strpos( $asset['name'], '.zip.sha256' ) ) {
+				$hash_url = $asset['browser_download_url'];
+				break;
+			}
+		}
+
+		if ( ! $hash_url ) {
+			return false;
+		}
+
+		$response = wp_remote_get(
+			$hash_url,
+			array(
+				'timeout' => 15,
+				'headers' => array(
+					'Accept' => 'text/plain',
+				),
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			return false;
+		}
+
+		$code = wp_remote_retrieve_response_code( $response );
+		if ( 200 !== $code ) {
+			return false;
+		}
+
+		$body = trim( wp_remote_retrieve_body( $response ) );
+		if ( preg_match( '/^([a-f0-9]{64})\b/i', $body, $matches ) ) {
+			return strtolower( $matches[1] );
+		}
+
+		return false;
+	}
+
+	/**
+	 * Verify the downloaded update package against the expected SHA-256 hash.
+	 *
+	 * Hooked to http_response so the check runs as WordPress downloads the zip.
+	 *
+	 * @param array|WP_Error $response HTTP response.
+	 * @param array          $args     HTTP request arguments.
+	 * @param string         $url      Request URL.
+	 * @return array|WP_Error Response or error.
+	 */
+	public function verify_download_response( $response, $args, $url ) {
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+
+		$package_url = get_site_transient( 'mxroute_mailer_package_url' );
+		if ( empty( $package_url ) || $url !== $package_url ) {
+			return $response;
+		}
+
+		$expected_hash = get_site_transient( 'mxroute_mailer_package_hash' );
+		if ( false === $expected_hash || '' === $expected_hash ) {
+			return $response;
+		}
+
+		$body = wp_remote_retrieve_body( $response );
+		if ( '' === $body ) {
+			return $response;
+		}
+
+		$actual_hash = hash( 'sha256', $body );
+		if ( hash_equals( $expected_hash, $actual_hash ) ) {
+			return $response;
+		}
+
+		return new WP_Error(
+			'mxroute_checksum_mismatch',
+			__( 'MXRoute Mailer update package checksum verification failed.', 'mxroute-mailer' )
+		);
 	}
 
 	/**

@@ -46,7 +46,7 @@ class MXRoute_API {
 	public function send( $from, $to, $subject, $body, $reply_to = '' ) {
 		$server   = get_option( 'mxroute_mailer_server', '' );
 		$username = get_option( 'mxroute_mailer_username', '' );
-		$password = get_option( 'mxroute_mailer_password', '' );
+		$password = MXRoute_Crypto::get_password();
 
 		if ( empty( $server ) || empty( $username ) || empty( $password ) ) {
 			return array(
@@ -63,8 +63,13 @@ class MXRoute_API {
 		}
 
 		if ( preg_match( '/<(.+?)>/', $to_single, $matches ) ) {
-			$to_single = $matches[1];
+			$to_single = sanitize_email( $matches[1] );
+		} else {
+			$to_single = sanitize_email( $to_single );
 		}
+
+		$from     = sanitize_email( $from );
+		$reply_to = sanitize_email( $reply_to );
 
 		$payload = array(
 			'server'   => $server,
