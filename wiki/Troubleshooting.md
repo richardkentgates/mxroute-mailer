@@ -84,11 +84,11 @@ The test email form shows the full API response. Look for:
 
 ```bash
 # Fix ownership
-sudo chown -R www-data:www-data /srv/www/wordpress/wp-content/plugins/mxroute-mailer/
+sudo chown -R www-data:www-data /path/to/wp-content/plugins/mxroute-mailer/
 
 # Or use git with sudo
-sudo git -C /srv/www/wordpress/wp-content/plugins/mxroute-mailer fetch --all
-sudo git -C /srv/www/wordpress/wp-content/plugins/mxroute-mailer checkout v1.2.4
+sudo git -C /path/to/wp-content/plugins/mxroute-mailer fetch --all
+sudo git -C /path/to/wp-content/plugins/mxroute-mailer checkout v1.2.4
 ```
 
 ### Database Migration Not Running
@@ -143,6 +143,34 @@ define( 'WP_DEBUG_DISPLAY', false );
 ```
 
 Check `/wp-content/debug.log` for errors.
+
+### Enable Plugin Debug Logging
+
+To log MXRoute API requests and responses (without passwords), add to `wp-config.php`:
+
+```php
+define( 'MXROUTE_MAILER_DEBUG', true );
+```
+
+This writes API send attempts and responses to the WordPress debug log. **Never leave this enabled in production** — it adds I/O overhead on every email send.
+
+### Verify Password Decryption
+
+If emails suddenly fail after a plugin update, the stored password may not be decrypting correctly. Test decryption by adding a temporary script in the WordPress root:
+
+```php
+<?php
+require_once 'wp-load.php';
+$pw = get_option( 'mxroute_mailer_password', '' );
+$dec = MXRoute_Crypto::decrypt( $pw );
+echo 'Decrypted: ' . ( $dec !== $pw ? 'YES' : 'NO (raw value returned)' ) . "\n";
+echo 'Length: ' . strlen( $dec ) . "\n";
+```
+
+**Key indicators:**
+- If decryption fails (returns raw value), the password is stored as plaintext or the encryption key changed
+- If the decrypted password looks like a URL or garbage, the wrong value was saved
+- If decryption succeeds but MXRoute rejects it, verify the password against your MXRoute dashboard
 
 ### Check MXRoute API Directly
 

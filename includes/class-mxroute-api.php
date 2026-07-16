@@ -95,6 +95,10 @@ class MXRoute_API {
 
 		$auth_header = 'Basic ' . base64_encode( $username . ':' . $password ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
 
+		if ( defined( 'MXROUTE_MAILER_DEBUG' ) && MXROUTE_MAILER_DEBUG ) {
+			error_log( 'MXRoute API Send: server=' . $server . ' username=' . $username . ' from=' . $payload['from'] . ' to=' . $payload['to'] );
+		}
+
 		$response = wp_remote_post(
 			$this->endpoint,
 			array(
@@ -109,6 +113,9 @@ class MXRoute_API {
 		);
 
 		if ( is_wp_error( $response ) ) {
+			if ( defined( 'MXROUTE_MAILER_DEBUG' ) && MXROUTE_MAILER_DEBUG ) {
+				error_log( 'MXRoute API Error: ' . $response->get_error_message() );
+			}
 			return array(
 				'success'  => false,
 				'message'  => __( 'HTTP request failed.', 'mxroute-mailer' ),
@@ -120,6 +127,10 @@ class MXRoute_API {
 		$raw_response = wp_remote_retrieve_body( $response );
 		$http_code    = wp_remote_retrieve_response_code( $response );
 		$json_data    = json_decode( $raw_response, true );
+
+		if ( defined( 'MXROUTE_MAILER_DEBUG' ) && MXROUTE_MAILER_DEBUG ) {
+			error_log( 'MXRoute API Response: http_code=' . $http_code . ' body=' . $raw_response );
+		}
 
 		if ( json_last_error() !== JSON_ERROR_NONE ) {
 			return array(

@@ -213,6 +213,7 @@ All code follows the [WordPress Coding Standards](https://developer.wordpress.or
 - Use `$wpdb->prepare()` for all database queries
 - Use nonces for form submissions
 - Never log or expose credentials
+- Gate debug logging behind `MXROUTE_MAILER_DEBUG` constant — never log passwords or sensitive data
 
 ### Docblocks
 

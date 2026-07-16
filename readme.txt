@@ -2,7 +2,7 @@
 Contributors: richardkentgates
 Tags: email, smtp, mxroute, mail
 Requires at least: 5.0
-Tested up to: 6.7
+Tested up to: 7.0
 Requires PHP: 7.3
 Stable tag: 1.2.20
 License: GPLv2 or later
@@ -83,6 +83,16 @@ The plugin fires a `wp_mail_failed` action so other plugins can handle the failu
 3. Individual log detail view with API request and response data
 
 == Changelog ==
+
+= 1.2.21 =
+* Fix: remove dead `drop_table()` and `get_recent_logs()` methods from logger
+* Fix: remove obsolete v1.2.17 regression test
+* Fix: remove duplicate `get_option` call in `intercept_wp_mail`
+* Fix: add `mxroute_mailer_db_version` to uninstall cleanup
+* Security: remove password-leaking `error_log()` calls from API client
+* Security: gate debug logging behind `MXROUTE_MAILER_DEBUG` constant
+* Cleanup: remove unused test mocks and redundant activation hook require
+* Update documentation with debugging guidance
 
 = 1.2.20 =
 * Fix: prevent the password-encryption filter from double-encrypting an already encrypted password

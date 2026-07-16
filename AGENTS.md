@@ -41,6 +41,20 @@ mxroute-mailer/
 - **Release zips must contain a single top-level `mxroute-mailer/` folder.** A flat zip causes WordPress to install into a versioned folder and deactivate the plugin.
 - **WordPress Coding Standards.** Tabs, Yoda conditions, snake_case functions/variables, PascalCase classes, full docblocks.
 - **Security first.** Sanitize input, escape output, use nonces, use `$wpdb->prepare()`, never log credentials.
+- **Debug logging uses `MXROUTE_MAILER_DEBUG` constant.** Never log passwords or sensitive data. Gate all debug output behind `defined( 'MXROUTE_MAILER_DEBUG' ) && MXROUTE_MAILER_DEBUG`.
+
+## Testing Site
+
+The project has a live testing environment for integration testing. It has:
+
+- **WP_DEBUG_LOG** enabled (logs to `/wp-content/debug.log`)
+- **Query Monitor** plugin installed for live debugging
+- **WP-CLI** available via `php8.2 /usr/local/bin/wp`
+
+To enable API debug logging on the test site, add to `wp-config.php`:
+```php
+define( 'MXROUTE_MAILER_DEBUG', true );
+```
 
 ## Branch and Release Workflow
 

@@ -109,6 +109,29 @@ class MXRoute_Mailer_Test extends \PHPUnit\Framework\TestCase {
     }
 
     /**
+     * Tests that intercept_wp_mail decrypts the stored password before sending.
+     */
+    public function test_intercept_decrypts_password_before_sending() {
+        $plain_password = 'intercept_secret';
+        $mailer = MXRoute_Mailer::instance();
+        $GLOBALS['wp_options']['mxroute_mailer_server'] = 'server.example.com';
+        $GLOBALS['wp_options']['mxroute_mailer_username'] = 'from@example.com';
+        $GLOBALS['wp_options']['mxroute_mailer_password'] = MXRoute_Crypto::encrypt($plain_password);
+
+        $mailer->intercept_wp_mail(array(
+            'to' => 'to@example.com',
+            'subject' => 'Test',
+            'message' => 'Body',
+        ));
+
+        $call = array_pop($GLOBALS['wp_function_calls']['wp_remote_post']);
+        $body = json_decode($call['args']['body'], true);
+
+        $this->assertEquals($plain_password, $body['password']);
+        $this->assertEquals('Basic ' . base64_encode('from@example.com:' . $plain_password), $call['args']['headers']['Authorization']);
+    }
+
+    /**
      * Tests that wp_mail_failed action is fired with WP_Error when API call fails.
      */
     public function test_intercept_wp_mail_fires_wp_mail_failed_on_api_failure() {

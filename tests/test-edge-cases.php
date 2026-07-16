@@ -746,14 +746,12 @@ class MXRoute_Settings_Edge_Test extends \PHPUnit\Framework\TestCase {
 	}
 
 	/**
-	 * Tests that sanitize_password preserves the existing password when empty is submitted.
+	 * Tests that sanitize_password returns empty when empty is submitted.
 	 */
-	public function test_sanitize_password_preserves_existing_on_empty() {
-		$GLOBALS['wp_options']['mxroute_mailer_password'] = 'existing_pass';
-
+	public function test_sanitize_password_returns_empty_when_empty() {
 		$settings = new MXRoute_Settings();
 		$result   = $settings->sanitize_password( '' );
-		$this->assertEquals( 'existing_pass', $result );
+		$this->assertEquals( '', $result );
 	}
 
 	/**

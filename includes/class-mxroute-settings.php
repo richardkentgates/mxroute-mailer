@@ -23,7 +23,7 @@ class MXRoute_Settings {
 		add_action( 'load-settings_page_mxroute-mailer', array( $this, 'add_settings_help_tabs' ) );
 		add_action( 'load-tools_page_mxroute-logs', array( $this, 'add_logs_help_tabs' ) );
 		add_action( 'load-tools_page_mxroute-log-view', array( $this, 'add_log_view_help_tabs' ) );
-		add_filter( 'pre_update_option_mxroute_mailer_password', array( $this, 'encrypt_password_on_update' ), 10, 3 );
+
 	}
 
 	/**
@@ -116,44 +116,14 @@ class MXRoute_Settings {
 	/**
 	 * Sanitize password value, preserving existing when empty.
 	 *
-	 * When the password field is left blank on save, the stored password is
-	 * returned unchanged so the user does not accidentally clear it.
-	 *
 	 * @param string $value Password value.
 	 * @return string Sanitized password.
 	 */
 	public function sanitize_password( $value ) {
 		$value = sanitize_text_field( $value );
-		if ( empty( $value ) ) {
+		if ( '' === $value ) {
 			return get_option( 'mxroute_mailer_password', '' );
 		}
-		return $value;
-	}
-
-	/**
-	 * Encrypt the password before it is saved to the database.
-	 *
-	 * This runs on the pre_update_option filter. Empty values keep the old
-	 * password (the user left the field blank). Identical values are not
-	 * re-encrypted.
-	 *
-	 * @param string $value     New option value.
-	 * @param string $old_value Previous option value.
-	 * @param string $option    Option name.
-	 * @return string Encrypted value, old value, or input value.
-	 */
-	public function encrypt_password_on_update( $value, $old_value, $option ) {
-		if ( '' === $value ) {
-			return $old_value;
-		}
-		if ( $value === $old_value ) {
-			return $value;
-		}
-		// Avoid double-encrypting a value that is already encrypted.
-		if ( MXRoute_Crypto::decrypt( $value ) !== $value ) {
-			return $value;
-		}
-		update_option( 'mxroute_mailer_password_encrypted', 1 );
 		return MXRoute_Crypto::encrypt( $value );
 	}
 

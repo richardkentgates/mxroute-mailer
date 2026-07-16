@@ -24,3 +24,4 @@ delete_option( 'mxroute_mailer_username' );
 delete_option( 'mxroute_mailer_password' );
 delete_option( 'mxroute_mailer_logging_enabled' );
 delete_option( 'mxroute_mailer_keep_data' );
+delete_option( 'mxroute_mailer_db_version' );
