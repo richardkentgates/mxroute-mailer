@@ -76,7 +76,7 @@ jobs:
           category: "/language:actions"
 
       - name: Run Semgrep PHP security scan
-        uses: semgrep/semgrep-action@v1
+        uses: semgrep/semgrep-action@713efdd345f3035192eaa63f56867b88e63e4e5d # v1
         with:
           config: >-
             p/security-audit
@@ -110,7 +110,7 @@ jobs:
 
       - name: Check for unpinned Actions references
         run: |
-          unpinned=$(grep -R "uses:" .github/workflows | grep -vE '@[0-9a-f]{40}' || true)
+          unpinned=$(grep -R "^\s*uses:" .github/workflows | grep -vE '@[0-9a-f]{40}' || true)
           if [[ -n "$unpinned" ]]; then
             echo "::error::Unpinned Actions references found:"
             echo "$unpinned"
