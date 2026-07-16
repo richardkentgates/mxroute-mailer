@@ -46,6 +46,7 @@ function mxroute_mailer() {
 	return MXRoute_Mailer::instance();
 }
 
+require_once MXROUTE_MAILER_PLUGIN_DIR . 'includes/class-mxroute-crypto.php';
 require_once MXROUTE_MAILER_PLUGIN_DIR . 'includes/class-mxroute-mailer.php';
 require_once MXROUTE_MAILER_PLUGIN_DIR . 'includes/class-mxroute-updater.php';
 
@@ -70,6 +71,16 @@ function mxroute_mailer_db_upgrade() {
 		if ( ! $column_exists ) {
 			$wpdb->query( "ALTER TABLE `$table_name` ADD COLUMN `reply_to` varchar(255) NOT NULL DEFAULT '' AFTER `from_email`" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Schema upgrade.
 		}
+
+		// Encrypt any existing plaintext password once.
+		if ( ! get_option( 'mxroute_mailer_password_encrypted' ) ) {
+			$password = get_option( 'mxroute_mailer_password', '' );
+			if ( '' !== $password ) {
+				update_option( 'mxroute_mailer_password', MXRoute_Crypto::encrypt( $password ) );
+			}
+			update_option( 'mxroute_mailer_password_encrypted', 1 );
+		}
+
 		update_option( 'mxroute_mailer_db_version', MXROUTE_MAILER_VERSION );
 	}
 }

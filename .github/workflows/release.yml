@@ -37,10 +37,17 @@ jobs:
           cd /tmp
           rm -rf /tmp/build
 
+      - name: Generate checksum
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          sha256sum "mxroute-mailer-${{ github.ref_name }}.zip" > "mxroute-mailer-${{ github.ref_name }}.zip.sha256"
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
-          files: mxroute-mailer-${{ github.ref_name }}.zip
+          files: |
+            mxroute-mailer-${{ github.ref_name }}.zip
+            mxroute-mailer-${{ github.ref_name }}.zip.sha256
           generate_release_notes: true
           draft: false
           prerelease: false
