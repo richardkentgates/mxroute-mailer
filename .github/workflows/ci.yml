@@ -89,6 +89,9 @@ jobs:
   scorecard:
     name: Security - Scorecard Audit
     runs-on: ubuntu-latest
+    # OSSF Scorecard only supports the default branch, but we still want it
+    # to execute on dev pushes without blocking promotion/release.
+    continue-on-error: true
     permissions:
       contents: read
       security-events: write
