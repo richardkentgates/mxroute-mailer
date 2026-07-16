@@ -67,8 +67,11 @@ class MXRoute_Mailer {
 	/**
 	 * Intercept wp_mail to route through MXRoute API.
 	 *
+	 * Returning false prevents WordPress from also sending through the
+	 * server mailer (e.g. sendmail/ssmtp) after the API send.
+	 *
 	 * @param array $args wp_mail arguments.
-	 * @return array|false Array of args on skip, false on send.
+	 * @return array|false Array of args to let default mailer run, false to stop it.
 	 */
 	public function intercept_wp_mail( $args ) {
 		$defaults = array(
@@ -145,7 +148,7 @@ class MXRoute_Mailer {
 			do_action( 'wp_mail_failed', $error );
 		}
 
-		return $args;
+		return false;
 	}
 
 	/**
