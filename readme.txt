@@ -4,7 +4,7 @@ Tags: email, smtp, mxroute, mail
 Requires at least: 5.0
 Tested up to: 6.7
 Requires PHP: 7.3
-Stable tag: 1.2.14
+Stable tag: 1.2.16
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -83,6 +83,10 @@ The plugin fires a `wp_mail_failed` action so other plugins can handle the failu
 3. Individual log detail view with API request and response data
 
 == Changelog ==
+
+= 1.2.16 =
+* Fix duplicate sends by using the `pre_wp_mail` filter to short-circuit WordPress's default mailer
+* Return `true` after a successful MXRoute API send and `false` after a failure
 
 = 1.2.14 =
 * Fix release zip build to avoid workspace self-copy failure
@@ -168,6 +172,9 @@ The plugin fires a `wp_mail_failed` action so other plugins can handle the failu
 * Initial release
 
 == Upgrade Notice ==
+
+= 1.2.16 =
+Fixes duplicate email sends. WordPress will no longer also send through the server mailer when MXRoute Mailer is configured.
 
 = 1.2.14 =
 Release packaging fix. WordPress now installs updates into the correct `mxroute-mailer/` folder.
