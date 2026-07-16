@@ -106,7 +106,7 @@ jobs:
         run: pip install zizmor
 
       - name: Run zizmor on workflow files
-        run: zizmor --format sarif --output results.sarif .github/workflows
+        run: zizmor --format sarif .github/workflows > results.sarif
 
       - name: Check for unpinned Actions references
         run: |
