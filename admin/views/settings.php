@@ -139,6 +139,22 @@ defined( 'ABSPATH' ) || exit;
 					<textarea id="mxroute_test_body" name="mxroute_test_body" rows="4" class="large-text"><?php echo esc_textarea( __( 'This is a test email from MXRoute Mailer.', 'mxroute-mailer' ) ); ?></textarea>
 				</td>
 			</tr>
+			<tr>
+				<th scope="row"><?php esc_html_e( 'Options', 'mxroute-mailer' ); ?></th>
+				<td>
+					<fieldset>
+						<label for="mxroute_test_queue">
+							<input type="checkbox" id="mxroute_test_queue" name="mxroute_test_queue" value="1" />
+							<?php esc_html_e( 'Send through queue', 'mxroute-mailer' ); ?>
+						</label>
+						<br />
+						<label for="mxroute_test_attachment">
+							<input type="checkbox" id="mxroute_test_attachment" name="mxroute_test_attachment" value="1" />
+							<?php esc_html_e( 'Include test attachment', 'mxroute-mailer' ); ?>
+						</label>
+					</fieldset>
+				</td>
+			</tr>
 		</table>
 		<?php submit_button( __( 'Send Test Email', 'mxroute-mailer' ) ); ?>
 	</form>

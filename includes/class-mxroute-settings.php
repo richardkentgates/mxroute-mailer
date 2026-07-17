@@ -329,7 +329,12 @@ class MXRoute_Settings {
 				'id'      => 'mxroute-test-email',
 				'title'   => __( 'Test Email', 'mxroute-mailer' ),
 				'content' => '<p>' . esc_html__( 'Use the test form at the bottom of this page to send a test email. Enter a recipient address, then click "Send Test Email". The sender address is automatically taken from your configured username.', 'mxroute-mailer' ) . '</p>'
-					. '<p>' . esc_html__( 'If the test succeeds, you\'ll see a green notice. If it fails, you\'ll see a red notice with the error details.', 'mxroute-mailer' ) . '</p>',
+					. '<p>' . esc_html__( 'If the test succeeds, you\'ll see a green notice. If it fails, you\'ll see a red notice with the error details.', 'mxroute-mailer' ) . '</p>'
+					. '<p><strong>' . esc_html__( 'Options:', 'mxroute-mailer' ) . '</strong></p>'
+					. '<ul>'
+					. '<li>' . esc_html__( 'Send through queue — adds the test email to the background queue instead of sending immediately. Useful for verifying queue processing.', 'mxroute-mailer' ) . '</li>'
+					. '<li>' . esc_html__( 'Include test attachment — attaches a small text file to verify attachment handling works correctly.', 'mxroute-mailer' ) . '</li>'
+					. '</ul>',
 			)
 		);
 
