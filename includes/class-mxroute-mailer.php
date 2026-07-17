@@ -282,7 +282,10 @@ class MXRoute_Mailer {
 	/**
 	 * Handle test email submission.
 	 *
-	 * Test emails bypass the queue and send synchronously for instant feedback.
+	 * By default test emails bypass the queue and send synchronously for instant
+	 * feedback.  Checking "Send through queue" adds the email to the queue and
+	 * schedules the cron processor instead.  Checking "Include test attachment"
+	 * attaches a small text file to the email.
 	 *
 	 * @return void
 	 */
@@ -325,8 +328,38 @@ class MXRoute_Mailer {
 			return;
 		}
 
-		$api    = new MXRoute_API();
-		$result = $api->send( $from, $to, $subject, $body );
+		$use_queue    = ! empty( $_POST['mxroute_test_queue'] );
+		$use_attach   = ! empty( $_POST['mxroute_test_attachment'] );
+		$attachments  = array();
+
+		if ( $use_attach ) {
+			$tmp = wp_tempnam( 'mxroute-test-attach-' );
+			if ( $tmp ) {
+				file_put_contents( $tmp, "MXRoute Mailer test attachment.\nTimestamp: " . gmdate( 'Y-m-d H:i:s' ) . "\n" ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+				$attachments[] = $tmp;
+			}
+		}
+
+		if ( $use_queue ) {
+			$queue    = new MXRoute_Queue();
+			$inserted = $queue->add( $from, $to, $subject, $body, '', $attachments );
+
+			if ( ! wp_next_scheduled( 'mxroute_mailer_process_queue' ) ) {
+				wp_schedule_single_event( time(), 'mxroute_mailer_process_queue' );
+			}
+
+			$result = array(
+				'success'  => (bool) $inserted,
+				'message'  => $inserted
+					? __( 'Test email added to the queue. It will be sent on the next cron run.', 'mxroute-mailer' )
+					: __( 'Failed to add test email to the queue.', 'mxroute-mailer' ),
+				'request'  => '',
+				'response' => '',
+			);
+		} else {
+			$api    = new MXRoute_API();
+			$result = $api->send( $from, $to, $subject, $body, '', $attachments );
+		}
 
 		$logger = new MXRoute_Logger();
 		$logger->log(

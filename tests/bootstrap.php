@@ -509,6 +509,14 @@ if (!function_exists('get_attached_file')) {
     }
 }
 
+if (!function_exists('wp_tempnam')) {
+    function wp_tempnam($prefix = '') {
+        $path = tempnam(sys_get_temp_dir(), $prefix);
+        $GLOBALS['wp_function_calls']['wp_tempnam'][] = compact('prefix', 'path');
+        return $path;
+    }
+}
+
 // Define constants
 if (!defined('ABSPATH')) {
     define('ABSPATH', '/tmp/wordpress/');
