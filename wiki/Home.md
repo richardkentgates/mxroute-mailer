@@ -18,6 +18,9 @@ If your hosting provider blocks SMTP ports, standard WordPress email and SMTP pl
 ## Features
 
 - **Automatic email routing** - Intercepts `wp_mail()` and sends through MXRoute API
+- **Email queue** - Background processing via WP-Cron with configurable batch size
+- **File attachments** - Full attachment support for all email types
+- **Re-queue feature** - Resend any failed or sent email directly from logs
 - **Email logging** - Full logs with search, filtering, and pagination
 - **Reply-To support** - Preserves form sender addresses as Reply-To headers
 - **Test email** - Verify your configuration with a single click

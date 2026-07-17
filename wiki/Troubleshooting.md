@@ -60,8 +60,20 @@ The test email form shows the full API response. Look for:
 
 1. **Check if logging is enabled** - Go to Settings > MXRoute Mailer and verify logging is on
 2. **Send a test email** - This creates a log entry
-3. **Check database table** - The table `{prefix}_mxroute_mailer_logs` must exist
-4. **Reactivate the plugin** - This recreates the table if it was dropped
+3. **Check the queue** - Pending emails appear under Tools > MXRoute Queue, not in logs
+4. **Check database table** - The table `{prefix}_mxroute_mailer_logs` must exist
+5. **Reactivate the plugin** - This recreates the table if it was dropped
+
+### Emails Stuck in Queue
+
+**Symptoms**: Emails appear on the Queue page but are never sent.
+
+**Causes and Fixes**:
+
+1. **WP-Cron not running** - Ensure WP-Cron is triggered by an external uptime monitor or page visits
+2. **MXRoute credentials wrong** - Check Settings > MXRoute Mailer for correct server, username, password
+3. **Batch size too small** - Increase batch size under Settings > MXRoute Mailer
+4. **Re-queue failed emails** - Go to Tools > MXRoute Logs, filter by Failed status, and re-queue
 
 ### Plugin Causes White Screen
 

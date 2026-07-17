@@ -18,6 +18,11 @@
     color: #721c24;
 }
 
+.mxroute-pending {
+    background: #fff3cd;
+    color: #856404;
+}
+
 .mxroute-filters-form {
     margin: 16px 0;
 }

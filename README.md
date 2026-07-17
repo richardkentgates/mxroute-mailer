@@ -9,6 +9,9 @@ MXRoute Mailer is a WordPress plugin that intercepts all emails sent via `wp_mai
 ## Features
 
 - Automatic email routing through MXRoute's HTTP API
+- Email queue with background processing via WP-Cron
+- File attachment support
+- Re-queue feature for failed or sent emails
 - Email logging with search, filtering, and pagination
 - Reply-To header support for contact forms
 - Built-in test email tool

@@ -29,11 +29,12 @@ class MXRoute_API {
 	/**
 	 * Send an email via the MXRoute API using saved settings.
 	 *
-	 * @param string       $from     Sender email address.
-	 * @param string|array $to       Recipient email address(es).
-	 * @param string       $subject  Email subject.
-	 * @param string       $body     Email body.
-	 * @param string       $reply_to Optional Reply-To email address.
+	 * @param string       $from        Sender email address.
+	 * @param string|array $to          Recipient email address(es).
+	 * @param string       $subject     Email subject.
+	 * @param string       $body        Email body.
+	 * @param string       $reply_to    Optional Reply-To email address.
+	 * @param array        $attachments Optional array of file paths.
 	 * @return array {
 	 *     Response data.
 	 *
@@ -43,7 +44,7 @@ class MXRoute_API {
 	 *     @type array  $response Raw API response.
 	 * }
 	 */
-	public function send( $from, $to, $subject, $body, $reply_to = '' ) {
+	public function send( $from, $to, $subject, $body, $reply_to = '', $attachments = array() ) {
 		$server   = get_option( 'mxroute_mailer_server', '' );
 		$username = get_option( 'mxroute_mailer_username', '' );
 		$password = MXRoute_Crypto::get_password();
@@ -83,6 +84,13 @@ class MXRoute_API {
 
 		if ( ! empty( $reply_to ) ) {
 			$payload['headers'] = 'Reply-To: ' . substr( $reply_to, 0, self::$max_field_length );
+		}
+
+		if ( ! empty( $attachments ) ) {
+			$encoded = $this->encode_attachments( $attachments );
+			if ( ! empty( $encoded ) ) {
+				$payload['attachments'] = $encoded;
+			}
 		}
 
 		$request = array(
@@ -132,7 +140,7 @@ class MXRoute_API {
 			error_log( 'MXRoute API Response: http_code=' . $http_code . ' body=' . $raw_response );
 		}
 
-		if ( json_last_error() !== JSON_ERROR_NONE ) {
+		if ( JSON_ERROR_NONE !== json_last_error() ) {
 			return array(
 				'success'  => false,
 				'message'  => __( 'Invalid JSON response from API.', 'mxroute-mailer' ),
@@ -150,5 +158,36 @@ class MXRoute_API {
 			'request'  => $request,
 			'response' => $json_data,
 		);
+	}
+
+	/**
+	 * Encode file attachments for the API payload.
+	 *
+	 * @param array $attachments Array of file paths.
+	 * @return array Array of encoded attachment arrays.
+	 */
+	private function encode_attachments( $attachments ) {
+		$encoded = array();
+
+		foreach ( $attachments as $file_path ) {
+			if ( ! is_string( $file_path ) || ! file_exists( $file_path ) || ! is_readable( $file_path ) ) {
+				if ( defined( 'MXROUTE_MAILER_DEBUG' ) && MXROUTE_MAILER_DEBUG ) {
+					error_log( 'MXRoute API Attachment: skipping unreadable or missing file ' . $file_path );
+				}
+				continue;
+			}
+
+			$content = file_get_contents( $file_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+			if ( false === $content ) {
+				continue;
+			}
+
+			$encoded[] = array(
+				'filename' => basename( $file_path ),
+				'content'  => base64_encode( $content ), // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
+			);
+		}
+
+		return $encoded;
 	}
 }

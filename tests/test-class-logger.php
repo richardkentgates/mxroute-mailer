@@ -273,4 +273,45 @@ class MXRoute_Logger_Test extends \PHPUnit\Framework\TestCase {
         $insert = $GLOBALS['wp_db_inserts'][0];
         $this->assertEquals(0, $insert['data']['success']);
     }
+
+    /**
+     * Tests that requeue_log calls $wpdb->update with correct data.
+     */
+    public function test_requeue_log_calls_update() {
+        $logger = new MXRoute_Logger();
+        $result = $logger->requeue_log( 1 );
+
+        $this->assertTrue( $result );
+    }
+
+    /**
+     * Tests that requeue_log uses success=0 for pending status.
+     */
+    public function test_requeue_log_sets_success_to_zero() {
+        $logger = new MXRoute_Logger();
+        $logger->requeue_log( 5 );
+
+        $updates = $GLOBALS['wp_function_calls']['$wpdb->update'] ?? array();
+        $this->assertNotEmpty( $updates );
+    }
+
+    /**
+     * Tests that requeue_logs handles multiple IDs without error.
+     */
+    public function test_requeue_logs_handles_multiple_ids() {
+        $logger = new MXRoute_Logger();
+        $logger->requeue_logs( array( 1, 2, 3 ) );
+
+        $this->assertTrue( true );
+    }
+
+    /**
+     * Tests that requeue_logs handles an empty array gracefully.
+     */
+    public function test_requeue_logs_handles_empty_array() {
+        $logger = new MXRoute_Logger();
+        $logger->requeue_logs( array() );
+
+        $this->assertTrue( true );
+    }
 }

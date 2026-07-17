@@ -46,7 +46,7 @@ class MXRoute_Crypto {
 	private static function get_key() {
 		$salt = function_exists( 'wp_salt' ) ? wp_salt( 'auth' ) : '';
 		if ( strlen( $salt ) < 32 ) {
-			$salt = str_pad( $salt, 32, '\0' );
+			$salt = str_pad( $salt, 32, "\0" );
 		}
 		return substr( $salt, 0, 32 );
 	}
