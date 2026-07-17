@@ -138,8 +138,14 @@ class MXRoute_Logger {
 	public function get_logs( $per_page = 20, $page = 1, $filters = array() ) {
 		global $wpdb;
 
-		$where  = 'success != 0';
 		$values = array();
+
+		// Exclude pending queue entries unless explicitly filtering for them.
+		if ( ! empty( $filters['success'] ) && '0' === (string) $filters['success'] ) {
+			$where = 'success = 0';
+		} else {
+			$where = 'success != 0';
+		}
 
 		if ( ! empty( $filters['search'] ) ) {
 			$like     = '%' . $wpdb->esc_like( $filters['search'] ) . '%';
@@ -149,7 +155,7 @@ class MXRoute_Logger {
 			$values[] = $like;
 		}
 
-		if ( ! empty( $filters['success'] ) ) {
+		if ( ! empty( $filters['success'] ) && '0' !== (string) $filters['success'] ) {
 			$where   .= ' AND success = %d';
 			$values[] = intval( $filters['success'] );
 		}
@@ -267,18 +273,31 @@ class MXRoute_Logger {
 		global $wpdb;
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Queue requeue by primary key.
-		return (bool) $wpdb->update(
+		$updated = $wpdb->update(
 			$this->table_name,
 			array(
 				'success'      => 0,
 				'api_request'  => '',
 				'api_response' => '',
-				'processed_at' => null,
 			),
 			array( 'id' => absint( $id ) ),
-			array( '%d', '%s', '%s', '%s' ),
+			array( '%d', '%s', '%s' ),
 			array( '%d' )
 		);
+
+		if ( false === $updated ) {
+			return false;
+		}
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Set NULL separately since $wpdb->update cannot produce SQL NULL.
+		$wpdb->query(
+			$wpdb->prepare(
+				"UPDATE {$this->table_name} SET processed_at = NULL WHERE id = %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				absint( $id )
+			)
+		);
+
+		return true;
 	}
 
 	/**
@@ -295,17 +314,25 @@ class MXRoute_Logger {
 		}
 		$ids = array_values( $ids );
 
-		$wpdb->update( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$wpdb->update(
 			$this->table_name,
 			array(
 				'success'      => 0,
 				'api_request'  => '',
 				'api_response' => '',
-				'processed_at' => null,
 			),
 			array( 'id' => $ids ),
-			array( '%d', '%s', '%s', '%s' ),
+			array( '%d', '%s', '%s' ),
 			array( '%d' )
+		);
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Set NULL separately since $wpdb->update cannot produce SQL NULL.
+		$wpdb->query(
+			$wpdb->prepare(
+				"UPDATE {$this->table_name} SET processed_at = NULL WHERE id IN (" . implode( ',', array_fill( 0, count( $ids ), '%d' ) ) . ")", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
+				$ids
+			)
 		);
 	}
 

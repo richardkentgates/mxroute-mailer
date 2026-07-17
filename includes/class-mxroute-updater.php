@@ -331,11 +331,13 @@ class MXRoute_Updater {
 			if ( $desired_folder !== $actual_folder ) {
 				$new_source = trailingslashit( $source ) . $desired_folder;
 				if ( function_exists( 'wp_move_file' ) ) {
-					wp_move_file( $files[0], $new_source );
+					$moved = wp_move_file( $files[0], $new_source );
+				} else {
+					$moved = rename( $files[0], $new_source ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions, WordPress.WP.AlternativeFunctions
+				}
+				if ( $moved && is_dir( $new_source ) ) {
 					return $new_source;
 				}
-				rename( $files[0], $new_source ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions, WordPress.WP.AlternativeFunctions
-				return $new_source;
 			}
 		}
 
