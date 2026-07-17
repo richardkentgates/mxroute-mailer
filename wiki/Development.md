@@ -67,7 +67,9 @@ mxroute-mailer/
 │   ├── test-class-settings.php     # Settings tests
 │   ├── test-class-logger.php       # Logger tests
 │   ├── test-class-dashboard.php    # Dashboard AJAX tests
+│   ├── test-class-crypto.php       # Encryption tests
 │   ├── test-class-mxroute-api.php  # API client tests
+│   ├── test-class-updater.php      # Updater tests
 │   └── test-edge-cases.php         # Edge case and boundary tests
 ├── .github/
 │   ├── workflows/
