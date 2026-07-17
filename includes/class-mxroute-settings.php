@@ -23,6 +23,7 @@ class MXRoute_Settings {
 		add_action( 'load-settings_page_mxroute-mailer', array( $this, 'add_settings_help_tabs' ) );
 		add_action( 'load-tools_page_mxroute-logs', array( $this, 'add_logs_help_tabs' ) );
 		add_action( 'load-tools_page_mxroute-log-view', array( $this, 'add_log_view_help_tabs' ) );
+		add_action( 'load-tools_page_mxroute-queue', array( $this, 'add_queue_help_tabs' ) );
 
 	}
 
@@ -46,6 +47,14 @@ class MXRoute_Settings {
 			'manage_options',
 			'mxroute-logs',
 			array( $this, 'render_logs_page' )
+		);
+
+		add_management_page(
+			__( 'MXRoute Email Queue', 'mxroute-mailer' ),
+			__( 'MXRoute Queue', 'mxroute-mailer' ),
+			'manage_options',
+			'mxroute-queue',
+			array( $this, 'render_queue_page' )
 		);
 
 		add_submenu_page(
@@ -101,6 +110,14 @@ class MXRoute_Settings {
 				'sanitize_callback' => array( $this, 'sanitize_checkbox' ),
 			)
 		);
+		register_setting(
+			'mxroute_mailer_settings',
+			'mxroute_mailer_batch_size',
+			array(
+				'type'              => 'integer',
+				'sanitize_callback' => array( $this, 'sanitize_batch_size' ),
+			)
+		);
 	}
 
 	/**
@@ -111,6 +128,23 @@ class MXRoute_Settings {
 	 */
 	public function sanitize_checkbox( $value ) {
 		return $value ? 1 : 0;
+	}
+
+	/**
+	 * Sanitize batch size value.
+	 *
+	 * @param mixed $value Batch size value.
+	 * @return int Clamped integer between 1 and 500.
+	 */
+	public function sanitize_batch_size( $value ) {
+		$value = intval( $value );
+		if ( $value < 1 ) {
+			$value = 1;
+		}
+		if ( $value > 500 ) {
+			$value = 500;
+		}
+		return $value;
 	}
 
 	/**
@@ -164,8 +198,9 @@ class MXRoute_Settings {
 	 */
 	public function enqueue_assets( $hook ) {
 		$is_log_view = isset( $_GET['page'] ) && 'mxroute-log-view' === sanitize_text_field( wp_unslash( $_GET['page'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$is_queue    = isset( $_GET['page'] ) && 'mxroute-queue' === sanitize_text_field( wp_unslash( $_GET['page'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
-		if ( 'settings_page_mxroute-mailer' !== $hook && 'tools_page_mxroute-logs' !== $hook && ! $is_log_view ) {
+		if ( 'settings_page_mxroute-mailer' !== $hook && 'tools_page_mxroute-logs' !== $hook && ! $is_log_view && ! $is_queue ) {
 			return;
 		}
 
@@ -176,7 +211,7 @@ class MXRoute_Settings {
 			MXROUTE_MAILER_VERSION
 		);
 
-		if ( 'tools_page_mxroute-logs' === $hook ) {
+		if ( 'tools_page_mxroute-logs' === $hook || $is_queue ) {
 			wp_enqueue_script(
 				'mxroute-mailer-admin',
 				MXROUTE_MAILER_PLUGIN_URL . 'admin/js/admin.js',
@@ -194,15 +229,24 @@ class MXRoute_Settings {
 					'i18n'           => array(
 						'confirmDelete'     => __( 'Delete this log entry?', 'mxroute-mailer' ),
 						'confirmClear'      => __( 'Are you sure you want to clear ALL email logs? This cannot be undone.', 'mxroute-mailer' ),
+						'confirmRequeue'    => __( 'Re-queue this email to be sent again?', 'mxroute-mailer' ),
 						// translators: %d: number of log entries to delete.
 						'confirmBulkDelete' => __( 'Are you sure you want to delete %d log entries? This cannot be undone.', 'mxroute-mailer' ),
+						// translators: %d: number of log entries to re-queue.
+						'confirmBulkRequeue' => __( 'Re-queue %d emails to be sent again?', 'mxroute-mailer' ),
 						'failedDelete'      => __( 'Failed to delete log.', 'mxroute-mailer' ),
 						'failedClear'       => __( 'Failed to clear logs.', 'mxroute-mailer' ),
 						'failedBulkDelete'  => __( 'Failed to delete logs.', 'mxroute-mailer' ),
+						'failedRequeue'     => __( 'Failed to re-queue email.', 'mxroute-mailer' ),
+						'failedBulkRequeue' => __( 'Failed to re-queue emails.', 'mxroute-mailer' ),
 						'noSelection'       => __( 'No logs selected.', 'mxroute-mailer' ),
 						'logDeleted'        => __( 'Log entry deleted.', 'mxroute-mailer' ),
 						'logsCleared'       => __( 'All logs cleared.', 'mxroute-mailer' ),
 						'logsBulkDeleted'   => __( 'Selected logs deleted.', 'mxroute-mailer' ),
+						'logRequeued'       => __( 'Email re-queued.', 'mxroute-mailer' ),
+						'logsBulkRequeued'  => __( 'Selected emails re-queued.', 'mxroute-mailer' ),
+						'queueAdded'        => __( 'Email added to queue.', 'mxroute-mailer' ),
+						'failedQueueAdd'    => __( 'Failed to add email to queue.', 'mxroute-mailer' ),
 					),
 				)
 			);
@@ -234,6 +278,15 @@ class MXRoute_Settings {
 	 */
 	public function render_log_view_page() {
 		include MXROUTE_MAILER_PLUGIN_DIR . 'admin/views/log-view.php';
+	}
+
+	/**
+	 * Render the queue status page.
+	 *
+	 * @return void
+	 */
+	public function render_queue_page() {
+		include MXROUTE_MAILER_PLUGIN_DIR . 'admin/views/queue.php';
 	}
 
 	/**
@@ -280,6 +333,7 @@ class MXRoute_Settings {
 				'id'      => 'mxroute-options',
 				'title'   => __( 'Options', 'mxroute-mailer' ),
 				'content' => '<p><strong>' . esc_html__( 'Enable Logging:', 'mxroute-mailer' ) . '</strong> ' . esc_html__( 'When checked, all sent emails are logged with request and response data. You can view logs under Tools > MXRoute Logs.', 'mxroute-mailer' ) . '</p>'
+					. '<p><strong>' . esc_html__( 'Batch Size:', 'mxroute-mailer' ) . '</strong> ' . esc_html__( 'Number of emails to process per WP-Cron run. Default is 50. Range is 1-500.', 'mxroute-mailer' ) . '</p>'
 					. '<p><strong>' . esc_html__( 'Uninstall:', 'mxroute-mailer' ) . '</strong> ' . esc_html__( 'When checked, your logs and settings are preserved when the plugin is deleted. Uncheck to remove all data on uninstall.', 'mxroute-mailer' ) . '</p>',
 			)
 		);
@@ -330,7 +384,7 @@ class MXRoute_Settings {
 			array(
 				'id'      => 'mxroute-logs-overview',
 				'title'   => __( 'Overview', 'mxroute-mailer' ),
-				'content' => '<p>' . esc_html__( 'This page displays a log of all emails sent through MXRoute Mailer. Each entry shows the timestamp, status, sender, recipient, and subject.', 'mxroute-mailer' ) . '</p>'
+				'content' => '<p>' . esc_html__( 'This page displays a log of all processed emails (sent and failed) through MXRoute Mailer. Pending emails in the queue are shown separately under Tools > MXRoute Queue.', 'mxroute-mailer' ) . '</p>'
 					. '<p>' . esc_html__( 'Click "View" on any row to see the full API request and response data for that email.', 'mxroute-mailer' ) . '</p>',
 			)
 		);
@@ -353,7 +407,8 @@ class MXRoute_Settings {
 			array(
 				'id'      => 'mxroute-logs-actions',
 				'title'   => __( 'Actions', 'mxroute-mailer' ),
-				'content' => '<p><strong>' . esc_html__( 'Clear All Logs:', 'mxroute-mailer' ) . '</strong> ' . esc_html__( 'Removes all log entries. This action cannot be undone.', 'mxroute-mailer' ) . '</p>'
+				'content' => '<p><strong>' . esc_html__( 'Re-queue:', 'mxroute-mailer' ) . '</strong> ' . esc_html__( 'Click the "Re-queue" button on any row to send that email again. Use bulk actions to re-queue multiple entries at once.', 'mxroute-mailer' ) . '</p>'
+					. '<p><strong>' . esc_html__( 'Clear All Logs:', 'mxroute-mailer' ) . '</strong> ' . esc_html__( 'Removes all log entries. This action cannot be undone.', 'mxroute-mailer' ) . '</p>'
 					. '<p><strong>' . esc_html__( 'Bulk Delete:', 'mxroute-mailer' ) . '</strong> ' . esc_html__( 'Select multiple entries using the checkboxes, choose "Delete" from the Bulk Actions dropdown, and click "Apply".', 'mxroute-mailer' ) . '</p>'
 					. '<p><strong>' . esc_html__( 'Delete Single Entry:', 'mxroute-mailer' ) . '</strong> ' . esc_html__( 'Click the "Delete" button on any row to remove that specific log entry.', 'mxroute-mailer' ) . '</p>',
 			)
@@ -410,6 +465,47 @@ class MXRoute_Settings {
 					. '<li><strong>' . esc_html__( 'API Request:', 'mxroute-mailer' ) . '</strong> ' . esc_html__( 'The JSON payload sent to the MXRoute API (password excluded).', 'mxroute-mailer' ) . '</li>'
 					. '<li><strong>' . esc_html__( 'API Response:', 'mxroute-mailer' ) . '</strong> ' . esc_html__( 'The raw JSON response from the MXRoute API.', 'mxroute-mailer' ) . '</li>'
 					. '</ul>',
+			)
+		);
+
+		$screen->set_help_sidebar(
+			'<p><strong>' . esc_html__( 'For more information:', 'mxroute-mailer' ) . '</strong></p>'
+			. '<p><a href="https://github.com/richardkentgates/mxroute-mailer/wiki" target="_blank">' . esc_html__( 'MXRoute Mailer Wiki', 'mxroute-mailer' ) . '</a></p>'
+			. '<p><a href="https://mxroute.com" target="_blank">' . esc_html__( 'MXRoute Documentation', 'mxroute-mailer' ) . '</a></p>'
+		);
+	}
+
+	/**
+	 * Add help tabs for the Queue page.
+	 *
+	 * @return void
+	 */
+	public function add_queue_help_tabs() {
+		$screen = get_current_screen();
+		if ( ! $screen ) {
+			return;
+		}
+
+		$screen->add_help_tab(
+			array(
+				'id'      => 'mxroute-queue-overview',
+				'title'   => __( 'Overview', 'mxroute-mailer' ),
+				'content' => '<p>' . esc_html__( 'This page shows emails waiting to be sent and allows you to add new emails to the queue. Emails are processed in the background via WP-Cron and sent in batches.', 'mxroute-mailer' ) . '</p>',
+			)
+		);
+
+		$screen->add_help_tab(
+			array(
+				'id'      => 'mxroute-queue-add',
+				'title'   => __( 'Add Email', 'mxroute-mailer' ),
+				'content' => '<p>' . esc_html__( 'Use the form to manually add an email to the queue:', 'mxroute-mailer' ) . '</p>'
+					. '<ul>'
+					. '<li><strong>' . esc_html__( 'From:', 'mxroute-mailer' ) . '</strong> ' . esc_html__( 'Sender email address.', 'mxroute-mailer' ) . '</li>'
+					. '<li><strong>' . esc_html__( 'To:', 'mxroute-mailer' ) . '</strong> ' . esc_html__( 'Recipient email address.', 'mxroute-mailer' ) . '</li>'
+					. '<li><strong>' . esc_html__( 'Subject:', 'mxroute-mailer' ) . '</strong> ' . esc_html__( 'Email subject line.', 'mxroute-mailer' ) . '</li>'
+					. '<li><strong>' . esc_html__( 'Body:', 'mxroute-mailer' ) . '</strong> ' . esc_html__( 'Email message content.', 'mxroute-mailer' ) . '</li>'
+					. '</ul>'
+					. '<p>' . esc_html__( 'Click "Add to Queue" to submit. The email will be processed by WP-Cron in the background.', 'mxroute-mailer' ) . '</p>',
 			)
 		);
 

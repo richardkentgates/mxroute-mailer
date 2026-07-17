@@ -328,7 +328,7 @@ class MXRoute_Updater {
 		$files = glob( $source_base . '*' );
 		if ( ! empty( $files ) && 1 === count( $files ) && is_dir( $files[0] ) ) {
 			$actual_folder = basename( $files[0] );
-			if ( $actual_folder !== $desired_folder ) {
+			if ( $desired_folder !== $actual_folder ) {
 				$new_source = trailingslashit( $source ) . $desired_folder;
 				if ( function_exists( 'wp_move_file' ) ) {
 					wp_move_file( $files[0], $new_source );

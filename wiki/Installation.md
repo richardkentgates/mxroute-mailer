@@ -46,6 +46,7 @@ After activation, you should see:
 
 - A new menu item under **Settings** called "MXRoute Mailer"
 - A new item under **Tools** called "MXRoute Logs"
+- A new item under **Tools** called "MXRoute Queue"
 - The plugin listed on the **Plugins** page with version info
 
 ## Troubleshooting

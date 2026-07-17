@@ -40,6 +40,38 @@
         });
     });
 
+    $(document).on('click', '.mxroute-requeue-log', function (e) {
+        e.preventDefault();
+        if (!confirm(mxrouteMailer.i18n.confirmRequeue)) {
+            return;
+        }
+        var logId = $(this).data('log-id');
+        var $row = $(this).closest('tr');
+
+        $.post(mxrouteMailer.ajaxUrl, {
+            action: 'mxroute_requeue_log',
+            nonce: mxrouteMailer.logManageNonce,
+            log_id: logId
+        }, function (response) {
+            if (response.success) {
+                $row.fadeOut(300, function () {
+                    $(this).remove();
+                    var $next = $('.mxroute-log-checkbox').first();
+                    if ($next.length) {
+                        $next.focus();
+                    } else {
+                        $('.mxroute-logs-wrap h1').attr('tabindex', '-1').focus();
+                    }
+                    mxrouteAnnounce(response.data.message);
+                });
+            } else {
+                alert(response.data && response.data.message ? response.data.message : mxrouteMailer.i18n.failedRequeue);
+            }
+        }).fail(function () {
+            alert(mxrouteMailer.i18n.failedRequeue);
+        });
+    });
+
     $(document).on('click', '.mxroute-clear-logs', function (e) {
         e.preventDefault();
         if (!confirm(mxrouteMailer.i18n.confirmClear)) {
@@ -72,11 +104,16 @@
         $('#mxroute-select-all').prop('checked', total === checked);
     });
 
-    function mxrouteBulkDelete() {
+    function mxrouteGetSelectedIds() {
         var ids = [];
         $('.mxroute-log-checkbox:checked').each(function () {
             ids.push($(this).val());
         });
+        return ids;
+    }
+
+    function mxrouteBulkDelete() {
+        var ids = mxrouteGetSelectedIds();
 
         if (ids.length === 0) {
             alert(mxrouteMailer.i18n.noSelection);
@@ -112,11 +149,83 @@
         });
     }
 
+    function mxrouteBulkRequeue() {
+        var ids = mxrouteGetSelectedIds();
+
+        if (ids.length === 0) {
+            alert(mxrouteMailer.i18n.noSelection);
+            return;
+        }
+
+        if (!confirm(mxrouteMailer.i18n.confirmBulkRequeue.replace('%d', ids.length))) {
+            return;
+        }
+
+        $.post(mxrouteMailer.ajaxUrl, {
+            action: 'mxroute_bulk_requeue_logs',
+            nonce: mxrouteMailer.logManageNonce,
+            log_ids: ids
+        }, function (response) {
+            if (response.success) {
+                $('.mxroute-log-checkbox:checked').closest('tr').fadeOut(300, function () {
+                    $(this).remove();
+                    var $next = $('.mxroute-log-checkbox').first();
+                    if ($next.length) {
+                        $next.focus();
+                    } else {
+                        $('.mxroute-logs-wrap h1').attr('tabindex', '-1').focus();
+                    }
+                });
+                $('#mxroute-select-all').prop('checked', false);
+                mxrouteAnnounce(response.data.message);
+            } else {
+                alert(response.data && response.data.message ? response.data.message : mxrouteMailer.i18n.failedBulkRequeue);
+            }
+        }).fail(function () {
+            alert(mxrouteMailer.i18n.failedBulkRequeue);
+        });
+    }
+
     $('#mxroute-bulk-apply, #mxroute-bulk-apply-bottom').on('click', function (e) {
         e.preventDefault();
         var action = $(this).closest('.tablenav').find('select[name="action"]').val();
         if (action === 'bulk-delete') {
             mxrouteBulkDelete();
+        } else if (action === 'bulk-requeue') {
+            mxrouteBulkRequeue();
         }
+    });
+
+    $('#mxroute-queue-add-form').on('submit', function (e) {
+        e.preventDefault();
+        var $form = $(this);
+        var $button = $form.find('#mxroute-queue-submit');
+        var originalText = $button.val();
+
+        $button.prop('disabled', true).val(mxrouteMailer.i18n.sending || 'Sending...');
+
+        $.post(mxrouteMailer.ajaxUrl, {
+            action: 'mxroute_add_to_queue',
+            nonce: mxrouteMailer.logManageNonce,
+            from_email: $form.find('#mxroute-queue-from').val(),
+            to_email: $form.find('#mxroute-queue-to').val(),
+            subject: $form.find('#mxroute-queue-subject').val(),
+            message: $form.find('#mxroute-queue-body').val()
+        }, function (response) {
+            if (response.success) {
+                $form.find('#mxroute-queue-from').val('');
+                $form.find('#mxroute-queue-to').val('');
+                $form.find('#mxroute-queue-subject').val('');
+                $form.find('#mxroute-queue-body').val('');
+                mxrouteAnnounce(response.data.message);
+                location.reload();
+            } else {
+                alert(response.data && response.data.message ? response.data.message : mxrouteMailer.i18n.failedQueueAdd);
+            }
+        }).fail(function () {
+            alert(mxrouteMailer.i18n.failedQueueAdd);
+        }).always(function () {
+            $button.prop('disabled', false).val(originalText);
+        });
     });
 })(jQuery);

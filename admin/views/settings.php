@@ -89,16 +89,25 @@ defined( 'ABSPATH' ) || exit;
 					</label>
 				</td>
 			</tr>
-			<tr>
-				<th scope="row"><?php esc_html_e( 'Uninstall', 'mxroute-mailer' ); ?></th>
-				<td>
-					<label>
-						<input type="checkbox" name="mxroute_mailer_keep_data" value="1"
-								<?php checked( get_option( 'mxroute_mailer_keep_data', 0 ), 1 ); ?> />
-						<?php esc_html_e( 'Keep logs and settings when plugin is deleted', 'mxroute-mailer' ); ?>
-					</label>
-				</td>
-			</tr>
+		<tr>
+			<th scope="row"><?php esc_html_e( 'Uninstall', 'mxroute-mailer' ); ?></th>
+			<td>
+				<label>
+					<input type="checkbox" name="mxroute_mailer_keep_data" value="1"
+							<?php checked( get_option( 'mxroute_mailer_keep_data', 0 ), 1 ); ?> />
+					<?php esc_html_e( 'Keep logs and settings when plugin is deleted', 'mxroute-mailer' ); ?>
+				</label>
+			</td>
+		</tr>
+		<tr>
+			<th scope="row"><label for="mxroute_mailer_batch_size"><?php esc_html_e( 'Queue Batch Size', 'mxroute-mailer' ); ?></label></th>
+			<td>
+				<input type="number" id="mxroute_mailer_batch_size" name="mxroute_mailer_batch_size"
+						value="<?php echo esc_attr( get_option( 'mxroute_mailer_batch_size', 50 ) ); ?>"
+						class="small-text" min="1" max="500" step="1" />
+				<p class="description"><?php esc_html_e( 'Number of emails to process per cron run. Default is 50.', 'mxroute-mailer' ); ?></p>
+			</td>
+		</tr>
 		</table>
 
 		<?php submit_button( __( 'Save Settings', 'mxroute-mailer' ) ); ?>
