@@ -22,16 +22,21 @@ $GLOBALS['wp_db_queries'] = array();
 // Track function calls
 $GLOBALS['wp_function_calls'] = array();
 
+// Persistent hook registry (survives setUp resets — tracks singleton registrations)
+$GLOBALS['wp_hooks_registered'] = array();
+
 // Mock WordPress functions
 if (!function_exists('add_filter')) {
     function add_filter($hook, $callback, $priority = 10, $accepted_args = 1) {
         $GLOBALS['wp_function_calls']['add_filter'][] = compact('hook', 'callback', 'priority');
+        $GLOBALS['wp_hooks_registered']['filter'][] = $hook;
     }
 }
 
 if (!function_exists('add_action')) {
     function add_action($hook, $callback, $priority = 10, $accepted_args = 1) {
         $GLOBALS['wp_function_calls']['add_action'][] = compact('hook', 'callback', 'priority');
+        $GLOBALS['wp_hooks_registered']['action'][] = $hook;
     }
 }
 
@@ -209,13 +214,20 @@ if (!function_exists('check_ajax_referer')) {
 
 if (!function_exists('current_user_can')) {
     function current_user_can($capability) {
+        if (isset($GLOBALS['wp_mock_current_user_can'])) {
+            return $GLOBALS['wp_mock_current_user_can'];
+        }
         return true;
     }
 }
 
 if (!function_exists('wp_verify_nonce')) {
     function wp_verify_nonce($nonce, $action) {
-        return 1;
+        if (isset($GLOBALS['wp_mock_nonce_verification'])) {
+            return $GLOBALS['wp_mock_nonce_verification'];
+        }
+        $expected = 'test-nonce-' . md5($action);
+        return $nonce === $expected ? 1 : 0;
     }
 }
 
@@ -450,13 +462,35 @@ if (!function_exists('wp_schedule_single_event')) {
 
 if (!function_exists('wp_next_scheduled')) {
     function wp_next_scheduled($hook) {
-        return isset($GLOBALS['wp_scheduled_events'][$hook]) ? $GLOBALS['wp_scheduled_events'][$hook] : false;
+        if (isset($GLOBALS['wp_scheduled_events'][$hook])) {
+            return $GLOBALS['wp_scheduled_events'][$hook];
+        }
+        // Check if wp_schedule_single_event was called for this hook.
+        $calls = $GLOBALS['wp_function_calls']['wp_schedule_single_event'] ?? array();
+        foreach ( $calls as $call ) {
+            if ( $call['hook'] === $hook ) {
+                return true;
+            }
+        }
+        return false;
     }
 }
 
 if (!function_exists('home_url')) {
     function home_url($path = '') {
         return 'http://example.com' . $path;
+    }
+}
+
+if (!function_exists('wp_parse_url')) {
+    function wp_parse_url($url, $component = -1) {
+        return parse_url($url, $component);
+    }
+}
+
+if (!function_exists('trailingslashit')) {
+    function trailingslashit($string) {
+        return rtrim($string, '/') . '/';
     }
 }
 
@@ -550,6 +584,7 @@ class MockWPDB {
     }
 
     public function delete($table, $where, $format = null) {
+        $GLOBALS['wp_function_calls']['$wpdb->delete'][] = compact('table', 'where');
         return true;
     }
 

@@ -112,11 +112,11 @@ class MXRoute_Logger_Test extends \PHPUnit\Framework\TestCase {
      */
     public function test_delete_log_calls_delete() {
         $logger = new MXRoute_Logger();
-        $logger->delete_log(1);
+        $logger->delete_log( 1 );
 
-        // delete_log uses $wpdb->delete() which doesn't go through $wpdb->query()
-        // so we verify it doesn't throw
-        $this->assertTrue(true);
+        $deletes = $GLOBALS['wp_function_calls']['$wpdb->delete'] ?? array();
+        $this->assertNotEmpty( $deletes );
+        $this->assertEquals( 1, $deletes[0]['where']['id'] );
     }
 
     /**
@@ -126,7 +126,8 @@ class MXRoute_Logger_Test extends \PHPUnit\Framework\TestCase {
         $logger = new MXRoute_Logger();
         $logger->delete_logs( array( 1, 2, 3 ) );
 
-        $this->assertTrue(true);
+        $deletes = $GLOBALS['wp_function_calls']['$wpdb->delete'] ?? array();
+        $this->assertNotEmpty( $deletes );
     }
 
     /**
@@ -136,7 +137,8 @@ class MXRoute_Logger_Test extends \PHPUnit\Framework\TestCase {
         $logger = new MXRoute_Logger();
         $logger->delete_logs( array() );
 
-        $this->assertTrue(true);
+        $deletes = $GLOBALS['wp_function_calls']['$wpdb->delete'] ?? array();
+        $this->assertEmpty( $deletes );
     }
 
     /**
@@ -282,6 +284,9 @@ class MXRoute_Logger_Test extends \PHPUnit\Framework\TestCase {
         $result = $logger->requeue_log( 1 );
 
         $this->assertTrue( $result );
+        $updates = $GLOBALS['wp_function_calls']['$wpdb->update'] ?? array();
+        $this->assertNotEmpty( $updates );
+        $this->assertEquals( 0, $updates[0]['data']['success'] );
     }
 
     /**
@@ -302,7 +307,8 @@ class MXRoute_Logger_Test extends \PHPUnit\Framework\TestCase {
         $logger = new MXRoute_Logger();
         $logger->requeue_logs( array( 1, 2, 3 ) );
 
-        $this->assertTrue( true );
+        $updates = $GLOBALS['wp_function_calls']['$wpdb->update'] ?? array();
+        $this->assertNotEmpty( $updates );
     }
 
     /**
@@ -312,6 +318,7 @@ class MXRoute_Logger_Test extends \PHPUnit\Framework\TestCase {
         $logger = new MXRoute_Logger();
         $logger->requeue_logs( array() );
 
-        $this->assertTrue( true );
+        $updates = $GLOBALS['wp_function_calls']['$wpdb->update'] ?? array();
+        $this->assertEmpty( $updates );
     }
 }

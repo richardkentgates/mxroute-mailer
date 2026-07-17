@@ -76,10 +76,10 @@ class MXRoute_API {
 			'server'   => $server,
 			'username' => $username,
 			'password' => $password,
-			'from'     => substr( $from, 0, self::$max_field_length ),
-			'to'       => substr( $to_single, 0, self::$max_field_length ),
-			'subject'  => substr( $subject, 0, self::$max_field_length ),
-			'body'     => substr( $body, 0, self::$max_field_length * 10 ),
+			'from'     => mb_substr( $from, 0, self::$max_field_length ),
+			'to'       => mb_substr( $to_single, 0, self::$max_field_length ),
+			'subject'  => mb_substr( $subject, 0, self::$max_field_length ),
+			'body'     => mb_substr( $body, 0, self::$max_field_length * 10 ),
 		);
 
 		if ( ! empty( $reply_to ) ) {
@@ -173,6 +173,14 @@ class MXRoute_API {
 			if ( ! is_string( $file_path ) || ! file_exists( $file_path ) || ! is_readable( $file_path ) ) {
 				if ( defined( 'MXROUTE_MAILER_DEBUG' ) && MXROUTE_MAILER_DEBUG ) {
 					error_log( 'MXRoute API Attachment: skipping unreadable or missing file ' . $file_path );
+				}
+				continue;
+			}
+
+			$file_size = @filesize( $file_path ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_filesize
+			if ( false === $file_size || $file_size > 5242880 ) {
+				if ( defined( 'MXROUTE_MAILER_DEBUG' ) && MXROUTE_MAILER_DEBUG ) {
+					error_log( 'MXRoute API Attachment: skipping file over 5MB ' . $file_path );
 				}
 				continue;
 			}

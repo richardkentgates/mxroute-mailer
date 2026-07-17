@@ -158,6 +158,11 @@ class MXRoute_Settings {
 		if ( '' === $value ) {
 			return get_option( 'mxroute_mailer_password', '' );
 		}
+		// Prevent double-encryption if browser autofill submits the already-encrypted value.
+		$existing = get_option( 'mxroute_mailer_password', '' );
+		if ( $existing !== '' && $existing === $value ) {
+			return $existing;
+		}
 		return MXRoute_Crypto::encrypt( $value );
 	}
 

@@ -87,6 +87,11 @@ class MXRoute_Mailer {
 			$pre  = null;
 		}
 
+		// Another plugin already handled this email via pre_wp_mail.
+		if ( null !== $pre ) {
+			return $pre;
+		}
+
 		$defaults = array(
 			'to'          => '',
 			'subject'     => '',
@@ -119,7 +124,11 @@ class MXRoute_Mailer {
 
 		$queue = new MXRoute_Queue();
 
-		$recipients = is_array( $args['to'] ) ? array_values( array_filter( $args['to'] ) ) : array( $args['to'] );
+		if ( is_array( $args['to'] ) ) {
+			$recipients = array_values( array_filter( $args['to'] ) );
+		} else {
+			$recipients = array_filter( array_map( 'trim', explode( ',', $args['to'] ) ) );
+		}
 
 		$queued = 0;
 		foreach ( $recipients as $recipient ) {
@@ -188,6 +197,11 @@ class MXRoute_Mailer {
 			} else {
 				$queue->mark_failed( $item->id, $result['request'], $result['response'] );
 			}
+		}
+
+		// Re-schedule if more pending items remain.
+		if ( $queue->count_pending() > 0 && ! wp_next_scheduled( 'mxroute_mailer_process_queue' ) ) {
+			wp_schedule_single_event( time(), 'mxroute_mailer_process_queue' );
 		}
 	}
 
