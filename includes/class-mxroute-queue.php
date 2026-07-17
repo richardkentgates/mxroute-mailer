@@ -161,7 +161,7 @@ class MXRoute_Queue {
 	public function cleanup( $days = 30 ) {
 		global $wpdb;
 
-		$date = gmdate( 'Y-m-d H:i:s', strtotime( '-' . absint( $days ) . ' days' ) );
+		$date = gmdate( 'Y-m-d H:i:s', strtotime( '-' . absint( $days ) . ' days', current_time( 'timestamp' ) ) );
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is safe.
 		return (int) $wpdb->query(

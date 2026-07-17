@@ -178,7 +178,7 @@ class MXRoute_Settings_Test extends \PHPUnit\Framework\TestCase {
         $GLOBALS['wp_options']['mxroute_mailer_server'] = 'server.example.com';
         $GLOBALS['wp_options']['mxroute_mailer_username'] = 'from@example.com';
         $GLOBALS['wp_options']['mxroute_mailer_password'] = MXRoute_Crypto::encrypt($plain_password);
-        $_POST['mxroute_test_email_nonce'] = 'test-nonce';
+        $_POST['mxroute_test_email_nonce'] = wp_create_nonce('mxroute_test_email');
         $_POST['mxroute_test_to'] = 'to@example.com';
         $_POST['mxroute_test_subject'] = 'Subject';
         $_POST['mxroute_test_body'] = 'Body';
@@ -209,5 +209,70 @@ class MXRoute_Settings_Test extends \PHPUnit\Framework\TestCase {
         $call = $GLOBALS['wp_function_calls']['add_management_page'][0];
         $this->assertEquals('MXRoute Email Logs', $call['page_title']);
         $this->assertEquals('mxroute-logs', $call['menu_slug']);
+    }
+
+    /**
+     * Tests that sanitize_batch_size clamps values below 1 to 1.
+     */
+    public function test_sanitize_batch_size_clamps_below_minimum() {
+        $settings = new MXRoute_Settings();
+        $this->assertEquals( 1, $settings->sanitize_batch_size( 0 ) );
+        $this->assertEquals( 1, $settings->sanitize_batch_size( -5 ) );
+    }
+
+    /**
+     * Tests that sanitize_batch_size clamps values above 500 to 500.
+     */
+    public function test_sanitize_batch_size_clamps_above_maximum() {
+        $settings = new MXRoute_Settings();
+        $this->assertEquals( 500, $settings->sanitize_batch_size( 501 ) );
+        $this->assertEquals( 500, $settings->sanitize_batch_size( 9999 ) );
+    }
+
+    /**
+     * Tests that sanitize_batch_size passes valid values through.
+     */
+    public function test_sanitize_batch_size_passes_valid_values() {
+        $settings = new MXRoute_Settings();
+        $this->assertEquals( 1, $settings->sanitize_batch_size( 1 ) );
+        $this->assertEquals( 50, $settings->sanitize_batch_size( 50 ) );
+        $this->assertEquals( 500, $settings->sanitize_batch_size( 500 ) );
+    }
+
+    /**
+     * Tests that sanitize_batch_size converts non-integer input.
+     */
+    public function test_sanitize_batch_size_casts_non_integer() {
+        $settings = new MXRoute_Settings();
+        $this->assertEquals( 25, $settings->sanitize_batch_size( '25abc' ) );
+        $this->assertEquals( 1, $settings->sanitize_batch_size( 'abc' ) );
+    }
+
+    /**
+     * Tests that sanitize_username_local strips the domain and uses home_url host.
+     */
+    public function test_sanitize_username_local_strips_domain() {
+        $settings = new MXRoute_Settings();
+        $result = $settings->sanitize_username_local( 'user@example.com' );
+        $this->assertEquals( 'user@example.com', $result );
+    }
+
+    /**
+     * Tests that sanitize_username_local handles local part only input.
+     */
+    public function test_sanitize_username_local_handles_local_part_only() {
+        $settings = new MXRoute_Settings();
+        $result = $settings->sanitize_username_local( 'user' );
+        $this->assertEquals( 'user@example.com', $result );
+    }
+
+    /**
+     * Tests that sanitize_username_local strips angle brackets and extra parts.
+     */
+    public function test_sanitize_username_local_strips_angle_brackets() {
+        $settings = new MXRoute_Settings();
+        $result = $settings->sanitize_username_local( 'User <user@example.com>' );
+        $this->assertStringNotContainsString( '<', $result );
+        $this->assertStringNotContainsString( '>', $result );
     }
 }

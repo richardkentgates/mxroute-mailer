@@ -118,12 +118,12 @@ class MXRoute_Queue_Test extends \PHPUnit\Framework\TestCase {
 	}
 
 	/**
-	 * Tests that add sanitizes email addresses.
+	 * Tests that add sanitizes email addresses by stripping invalid characters.
 	 */
 	public function test_add_sanitizes_email_addresses() {
 		$queue = new MXRoute_Queue();
 		$queue->add(
-			'from@example.com',
+			'<script>alert("xss")</script>from@example.com',
 			'to@example.com',
 			'Subject',
 			'Body',
@@ -133,7 +133,7 @@ class MXRoute_Queue_Test extends \PHPUnit\Framework\TestCase {
 		);
 
 		$insert = $GLOBALS['wp_db_inserts'][0];
-		$this->assertEquals( 'from@example.com', $insert['data']['from_email'] );
+		$this->assertStringNotContainsString( '<script>', $insert['data']['from_email'] );
 		$this->assertEquals( 'to@example.com', $insert['data']['to_email'] );
 	}
 
@@ -285,6 +285,27 @@ class MXRoute_Mailer_Queue_Test extends \PHPUnit\Framework\TestCase {
 	}
 
 	/**
+	 * Tests that intercept_wp_mail splits comma-separated recipient strings.
+	 */
+	public function test_intercept_splits_comma_separated_recipients() {
+		$mailer = MXRoute_Mailer::instance();
+		$GLOBALS['wp_options']['mxroute_mailer_server']   = 'server.example.com';
+		$GLOBALS['wp_options']['mxroute_mailer_username'] = 'user@example.com';
+		$GLOBALS['wp_options']['mxroute_mailer_password'] = 'password123';
+
+		$mailer->intercept_wp_mail( array(
+			'to'      => 'a@example.com, b@example.com, c@example.com',
+			'subject' => 'Test Subject',
+			'message' => 'Body',
+		) );
+
+		$this->assertCount( 3, $GLOBALS['wp_db_inserts'] );
+		$this->assertEquals( 'a@example.com', $GLOBALS['wp_db_inserts'][0]['data']['to_email'] );
+		$this->assertEquals( 'b@example.com', $GLOBALS['wp_db_inserts'][1]['data']['to_email'] );
+		$this->assertEquals( 'c@example.com', $GLOBALS['wp_db_inserts'][2]['data']['to_email'] );
+	}
+
+	/**
 	 * Tests that intercept_wp_mail stores headers in the queue entry.
 	 */
 	public function test_intercept_stores_headers() {
@@ -413,9 +434,9 @@ class MXRoute_Mailer_Queue_Test extends \PHPUnit\Framework\TestCase {
 
 		$mailer->process_queue();
 
-		// process_queue calls mark_sent or mark_failed which do $wpdb->update
-		// The mock doesn't track updates, but we verify the function ran without error.
-		$this->assertTrue( true );
+		// Mock get_results returns [], so process_queue sees empty queue and returns early.
+		// Verify it completed without error and made no API calls.
+		$this->assertArrayNotHasKey( 'wp_remote_post', $GLOBALS['wp_function_calls'] );
 	}
 
 	/**
@@ -431,7 +452,7 @@ class MXRoute_Mailer_Queue_Test extends \PHPUnit\Framework\TestCase {
 		$mailer->process_queue();
 
 		// Should not error with batch size of 10.
-		$this->assertTrue( true );
+		$this->assertArrayNotHasKey( 'wp_remote_post', $GLOBALS['wp_function_calls'] );
 	}
 
 	/**
