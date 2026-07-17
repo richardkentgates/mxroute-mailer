@@ -441,6 +441,40 @@ if (!function_exists('wp_die')) {
     }
 }
 
+if (!function_exists('wp_schedule_single_event')) {
+    function wp_schedule_single_event($timestamp, $hook, $args = array()) {
+        $GLOBALS['wp_function_calls']['wp_schedule_single_event'][] = compact('timestamp', 'hook', 'args');
+        return true;
+    }
+}
+
+if (!function_exists('wp_next_scheduled')) {
+    function wp_next_scheduled($hook) {
+        return isset($GLOBALS['wp_scheduled_events'][$hook]) ? $GLOBALS['wp_scheduled_events'][$hook] : false;
+    }
+}
+
+if (!function_exists('home_url')) {
+    function home_url($path = '') {
+        return 'http://example.com' . $path;
+    }
+}
+
+if (!function_exists('absint')) {
+    function absint($value) {
+        return abs(intval($value));
+    }
+}
+
+if (!function_exists('get_attached_file')) {
+    function get_attached_file($attachment_id) {
+        if (isset($GLOBALS['wp_attached_files'][$attachment_id])) {
+            return $GLOBALS['wp_attached_files'][$attachment_id];
+        }
+        return false;
+    }
+}
+
 // Define constants
 if (!defined('ABSPATH')) {
     define('ABSPATH', '/tmp/wordpress/');
@@ -519,6 +553,11 @@ class MockWPDB {
         return true;
     }
 
+    public function update($table, $data, $where, $format = null, $where_format = null) {
+        $GLOBALS['wp_function_calls']['$wpdb->update'][] = compact('table', 'data', 'where');
+        return true;
+    }
+
     public function query($query) {
         $GLOBALS['wp_db_queries'][] = $query;
         return true;
@@ -578,3 +617,4 @@ require_once $plugin_dir . '/includes/class-mxroute-api.php';
 require_once $plugin_dir . '/includes/class-mxroute-settings.php';
 require_once $plugin_dir . '/includes/class-mxroute-logger.php';
 require_once $plugin_dir . '/includes/class-mxroute-dashboard.php';
+require_once $plugin_dir . '/includes/class-mxroute-queue.php';

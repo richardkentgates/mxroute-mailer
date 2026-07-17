@@ -14,7 +14,7 @@ $logs_per_page = 20;
 
 $filters = array(
 	'search'     => sanitize_text_field( wp_unslash( $_GET['s'] ?? '' ) ), // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-	'success'    => in_array( wp_unslash( $_GET['status'] ?? '' ), array( '0', '1' ), true ) ? sanitize_text_field( wp_unslash( $_GET['status'] ) ) : '', // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	'success'    => in_array( wp_unslash( $_GET['status'] ?? '' ), array( '-1', '1' ), true ) ? sanitize_text_field( wp_unslash( $_GET['status'] ) ) : '', // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 	'from_email' => sanitize_text_field( wp_unslash( $_GET['from'] ?? '' ) ), // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 	'date_from'  => sanitize_text_field( wp_unslash( $_GET['date_from'] ?? '' ) ), // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 	'date_to'    => sanitize_text_field( wp_unslash( $_GET['date_to'] ?? '' ) ), // phpcs:ignore WordPress.Security.NonceVerification.Recommended
@@ -44,8 +44,8 @@ $total_pages = $result['pages'];
 			<label for="mxroute-filter-status" class="screen-reader-text"><?php esc_html_e( 'Filter by status', 'mxroute-mailer' ); ?></label>
 			<select id="mxroute-filter-status" name="status">
 				<option value=""><?php esc_html_e( 'All Status', 'mxroute-mailer' ); ?></option>
-				<option value="1" <?php selected( $filters['success'], '1' ); ?>><?php esc_html_e( 'Success', 'mxroute-mailer' ); ?></option>
-				<option value="0" <?php selected( $filters['success'], '0' ); ?>><?php esc_html_e( 'Failed', 'mxroute-mailer' ); ?></option>
+				<option value="1" <?php selected( $filters['success'], '1' ); ?>><?php esc_html_e( 'Sent', 'mxroute-mailer' ); ?></option>
+				<option value="-1" <?php selected( $filters['success'], '-1' ); ?>><?php esc_html_e( 'Failed', 'mxroute-mailer' ); ?></option>
 			</select>
 
 			<label for="mxroute-filter-from" class="screen-reader-text"><?php esc_html_e( 'From email...', 'mxroute-mailer' ); ?></label>
@@ -77,6 +77,7 @@ $total_pages = $result['pages'];
 				<label for="bulk-action-selector-top" class="screen-reader-text"><?php esc_html_e( 'Select bulk action', 'mxroute-mailer' ); ?></label>
 				<select name="action" id="bulk-action-selector-top">
 					<option value=""><?php esc_html_e( 'Bulk Actions', 'mxroute-mailer' ); ?></option>
+					<option value="bulk-requeue"><?php esc_html_e( 'Re-queue', 'mxroute-mailer' ); ?></option>
 					<option value="bulk-delete"><?php esc_html_e( 'Delete', 'mxroute-mailer' ); ?></option>
 				</select>
 				<input type="submit" id="mxroute-bulk-apply" class="button action" value="<?php esc_attr_e( 'Apply', 'mxroute-mailer' ); ?>" />
@@ -107,6 +108,8 @@ $total_pages = $result['pages'];
 				// translators: %d: log entry ID.
 				$view_label = sprintf( __( 'View log %d', 'mxroute-mailer' ), $log->id );
 				// translators: %d: log entry ID.
+				$requeue_label = sprintf( __( 'Re-queue log %d', 'mxroute-mailer' ), $log->id );
+				// translators: %d: log entry ID.
 				$delete_label = sprintf( __( 'Delete log %d', 'mxroute-mailer' ), $log->id );
 				?>
 				<tr class="mxroute-log-row" data-log-id="<?php echo esc_attr( $log->id ); ?>">
@@ -114,17 +117,18 @@ $total_pages = $result['pages'];
 						<input type="checkbox" name="log_ids[]" value="<?php echo esc_attr( $log->id ); ?>" class="mxroute-log-checkbox" aria-label="<?php echo esc_attr( $select_label ); ?>" />
 					</td>
 					<td><?php echo esc_html( $log->id ); ?></td>
-					<td>
-						<span class="mxroute-status-badge <?php echo esc_attr( $log->success ? 'mxroute-success' : 'mxroute-fail' ); ?>" role="status">
-							<?php echo esc_html( $log->success ? __( 'Sent', 'mxroute-mailer' ) : __( 'Fail', 'mxroute-mailer' ) ); ?>
-						</span>
-					</td>
+				<td>
+					<span class="mxroute-status-badge <?php echo esc_attr( $log->success > 0 ? 'mxroute-success' : 'mxroute-fail' ); ?>" role="status">
+						<?php echo esc_html( $log->success > 0 ? __( 'Sent', 'mxroute-mailer' ) : __( 'Fail', 'mxroute-mailer' ) ); ?>
+					</span>
+				</td>
 					<td><?php echo esc_html( $log->timestamp ); ?></td>
 					<td><?php echo esc_html( $log->from_email ); ?></td>
 					<td><?php echo esc_html( $log->to_email ); ?></td>
 					<td><?php echo esc_html( wp_trim_words( $log->subject, 8 ) ); ?></td>
 					<td>
 						<a href="<?php echo esc_url( admin_url( 'tools.php?page=mxroute-log-view&id=' . $log->id ) ); ?>" class="button button-small" aria-label="<?php echo esc_attr( $view_label ); ?>"><?php esc_html_e( 'View', 'mxroute-mailer' ); ?></a>
+						<button class="button button-small mxroute-requeue-log" data-log-id="<?php echo esc_attr( $log->id ); ?>" aria-label="<?php echo esc_attr( $requeue_label ); ?>"><?php esc_html_e( 'Re-queue', 'mxroute-mailer' ); ?></button>
 						<button class="button button-small mxroute-delete-log" data-log-id="<?php echo esc_attr( $log->id ); ?>" aria-label="<?php echo esc_attr( $delete_label ); ?>"><?php esc_html_e( 'Delete', 'mxroute-mailer' ); ?></button>
 					</td>
 				</tr>
@@ -137,6 +141,7 @@ $total_pages = $result['pages'];
 				<label for="bulk-action-selector-bottom" class="screen-reader-text"><?php esc_html_e( 'Select bulk action', 'mxroute-mailer' ); ?></label>
 				<select name="action" id="bulk-action-selector-bottom">
 					<option value=""><?php esc_html_e( 'Bulk Actions', 'mxroute-mailer' ); ?></option>
+					<option value="bulk-requeue"><?php esc_html_e( 'Re-queue', 'mxroute-mailer' ); ?></option>
 					<option value="bulk-delete"><?php esc_html_e( 'Delete', 'mxroute-mailer' ); ?></option>
 				</select>
 				<input type="submit" id="mxroute-bulk-apply-bottom" class="button action" value="<?php esc_attr_e( 'Apply', 'mxroute-mailer' ); ?>" />

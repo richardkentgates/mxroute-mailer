@@ -4,7 +4,7 @@ Tags: email, smtp, mxroute, mail
 Requires at least: 5.0
 Tested up to: 7.0
 Requires PHP: 7.3
-Stable tag: 1.2.22
+Stable tag: 1.3.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -21,6 +21,9 @@ If your hosting provider blocks outbound SMTP ports (common on Google Cloud, AWS
 **Features:**
 
 * Automatic email routing through MXRoute HTTP API (port 443)
+* Email queue with background processing via WP-Cron
+* File attachment support for all email types
+* Re-queue feature to resend failed or sent emails
 * Email logging with filtering, search, and pagination
 * Reply-To header support for contact forms
 * Test email functionality with full API response details
@@ -62,11 +65,19 @@ If a plugin sets a `From` header (like a contact form submitting a user's email)
 
 = Where are the email logs? =
 
-Go to **Tools > MXRoute Logs** in your WordPress admin. You can search, filter by date/status/sender, and view full API request/response details for each email.
+Go to **Tools > MXRoute Logs** in your WordPress admin. You can search, filter by date/status/sender, and view full API request/response details for each email. Pending emails in the queue are shown separately under **Tools > MXRoute Queue**.
+
+= What is the email queue? =
+
+The plugin queues all outgoing emails and processes them in the background via WP-Cron. This ensures reliable delivery even during high-traffic periods. You can view pending emails on the Queue page and re-queue any sent or failed email from the Logs page.
 
 = Does this send through SMTP or API? =
 
 API. The plugin sends email through MXRoute's HTTPS endpoint (`https://smtpapi.mxroute.com/`), not SMTP. This is why it works when SMTP ports are blocked.
+
+= Does this support file attachments? =
+
+Yes. The plugin supports file attachments in all outgoing emails. Attachments are base64-encoded and sent through the MXRoute API. You can view attachment details in the email logs.
 
 = How do automatic updates work? =
 
@@ -83,6 +94,16 @@ The plugin fires a `wp_mail_failed` action so other plugins can handle the failu
 3. Individual log detail view with API request and response data
 
 == Changelog ==
+
+= 1.3.0 =
+* Feature: Add email queue with background processing via WP-Cron
+* Feature: Add file attachment support for all email types
+* Feature: Add re-queue feature to resend failed or sent emails
+* Feature: Add dedicated queue status page
+* Improvement: Pending emails hidden from logs page (view on queue page)
+* Improvement: Dynamic row removal on re-queue (no page reload)
+* Improvement: Add emails directly to queue from queue page
+* Security: Separate access between logs and queue views
 
 = 1.2.21 =
 * Fix: remove dead `drop_table()` and `get_recent_logs()` methods from logger

@@ -12,6 +12,7 @@ class MXRoute_Mailer_Test extends \PHPUnit\Framework\TestCase {
         $GLOBALS['wp_transients'] = array();
         $GLOBALS['wp_db_inserts'] = array();
         $GLOBALS['wp_db_queries'] = array();
+        $GLOBALS['wp_scheduled_events'] = array();
     }
 
     /**
@@ -91,10 +92,9 @@ class MXRoute_Mailer_Test extends \PHPUnit\Framework\TestCase {
     }
 
     /**
-     * Tests that intercept_wp_mail returns true after a successful API send
-     * so WordPress does not also invoke the default mailer.
+     * Tests that intercept_wp_mail returns true after queuing an email.
      */
-    public function test_intercept_wp_mail_returns_true_after_api_send() {
+    public function test_intercept_wp_mail_returns_true_after_queue() {
         $mailer = MXRoute_Mailer::instance();
         $GLOBALS['wp_options']['mxroute_mailer_server'] = 'server.example.com';
         $GLOBALS['wp_options']['mxroute_mailer_username'] = 'user@example.com';
@@ -109,14 +109,13 @@ class MXRoute_Mailer_Test extends \PHPUnit\Framework\TestCase {
     }
 
     /**
-     * Tests that intercept_wp_mail decrypts the stored password before sending.
+     * Tests that intercept_wp_mail queues an entry with success = 0.
      */
-    public function test_intercept_decrypts_password_before_sending() {
-        $plain_password = 'intercept_secret';
+    public function test_intercept_queues_entry_with_pending_status() {
         $mailer = MXRoute_Mailer::instance();
         $GLOBALS['wp_options']['mxroute_mailer_server'] = 'server.example.com';
-        $GLOBALS['wp_options']['mxroute_mailer_username'] = 'from@example.com';
-        $GLOBALS['wp_options']['mxroute_mailer_password'] = MXRoute_Crypto::encrypt($plain_password);
+        $GLOBALS['wp_options']['mxroute_mailer_username'] = 'user@example.com';
+        $GLOBALS['wp_options']['mxroute_mailer_password'] = 'password123';
 
         $mailer->intercept_wp_mail(array(
             'to' => 'to@example.com',
@@ -124,47 +123,48 @@ class MXRoute_Mailer_Test extends \PHPUnit\Framework\TestCase {
             'message' => 'Body',
         ));
 
-        $call = array_pop($GLOBALS['wp_function_calls']['wp_remote_post']);
-        $body = json_decode($call['args']['body'], true);
-
-        $this->assertEquals($plain_password, $body['password']);
-        $this->assertEquals('Basic ' . base64_encode('from@example.com:' . $plain_password), $call['args']['headers']['Authorization']);
+        $this->assertNotEmpty($GLOBALS['wp_db_inserts']);
+        $insert = $GLOBALS['wp_db_inserts'][0];
+        $this->assertEquals(0, $insert['data']['success']);
     }
 
     /**
-     * Tests that wp_mail_failed action is fired with WP_Error when API call fails.
+     * Tests that intercept_wp_mail does not make an API call directly.
      */
-    public function test_intercept_wp_mail_fires_wp_mail_failed_on_api_failure() {
+    public function test_intercept_does_not_call_api_directly() {
         $mailer = MXRoute_Mailer::instance();
         $GLOBALS['wp_options']['mxroute_mailer_server'] = 'server.example.com';
         $GLOBALS['wp_options']['mxroute_mailer_username'] = 'user@example.com';
         $GLOBALS['wp_options']['mxroute_mailer_password'] = 'password123';
 
-        // Mock wp_remote_post to return a failure response
-        $GLOBALS['mxroute_mock_remote_response'] = array(
-            'response' => array('code' => 500),
-            'body'     => wp_json_encode(array('success' => false, 'message' => 'SMTP error')),
-        );
-
-        $args = array(
-            'to'      => 'to@example.com',
-            'subject' => 'Test Subject',
+        $mailer->intercept_wp_mail(array(
+            'to' => 'to@example.com',
+            'subject' => 'Test',
             'message' => 'Body',
-        );
-        $mailer->intercept_wp_mail($args);
+        ));
 
-        $do_action_calls = $GLOBALS['wp_function_calls']['do_action'] ?? array();
-        $failed_calls = array_filter($do_action_calls, function($call) {
-            return $call['hook'] === 'wp_mail_failed';
-        });
-        $this->assertNotEmpty($failed_calls, 'wp_mail_failed action should be fired on API failure');
+        // Should not have made any wp_remote_post calls (that happens in process_queue).
+        $this->assertArrayNotHasKey('wp_remote_post', $GLOBALS['wp_function_calls']);
+    }
 
-        $failed_call = reset($failed_calls);
-        $this->assertInstanceOf('WP_Error', $failed_call['args'][0]);
-        $this->assertEquals('mxroute_send_failed', $failed_call['args'][0]->get_error_code());
+    /**
+     * Tests that intercept_wp_mail schedules the queue processor.
+     */
+    public function test_intercept_schedules_processor() {
+        $mailer = MXRoute_Mailer::instance();
+        $GLOBALS['wp_options']['mxroute_mailer_server'] = 'server.example.com';
+        $GLOBALS['wp_options']['mxroute_mailer_username'] = 'user@example.com';
+        $GLOBALS['wp_options']['mxroute_mailer_password'] = 'password123';
 
-        // Reset mock
-        unset($GLOBALS['mxroute_mock_remote_response']);
+        $mailer->intercept_wp_mail(array(
+            'to' => 'to@example.com',
+            'subject' => 'Test',
+            'message' => 'Body',
+        ));
+
+        $this->assertArrayHasKey('wp_schedule_single_event', $GLOBALS['wp_function_calls']);
+        $schedule = $GLOBALS['wp_function_calls']['wp_schedule_single_event'][0];
+        $this->assertEquals('mxroute_mailer_process_queue', $schedule['hook']);
     }
 
     /**

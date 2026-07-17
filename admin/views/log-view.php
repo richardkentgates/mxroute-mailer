@@ -45,11 +45,11 @@ $response = json_decode( $log->api_response, true );
 		</tr>
 		<tr>
 			<th scope="row"><?php esc_html_e( 'Status', 'mxroute-mailer' ); ?></th>
-			<td>
-				<span class="mxroute-status-badge <?php echo esc_attr( $log->success ? 'mxroute-success' : 'mxroute-fail' ); ?>" role="status">
-					<?php echo esc_html( $log->success ? __( 'Success', 'mxroute-mailer' ) : __( 'Failed', 'mxroute-mailer' ) ); ?>
-				</span>
-			</td>
+		<td>
+			<span class="mxroute-status-badge <?php echo esc_attr( $log->success > 0 ? 'mxroute-success' : 'mxroute-fail' ); ?>" role="status">
+				<?php echo esc_html( $log->success > 0 ? __( 'Sent', 'mxroute-mailer' ) : __( 'Failed', 'mxroute-mailer' ) ); ?>
+			</span>
+		</td>
 		</tr>
 	<tr>
 		<th scope="row"><?php esc_html_e( 'From', 'mxroute-mailer' ); ?></th>
