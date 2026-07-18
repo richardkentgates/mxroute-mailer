@@ -95,6 +95,16 @@ Failed emails are logged with status -1 and visible on the Logs page. You can re
 
 == Changelog ==
 
+= 1.3.10 =
+* Fix: Load PHPMailer classes before SMTP use — prevents fatal when WordPress hasn't autoloaded them
+* Fix: Catch `\Throwable` instead of `\Exception` in process_queue to handle PHP 7+ class-not-found errors
+* Improvement: Test email sends all three attachment types (media library ID, persistent path, temp file)
+* Improvement: Each test attachment type uses a distinct file so all three arrive as separate attachments
+
+= 1.3.8 =
+* Fix: SMTP fatal error when PHPMailer class not loaded — added require_once for PHPMailer, SMTP, and Exception
+* Fix: Queue processor now catches all errors including `\Error` (not just `\Exception`)
+
 = 1.3.4 =
 * Improvement: Attachment storage is now smart — only temp files are copied to persistent storage; media library and plugin files are referenced by native path/ID
 * Improvement: Log detail page shows attachment type, original path, and storage status (OK/Missing/N/A)

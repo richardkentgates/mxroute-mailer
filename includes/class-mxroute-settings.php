@@ -323,7 +323,7 @@ class MXRoute_Settings {
 				'title'   => __( 'Test Email', 'mxroute-mailer' ),
 				'content' => '<p>' . esc_html__( 'Use the test form at the bottom of this page to send a test email. Enter a recipient address, then click "Send Test Email". The sender address is automatically taken from your configured username.', 'mxroute-mailer' ) . '</p>'
 					. '<p>' . esc_html__( 'The email is queued and processed in the background by WP-Cron. You\'ll see a notice confirming it was queued. Check the Queue page for delivery status.', 'mxroute-mailer' ) . '</p>'
-					. '<p>' . esc_html__( 'Checking "Include file attachment" sends the test email with a file attachment via SMTP. This tests the smart switch that automatically routes emails with attachments through SMTP instead of the MXRoute HTTP API.', 'mxroute-mailer' ) . '</p>',
+					. '<p>' . esc_html__( 'Checking "Include file attachments" sends the test email with all three attachment types: a media library attachment (ID reference), a persistent file path, and a temp file (copied to storage). This tests the smart switch and all attachment storage paths.', 'mxroute-mailer' ) . '</p>',
 			)
 		);
 

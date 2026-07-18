@@ -83,14 +83,13 @@ Common failure reasons:
 
 **Symptoms**: Emails without attachments send fine, but emails with file attachments fail.
 
-**Cause**: Emails with file attachments are sent via SMTP (PHPMailer) instead of the MXRoute HTTP API, because the MXRoute HTTP API does not support file attachments. If your hosting environment blocks outbound SMTP ports (465, 587, 2525), these emails will fail.
+**Causes and Fixes**:
 
-**Fixes**:
-
-1. **Check which transport was used** - Go to Tools > MXRoute Logs, open the failed email, and check the Transport field. If it says `smtp`, the email was routed via SMTP (smart switch for attachments).
-2. **Check attachment status** - The log detail page shows an Attachments section with storage status for each file. If any show "Missing", the stored copy was deleted before the email could be sent. Re-queue the email to try again.
-3. **Check if SMTP ports are open** - Contact your hosting provider to confirm outbound SMTP ports (465, 587, or 2525) are not blocked
-4. **Remove attachments** - If SMTP ports cannot be opened, remove file attachments from the email. Emails without attachments use the MXRoute HTTP API (port 443) and are not affected by SMTP port blocks.
+1. **PHPMailer class not found** - If the error log shows `Class "PHPMailer\PHPMailer\PHPMailer" not found`, update to v1.3.8 or later. Earlier versions did not load PHPMailer explicitly, which caused a fatal error when the SMTP path was triggered.
+2. **SMTP ports blocked** - Emails with file attachments are sent via SMTP (PHPMailer) instead of the MXRoute HTTP API, because the MXRoute HTTP API does not support file attachments. If your hosting environment blocks outbound SMTP ports (465, 587, 2525), these emails will fail.
+3. **Check which transport was used** - Go to Tools > MXRoute Logs, open the failed email, and check the Transport field. If it says `smtp`, the email was routed via SMTP (smart switch for attachments).
+4. **Check attachment status** - The log detail page shows an Attachments section with storage status for each file. If any show "Missing", the stored copy was deleted before the email could be sent. Re-queue the email to try again.
+5. **Remove attachments** - If SMTP ports cannot be opened, remove file attachments from the email. Emails without attachments use the MXRoute HTTP API (port 443) and are not affected by SMTP port blocks.
 
 ### Attachment Storage Issues
 
