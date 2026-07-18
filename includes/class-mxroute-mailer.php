@@ -167,8 +167,8 @@ class MXRoute_Mailer {
 	public function process_queue() {
 		$queue    = new MXRoute_Queue();
 		$api      = new MXRoute_API();
-		$batch    = absint( get_option( 'mxroute_mailer_batch_size', 50 ) );
-		$pending  = $queue->get_pending( $batch );
+		$batch    = absint( get_option( 'mxroute_mailer_batch_size', 5 ) );
+		$pending  = $queue->claim_pending( $batch );
 
 		if ( empty( $pending ) ) {
 			return;
@@ -177,31 +177,48 @@ class MXRoute_Mailer {
 		$logger = new MXRoute_Logger();
 
 		foreach ( $pending as $item ) {
-			$attachments = json_decode( $item->attachments, true );
-			if ( ! is_array( $attachments ) ) {
-				$attachments = array();
-			}
-			$attachments = $this->normalize_attachments( $attachments );
+			$attachments = $queue->resolve_attachments( $item->attachments );
 
-			$result = $api->send(
+			$item_transport = ! empty( $item->transport ) ? $item->transport : $api->get_transport( $attachments );
+
+			try {
+				$result = $api->send(
+					$item->from_email,
+					$item->to_email,
+					$item->subject,
+					$item->message,
+					$item->reply_to,
+					$attachments
+				);
+			} catch ( \Exception $e ) {
+				$result = array(
+					'success'  => false,
+					'message'  => $e->getMessage(),
+					'request'  => array(),
+					'response' => array( 'error' => $e->getMessage() ),
+				);
+			}
+
+			$logger->log(
 				$item->from_email,
 				$item->to_email,
 				$item->subject,
 				$item->message,
+				$result['request'],
+				$result['response'],
+				$result['success'],
 				$item->reply_to,
-				$attachments
+				'',
+				$attachments,
+				$item_transport
 			);
 
 			if ( $result['success'] ) {
 				$queue->mark_sent( $item->id, $result['request'], $result['response'] );
+				$queue->delete_stored_attachments( $item->attachments );
 			} else {
 				$queue->mark_failed( $item->id, $result['request'], $result['response'] );
 			}
-		}
-
-		// Re-schedule if more pending items remain.
-		if ( $queue->count_pending() > 0 && ! wp_next_scheduled( 'mxroute_mailer_process_queue' ) ) {
-			wp_schedule_single_event( time(), 'mxroute_mailer_process_queue' );
 		}
 	}
 
@@ -256,10 +273,10 @@ class MXRoute_Mailer {
 			foreach ( $lines as $line ) {
 				if ( 0 === stripos( $line, 'From:' ) ) {
 					$from = trim( substr( $line, 5 ) );
-				if ( preg_match( '/<(.+?)>/', $from, $matches ) ) {
-					return sanitize_email( $matches[1] );
-				}
-				return sanitize_email( $from );
+					if ( preg_match( '/<(.+?)>/', $from, $matches ) ) {
+						return sanitize_email( $matches[1] );
+					}
+					return sanitize_email( $from );
 				}
 			}
 		}
@@ -268,10 +285,10 @@ class MXRoute_Mailer {
 			foreach ( $headers as $header ) {
 				if ( is_string( $header ) && 0 === stripos( $header, 'From:' ) ) {
 					$from = trim( substr( $header, 5 ) );
-				if ( preg_match( '/<(.+?)>/', $from, $matches ) ) {
-					return sanitize_email( $matches[1] );
-				}
-				return sanitize_email( $from );
+					if ( preg_match( '/<(.+?)>/', $from, $matches ) ) {
+						return sanitize_email( $matches[1] );
+					}
+					return sanitize_email( $from );
 				}
 			}
 		}
@@ -282,10 +299,8 @@ class MXRoute_Mailer {
 	/**
 	 * Handle test email submission.
 	 *
-	 * By default test emails bypass the queue and send synchronously for instant
-	 * feedback.  Checking "Send through queue" adds the email to the queue and
-	 * schedules the cron processor instead.  Checking "Include test attachment"
-	 * attaches a small text file to the email.
+	 * Sends synchronously for instant feedback. The transport (API or SMTP) is
+	 * automatically determined by the smart switch based on attachments.
 	 *
 	 * @return void
 	 */
@@ -328,50 +343,31 @@ class MXRoute_Mailer {
 			return;
 		}
 
-		$use_queue    = ! empty( $_POST['mxroute_test_queue'] );
-		$use_attach   = ! empty( $_POST['mxroute_test_attachment'] );
-		$attachments  = array();
-
-		if ( $use_attach ) {
-			$tmp = wp_tempnam( 'mxroute-test-attach-' );
-			if ( $tmp ) {
-				file_put_contents( $tmp, "MXRoute Mailer test attachment.\nTimestamp: " . gmdate( 'Y-m-d H:i:s' ) . "\n" ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
-				$attachments[] = $tmp;
+		$attachments = array();
+		if ( ! empty( $_POST['mxroute_test_attachment'] ) ) {
+			$test_file = plugin_dir_path( __DIR__ ) . 'assets/test-attachment.txt';
+			if ( file_exists( $test_file ) ) {
+				$attachments = array( $test_file );
 			}
 		}
 
-		if ( $use_queue ) {
-			$queue    = new MXRoute_Queue();
-			$inserted = $queue->add( $from, $to, $subject, $body, '', $attachments );
+		// Queue the test email so it goes through the same path as real emails.
+		$queue = new MXRoute_Queue();
+		$queue->add( $from, $to, $subject, $body, '', $attachments, '' );
 
-			if ( ! wp_next_scheduled( 'mxroute_mailer_process_queue' ) ) {
-				wp_schedule_single_event( time(), 'mxroute_mailer_process_queue' );
-			}
-
-			$result = array(
-				'success'  => (bool) $inserted,
-				'message'  => $inserted
-					? __( 'Test email added to the queue. It will be sent on the next cron run.', 'mxroute-mailer' )
-					: __( 'Failed to add test email to the queue.', 'mxroute-mailer' ),
-				'request'  => '',
-				'response' => '',
-			);
-		} else {
-			$api    = new MXRoute_API();
-			$result = $api->send( $from, $to, $subject, $body, '', $attachments );
+		// Schedule the queue processor.
+		if ( ! wp_next_scheduled( 'mxroute_mailer_process_queue' ) ) {
+			wp_schedule_single_event( time(), 'mxroute_mailer_process_queue' );
 		}
 
-		$logger = new MXRoute_Logger();
-		$logger->log(
-			$from,
-			$to,
-			$subject,
-			$body,
-			$result['request'],
-			$result['response'],
-			$result['success']
+		set_transient(
+			'mxroute_test_email_result',
+			array(
+				'success' => true,
+				'queued'  => true,
+				'message' => __( 'Test email queued for sending.', 'mxroute-mailer' ),
+			),
+			60
 		);
-
-		set_transient( 'mxroute_test_email_result', $result, 60 );
 	}
 }

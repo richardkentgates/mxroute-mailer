@@ -14,19 +14,7 @@ $queue = new MXRoute_Queue();
 $current_page   = max( 1, intval( wp_unslash( $_GET['paged'] ?? 1 ) ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 $items_per_page = 20;
 
-global $wpdb;
-$table_name = $wpdb->prefix . 'mxroute_mailer_logs';
-
-$offset = ( $current_page - 1 ) * $items_per_page;
-
-// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is safe.
-$pending_items = $wpdb->get_results(
-	$wpdb->prepare(
-		"SELECT * FROM {$table_name} WHERE success = 0 AND processed_at IS NULL ORDER BY created_at ASC LIMIT %d OFFSET %d",
-		$items_per_page,
-		$offset
-	)
-);
+$pending_items = $queue->get_pending_paginated( $items_per_page, $current_page );
 
 $total = $queue->count_pending();
 
@@ -37,32 +25,6 @@ $total_pages = $items_per_page > 0 ? (int) ceil( $total / $items_per_page ) : 0;
 	<h1 class="wp-heading-inline"><?php esc_html_e( 'MXRoute Email Queue', 'mxroute-mailer' ); ?></h1>
 
 	<div id="mxroute-status-announcer" class="screen-reader-text" aria-live="polite"></div>
-
-	<div class="mxroute-queue-add" style="margin: 20px 0; padding: 15px; background: #fff; border: 1px solid #ccd0d4;">
-		<h2 style="margin-top: 0;"><?php esc_html_e( 'Add Email to Queue', 'mxroute-mailer' ); ?></h2>
-		<form id="mxroute-queue-add-form">
-			<?php wp_nonce_field( 'mxroute_log_manage', 'mxroute_queue_nonce' ); ?>
-			<table class="form-table">
-				<tr>
-					<th><label for="mxroute-queue-from"><?php esc_html_e( 'From', 'mxroute-mailer' ); ?></label></th>
-					<td><input type="email" id="mxroute-queue-from" name="from_email" required class="regular-text" /></td>
-				</tr>
-				<tr>
-					<th><label for="mxroute-queue-to"><?php esc_html_e( 'To', 'mxroute-mailer' ); ?></label></th>
-					<td><input type="email" id="mxroute-queue-to" name="to_email" required class="regular-text" /></td>
-				</tr>
-				<tr>
-					<th><label for="mxroute-queue-subject"><?php esc_html_e( 'Subject', 'mxroute-mailer' ); ?></label></th>
-					<td><input type="text" id="mxroute-queue-subject" name="subject" required class="regular-text" /></td>
-				</tr>
-				<tr>
-					<th><label for="mxroute-queue-body"><?php esc_html_e( 'Body', 'mxroute-mailer' ); ?></label></th>
-					<td><textarea id="mxroute-queue-body" name="message" required class="large-text" rows="4"></textarea></td>
-				</tr>
-			</table>
-			<?php submit_button( __( 'Add to Queue', 'mxroute-mailer' ), 'primary', 'mxroute-queue-submit' ); ?>
-		</form>
-	</div>
 
 	<p class="description">
 		<?php
@@ -83,16 +45,37 @@ $total_pages = $items_per_page > 0 ? (int) ceil( $total / $items_per_page ) : 0;
 					<th scope="col"><?php esc_html_e( 'From', 'mxroute-mailer' ); ?></th>
 					<th scope="col"><?php esc_html_e( 'To', 'mxroute-mailer' ); ?></th>
 					<th scope="col"><?php esc_html_e( 'Subject', 'mxroute-mailer' ); ?></th>
+					<th scope="col" style="width:100px;"><?php esc_html_e( 'Attachments', 'mxroute-mailer' ); ?></th>
 				</tr>
 			</thead>
 			<tbody>
-				<?php foreach ( $pending_items as $item ) : ?>
+				<?php
+				$queue_helper = new MXRoute_Queue();
+				foreach ( $pending_items as $item ) :
+					$att_info  = $queue_helper->get_attachment_info( $item->attachments ?? '[]' );
+					$att_count = count( $att_info );
+					$att_ok    = 0;
+					foreach ( $att_info as $att ) {
+						if ( $att['stored_exists'] || '' === $att['stored_path'] ) {
+							++$att_ok;
+						}
+					}
+					?>
 					<tr>
 						<td><?php echo esc_html( $item->id ); ?></td>
 						<td><?php echo esc_html( $item->created_at ); ?></td>
 						<td><?php echo esc_html( $item->from_email ); ?></td>
 						<td><?php echo esc_html( $item->to_email ); ?></td>
 						<td><?php echo esc_html( wp_trim_words( $item->subject, 8 ) ); ?></td>
+						<td>
+							<?php if ( 0 === $att_count ) : ?>
+								<?php esc_html_e( 'None', 'mxroute-mailer' ); ?>
+							<?php elseif ( $att_ok === $att_count ) : ?>
+								<span class="mxroute-status-badge mxroute-success"><?php echo esc_html( sprintf( _n( '%d file', '%d files', $att_count, 'mxroute-mailer' ), $att_count ) ); ?></span>
+							<?php else : ?>
+								<span class="mxroute-status-badge mxroute-fail"><?php echo esc_html( sprintf( __( '%d/%d stored', 'mxroute-mailer' ), $att_ok, $att_count ) ); ?></span>
+							<?php endif; ?>
+						</td>
 					</tr>
 				<?php endforeach; ?>
 			</tbody>

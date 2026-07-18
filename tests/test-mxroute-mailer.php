@@ -356,67 +356,22 @@ class MXRoute_Mailer_Test extends \PHPUnit\Framework\TestCase {
     }
 
     /**
-     * Tests that handle_test_email adds to queue when queue checkbox is checked.
+     * Tests that handle_test_email sets queued flag in transient.
      */
-    public function test_handle_test_email_queues_when_queue_checked() {
+    public function test_handle_test_email_sets_queued_flag() {
+        $GLOBALS['wp_options']['mxroute_mailer_username'] = 'from@example.com';
         $mailer = MXRoute_Mailer::instance();
-        $GLOBALS['wp_options']['mxroute_mailer_username'] = 'sender@example.com';
         $_POST = array(
             'mxroute_test_email_nonce' => wp_create_nonce('mxroute_test_email'),
             'mxroute_test_to'          => 'to@example.com',
-            'mxroute_test_subject'     => 'Queue Test',
-            'mxroute_test_body'        => 'Queued body',
-            'mxroute_test_queue'       => '1',
+            'mxroute_test_subject'     => 'Test',
+            'mxroute_test_body'        => 'Body',
         );
-
         $mailer->handle_test_email();
 
-        $this->assertArrayHasKey('mxroute_test_email_result', $GLOBALS['wp_transients']);
         $result = $GLOBALS['wp_transients']['mxroute_test_email_result'];
+        $this->assertTrue($result['queued']);
         $this->assertTrue($result['success']);
-        $this->assertStringContainsString('queue', $result['message']);
-
-        $queue_insert = null;
-        foreach ( $GLOBALS['wp_db_inserts'] as $insert ) {
-            if ( isset( $insert['data']['success'] ) && 0 === $insert['data']['success'] ) {
-                $queue_insert = $insert;
-                break;
-            }
-        }
-        $this->assertNotNull( $queue_insert, 'Queue insert not found in DB inserts' );
-        $this->assertEquals( 'to@example.com', $queue_insert['data']['to_email'] );
-
-        $this->assertArrayNotHasKey('wp_remote_post', $GLOBALS['wp_function_calls']);
-    }
-
-    /**
-     * Tests that handle_test_email creates attachment when attachment checkbox is checked.
-     */
-    public function test_handle_test_email_creates_attachment_when_checked() {
-        $mailer = MXRoute_Mailer::instance();
-        $GLOBALS['wp_options']['mxroute_mailer_username'] = 'sender@example.com';
-        $GLOBALS['wp_options']['mxroute_mailer_server']   = 'https://api.example.com';
-        $GLOBALS['wp_options']['mxroute_mailer_password'] = 'test-password';
-        $_POST = array(
-            'mxroute_test_email_nonce' => wp_create_nonce('mxroute_test_email'),
-            'mxroute_test_to'          => 'to@example.com',
-            'mxroute_test_subject'     => 'Attach Test',
-            'mxroute_test_body'        => 'With attachment',
-            'mxroute_test_attachment'  => '1',
-        );
-
-        $mailer->handle_test_email();
-
-        $this->assertArrayHasKey('wp_tempnam', $GLOBALS['wp_function_calls']);
-        $this->assertArrayHasKey('mxroute_test_email_result', $GLOBALS['wp_transients']);
-
-        $remote_calls = $GLOBALS['wp_function_calls']['wp_remote_post'] ?? array();
-        $this->assertNotEmpty($remote_calls);
-        $last_call = end($remote_calls);
-        $this->assertArrayHasKey('args', $last_call);
-        $this->assertArrayHasKey('body', $last_call['args']);
-        $this->assertStringContainsString('attachments', $last_call['args']['body']);
-        $this->assertStringContainsString('mxroute-test-attach-', $last_call['args']['body']);
     }
 
     /**

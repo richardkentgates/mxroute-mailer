@@ -235,6 +235,10 @@ class MXRoute_Mailer_Edge_Test extends \PHPUnit\Framework\TestCase {
 		$GLOBALS['wp_db_queries']       = array();
 	}
 
+	protected function tearDown(): void {
+		unset( $GLOBALS['wp_mock_current_user_can'] );
+	}
+
 	/**
 	 * Tests that intercept_wp_mail handles a null "to" value.
 	 */
@@ -429,10 +433,17 @@ class MXRoute_Mailer_Edge_Test extends \PHPUnit\Framework\TestCase {
 	 * Tests that handle_test_email skips when user lacks manage_options capability.
 	 */
 	public function test_handle_test_email_skips_without_manage_options() {
-		$this->markTestSkipped(
-			'Test bootstrap mock always returns true for current_user_can(). '
-			. 'This path is verified by integration testing on the test site.'
+		$GLOBALS['wp_mock_current_user_can'] = false;
+
+		$mailer = MXRoute_Mailer::instance();
+		$_POST  = array(
+			'mxroute_test_email_nonce' => wp_create_nonce( 'mxroute_test_email' ),
+			'mxroute_test_to'          => 'to@example.com',
+			'mxroute_test_from'        => 'from@example.com',
 		);
+		$mailer->handle_test_email();
+
+		$this->assertArrayNotHasKey( 'mxroute_test_email_result', $GLOBALS['wp_transients'] );
 	}
 }
 
@@ -679,7 +690,7 @@ class MXRoute_Dashboard_Edge_Test extends \PHPUnit\Framework\TestCase {
 	}
 
 	/**
-	 * Tests that bulk delete accepts negative log IDs.
+	 * Tests that bulk delete filters out negative log IDs.
 	 */
 	public function test_bulk_delete_handles_negative_ids() {
 		$_POST['log_ids'] = array( -1, -2, -3 );
@@ -690,9 +701,11 @@ class MXRoute_Dashboard_Edge_Test extends \PHPUnit\Framework\TestCase {
 			$dashboard->ajax_bulk_delete_logs();
 		} catch ( \MXRouteJSONException $e ) {
 			$threw = true;
-			$this->assertTrue( $e->response['success'] );
+			$this->assertFalse( $e->response['success'] );
 		}
 		$this->assertTrue( $threw, 'Expected MXRouteJSONException to be thrown' );
+
+		unset( $_POST['log_ids'] );
 	}
 
 	/**
@@ -707,7 +720,7 @@ class MXRoute_Dashboard_Edge_Test extends \PHPUnit\Framework\TestCase {
 			$dashboard->ajax_delete_log();
 		} catch ( \MXRouteJSONException $e ) {
 			$threw = true;
-			$this->assertTrue( $e->response['success'] );
+			$this->assertFalse( $e->response['success'] );
 		}
 		$this->assertTrue( $threw, 'Expected MXRouteJSONException to be thrown' );
 	}
@@ -724,7 +737,7 @@ class MXRoute_Dashboard_Edge_Test extends \PHPUnit\Framework\TestCase {
 			$dashboard->ajax_delete_log();
 		} catch ( \MXRouteJSONException $e ) {
 			$threw = true;
-			$this->assertTrue( $e->response['success'] );
+			$this->assertFalse( $e->response['success'] );
 		}
 		$this->assertTrue( $threw, 'Expected MXRouteJSONException to be thrown' );
 	}
@@ -760,15 +773,6 @@ class MXRoute_Settings_Edge_Test extends \PHPUnit\Framework\TestCase {
 		$this->assertEquals( 0, $settings->sanitize_checkbox( 0 ) );
 		$this->assertEquals( 1, $settings->sanitize_checkbox( 2 ) );
 		$this->assertEquals( 1, $settings->sanitize_checkbox( -1 ) );
-	}
-
-	/**
-	 * Tests that sanitize_password returns empty when empty is submitted.
-	 */
-	public function test_sanitize_password_returns_empty_when_empty() {
-		$settings = new MXRoute_Settings();
-		$result   = $settings->sanitize_password( '' );
-		$this->assertEquals( '', $result );
 	}
 
 	/**

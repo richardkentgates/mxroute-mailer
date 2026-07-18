@@ -196,36 +196,4 @@
         }
     });
 
-    $('#mxroute-queue-add-form').on('submit', function (e) {
-        e.preventDefault();
-        var $form = $(this);
-        var $button = $form.find('#mxroute-queue-submit');
-        var originalText = $button.val();
-
-        $button.prop('disabled', true).val(mxrouteMailer.i18n.sending || 'Sending...');
-
-        $.post(mxrouteMailer.ajaxUrl, {
-            action: 'mxroute_add_to_queue',
-            nonce: mxrouteMailer.logManageNonce,
-            from_email: $form.find('#mxroute-queue-from').val(),
-            to_email: $form.find('#mxroute-queue-to').val(),
-            subject: $form.find('#mxroute-queue-subject').val(),
-            message: $form.find('#mxroute-queue-body').val()
-        }, function (response) {
-            if (response.success) {
-                $form.find('#mxroute-queue-from').val('');
-                $form.find('#mxroute-queue-to').val('');
-                $form.find('#mxroute-queue-subject').val('');
-                $form.find('#mxroute-queue-body').val('');
-                mxrouteAnnounce(response.data.message);
-                location.reload();
-            } else {
-                alert(response.data && response.data.message ? response.data.message : mxrouteMailer.i18n.failedQueueAdd);
-            }
-        }).fail(function () {
-            alert(mxrouteMailer.i18n.failedQueueAdd);
-        }).always(function () {
-            $button.prop('disabled', false).val(originalText);
-        });
-    });
 })(jQuery);

@@ -273,7 +273,7 @@ class MXRoute_Logger_Test extends \PHPUnit\Framework\TestCase {
 
         $this->assertNotEmpty($GLOBALS['wp_db_inserts']);
         $insert = $GLOBALS['wp_db_inserts'][0];
-        $this->assertEquals(0, $insert['data']['success']);
+        $this->assertEquals(-1, $insert['data']['success']);
     }
 
     /**

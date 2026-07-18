@@ -50,6 +50,7 @@ class MXRoute_Logger {
             api_request longtext,
             api_response longtext,
             success tinyint(2) NOT NULL DEFAULT 0,
+            transport varchar(10) NOT NULL DEFAULT 'api',
             created_at datetime DEFAULT NULL,
             processed_at datetime DEFAULT NULL,
             PRIMARY KEY (id),
@@ -78,9 +79,10 @@ class MXRoute_Logger {
 	 * @param string       $reply_to    Optional Reply-To email address.
 	 * @param string       $headers     Optional email headers.
 	 * @param array        $attachments Optional array of file paths.
+	 * @param string       $transport   Transport method ('api' or 'smtp').
 	 * @return void
 	 */
-	public function log( $from, $to, $subject, $body, $request, $response, $success, $reply_to = '', $headers = '', $attachments = array() ) {
+	public function log( $from, $to, $subject, $body, $request, $response, $success, $reply_to = '', $headers = '', $attachments = array(), $transport = 'api' ) {
 		if ( ! get_option( 'mxroute_mailer_logging_enabled', 1 ) ) {
 			return;
 		}
@@ -115,9 +117,10 @@ class MXRoute_Logger {
 				'attachments'  => wp_json_encode( $attachments ),
 				'api_request'  => wp_json_encode( $request ),
 				'api_response' => wp_json_encode( $response ),
-				'success'      => $success ? 1 : 0,
+				'success'      => $success ? 1 : -1,
+				'transport'    => in_array( $transport, array( 'api', 'smtp' ), true ) ? $transport : 'api',
 			),
-			array( '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d' )
+			array( '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%s' )
 		);
 	}
 
@@ -226,6 +229,15 @@ class MXRoute_Logger {
 	 */
 	public function clear_logs() {
 		global $wpdb;
+
+		// Delete stored attachment copies before removing rows.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Fetching attachments for cleanup.
+		$rows = $wpdb->get_col( "SELECT attachments FROM {$this->table_name} WHERE success != 0" );
+		$queue = new MXRoute_Queue();
+		foreach ( (array) $rows as $json ) {
+			$queue->delete_stored_attachments( $json );
+		}
+
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- DELETE with no user input, TRUNCATE avoided to preserve pending queue entries.
 		$wpdb->query( "DELETE FROM {$this->table_name} WHERE success != 0" );
 	}
@@ -238,6 +250,17 @@ class MXRoute_Logger {
 	 */
 	public function delete_log( $id ) {
 		global $wpdb;
+
+		// Fetch attachments before deleting to clean up stored copies.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Fetch by primary key.
+		$attachments_json = $wpdb->get_var(
+			$wpdb->prepare( "SELECT attachments FROM {$this->table_name} WHERE id = %d", absint( $id ) )
+		);
+		if ( $attachments_json ) {
+			$queue = new MXRoute_Queue();
+			$queue->delete_stored_attachments( $attachments_json );
+		}
+
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Delete by primary key, caching not applicable.
 		$wpdb->delete( $this->table_name, array( 'id' => $id ), array( '%d' ) );
 	}
@@ -254,8 +277,22 @@ class MXRoute_Logger {
 		if ( empty( $ids ) ) {
 			return;
 		}
+
+		// Fetch attachments before deleting to clean up stored copies.
 		$ids    = array_values( $ids );
-		$format = array_fill( 0, count( $ids ), '%d' ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Delete by primary keys, caching not applicable.
+		$format = array_fill( 0, count( $ids ), '%d' ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Fetch by primary keys.
+		$rows = $wpdb->get_col(
+			$wpdb->prepare(
+				"SELECT attachments FROM {$this->table_name} WHERE id IN (" . implode( ',', $format ) . ')',
+				$ids
+			)
+		);
+		$queue = new MXRoute_Queue();
+		foreach ( (array) $rows as $json ) {
+			$queue->delete_stored_attachments( $json );
+		}
+
 		$wpdb->delete( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$this->table_name,
 			array( 'id' => $ids ),

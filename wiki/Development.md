@@ -49,16 +49,19 @@ mxroute-mailer/
 ├── mxroute-mailer.php              # Main plugin file, constants, activation hook
 ├── includes/
 │   ├── class-mxroute-api.php       # MXRoute HTTP API client
+│   ├── class-mxroute-crypto.php    # Reversible encryption for sensitive options
 │   ├── class-mxroute-mailer.php    # Core mail interception and routing
 │   ├── class-mxroute-settings.php  # Settings page, menus, help tabs
 │   ├── class-mxroute-logger.php    # Email logging to database
+│   ├── class-mxroute-queue.php     # Queue CRUD operations
 │   ├── class-mxroute-dashboard.php # AJAX handlers for log management
 │   └── class-mxroute-updater.php   # GitHub-based auto-updater
 ├── admin/
 │   ├── views/
 │   │   ├── settings.php            # Settings page template
 │   │   ├── logs.php                # Logs list page template
-│   │   └── log-view.php            # Single log detail template
+│   │   ├── log-view.php            # Single log detail template
+│   │   └── queue.php               # Queue status page template
 │   ├── css/admin.css               # Admin styles
 │   └── js/admin.js                 # Admin scripts
 ├── tests/
@@ -67,8 +70,8 @@ mxroute-mailer/
 │   ├── test-class-settings.php     # Settings tests
 │   ├── test-class-logger.php       # Logger tests
 │   ├── test-class-dashboard.php    # Dashboard AJAX tests
+│   ├── test-class-queue.php        # Queue and API tests
 │   ├── test-class-crypto.php       # Encryption tests
-│   ├── test-class-mxroute-api.php  # API client tests
 │   ├── test-class-updater.php      # Updater tests
 │   └── test-edge-cases.php         # Edge case and boundary tests
 ├── .github/
@@ -262,7 +265,7 @@ class MXRoute_Example {
 /**
  * Tests for Example functionality.
  */
-class MXRoute_Example_Test extends WP_UnitTestCase {
+class MXRoute_Example_Test extends \PHPUnit\Framework\TestCase {
 
     /**
      * Test that something works correctly.
@@ -278,11 +281,16 @@ class MXRoute_Example_Test extends WP_UnitTestCase {
 
 The test bootstrap mocks WordPress functions to allow testing without a full WordPress installation. Key mocks include:
 
-- `WP_UnitTestCase` base class
-- `$wpdb` database abstraction
-- All `wp_mail`, `get_option`, `update_option` functions
-- Nonce verification
-- Sanitization and escaping functions
+- `\PHPUnit\Framework\TestCase` base class (not `WP_UnitTestCase`)
+- `$wpdb` database abstraction with configurable query results (`get_results`, `get_var`, `get_row`, `get_col`, `insert`, `update`, `delete`, `prepare`)
+- WordPress functions: `get_option`, `update_option`, `delete_option`, `add_action`, `add_filter`, `do_action`, `wp_upload_dir`, `wp_basename`
+- Nonce functions: `wp_create_nonce`, `wp_verify_nonce`, `check_ajax_referer`
+- AJAX response functions: `wp_send_json_success`, `wp_send_json_error` (throw `MXRouteJSONException`)
+- Sanitization and escaping functions: `sanitize_email`, `sanitize_text_field`, `esc_html`, `esc_attr`
+- PHPMailer mock with configurable success port for SMTP smart switch testing
+- `wp_remote_post`, `wp_remote_get` mocks with configurable responses
+- `current_user_can` mock with configurable return value via `$GLOBALS['wp_mock_current_user_can']`
+- Constants: `MB_IN_BYTES`, `DAY_IN_SECONDS`, `ABSPATH`, `OBJECT`, `ARRAY_A`, `ARRAY_N`
 
 ## Database Migrations
 
