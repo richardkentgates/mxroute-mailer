@@ -299,8 +299,10 @@ class MXRoute_Mailer {
 	/**
 	 * Handle test email submission.
 	 *
-	 * Sends synchronously for instant feedback. The transport (API or SMTP) is
-	 * automatically determined by the smart switch based on attachments.
+	 * Queues the email for background processing via WP-Cron so it follows the
+	 * same path as real emails. When the attachment checkbox is checked, three
+	 * distinct attachment types are included to exercise all storage paths:
+	 * media library ID, persistent file path, and temp file (copied to storage).
 	 *
 	 * @return void
 	 */
