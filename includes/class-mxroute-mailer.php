@@ -345,8 +345,24 @@ class MXRoute_Mailer {
 
 		$attachments = array();
 		if ( ! empty( $_POST['mxroute_test_attachment'] ) ) {
-			// Persistent file path — referenced as-is, no copy needed.
+			// Media library ID — re-resolved from WordPress at send time.
 			$persistent_file = plugin_dir_path( __DIR__ ) . 'assets/test-attachment.txt';
+			if ( file_exists( $persistent_file ) ) {
+				$attachment_id = wp_insert_attachment(
+					array(
+						'post_title'     => 'MXRoute Test Attachment',
+						'post_mime_type' => 'text/plain',
+						'post_status'    => 'attachment',
+						'post_content'   => '',
+					),
+					$persistent_file
+				);
+				if ( $attachment_id && ! is_wp_error( $attachment_id ) ) {
+					$attachments[] = $attachment_id;
+				}
+			}
+
+			// Persistent file path — referenced as-is, no copy needed.
 			if ( file_exists( $persistent_file ) ) {
 				$attachments[] = $persistent_file;
 			}
