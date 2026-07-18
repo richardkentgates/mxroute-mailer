@@ -8,11 +8,14 @@
 
 <h3 id="features">Features</h3>
 <ul>
-    <li>Automatic email routing through MXRoute's HTTPS API</li>
-    <li>Email logging with search, filtering, and pagination</li>
-    <li>Reply-To support for contact forms</li>
-    <li>Built-in test email tool</li>
-    <li>GitHub-based automatic updates</li>
+    <li><strong>Smart-switch transport</strong> &mdash; API for lightweight emails, SMTP for attachments (creates sent folder copy for legal records)</li>
+    <li><strong>Email queue</strong> &mdash; Background processing via WP-Cron with configurable batch size</li>
+    <li><strong>File attachments</strong> &mdash; Full attachment support with persistent storage for temp files</li>
+    <li><strong>Re-queue</strong> &mdash; Resend any failed or sent email directly from the logs page</li>
+    <li><strong>Email logging</strong> &mdash; Full logs with search, filtering, and pagination</li>
+    <li><strong>Reply-To support</strong> &mdash; Preserves form sender addresses as Reply-To headers</li>
+    <li><strong>Test email tool</strong> &mdash; Verify your configuration with a single click</li>
+    <li><strong>Automatic updates</strong> &mdash; Get new versions directly from GitHub</li>
     <li>Works with any plugin or theme that uses <code>wp_mail()</code></li>
 </ul>
 
@@ -26,9 +29,16 @@
 
 <h3 id="how">How it works</h3>
 <p>
-    When a plugin or theme calls <code>wp_mail()</code>, MXRoute Mailer uses the WordPress
-    <code>pre_wp_mail</code> filter to send the message through MXRoute's API before the default
-    server mailer runs. The server mailer is skipped, so you get exactly one send per email.
+    When a plugin or theme calls <code>wp_mail()</code>, MXRoute Mailer queues the email for background
+    processing. WP-Cron then picks it up and applies the smart switch:
+</p>
+<ul>
+    <li><strong>No attachments</strong> &rarr; Sent via MXRoute HTTP API (lightweight, no server storage)</li>
+    <li><strong>Has attachments</strong> &rarr; Sent via SMTP through PHPMailer (creates a copy in your MXRoute sent folder for legal records and documentation)</li>
+</ul>
+<p>
+    The transport method is automatically selected and logged in the email details. You can re-queue
+    any failed email from the logs page to try again.
 </p>
 
 <h3 id="docs">Documentation</h3>
