@@ -299,8 +299,10 @@ class MXRoute_Mailer {
 	/**
 	 * Handle test email submission.
 	 *
-	 * Sends synchronously for instant feedback. The transport (API or SMTP) is
-	 * automatically determined by the smart switch based on attachments.
+	 * Queues the email for background processing via WP-Cron so it follows the
+	 * same path as real emails. When the attachment checkbox is checked, three
+	 * distinct attachment types are included to exercise all storage paths:
+	 * media library ID, persistent file path, and temp file (copied to storage).
 	 *
 	 * @return void
 	 */
@@ -346,16 +348,21 @@ class MXRoute_Mailer {
 		$attachments = array();
 		if ( ! empty( $_POST['mxroute_test_attachment'] ) ) {
 			// Media library ID — re-resolved from WordPress at send time.
-			$persistent_file = plugin_dir_path( __DIR__ ) . 'assets/test-attachment.txt';
-			if ( file_exists( $persistent_file ) ) {
+			// Uses its own file so all three attachment types are distinct.
+			$media_file = plugin_dir_path( __DIR__ ) . 'assets/test-attachment-media.txt';
+			if ( ! file_exists( $media_file ) ) {
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+				file_put_contents( $media_file, 'MXRoute Mailer test attachment (media library ID test).' );
+			}
+			if ( file_exists( $media_file ) ) {
 				$attachment_id = wp_insert_attachment(
 					array(
-						'post_title'     => 'MXRoute Test Attachment',
+						'post_title'     => 'MXRoute Test Media Attachment',
 						'post_mime_type' => 'text/plain',
 						'post_status'    => 'attachment',
 						'post_content'   => '',
 					),
-					$persistent_file
+					$media_file
 				);
 				if ( $attachment_id && ! is_wp_error( $attachment_id ) ) {
 					$attachments[] = $attachment_id;
@@ -363,6 +370,7 @@ class MXRoute_Mailer {
 			}
 
 			// Persistent file path — referenced as-is, no copy needed.
+			$persistent_file = plugin_dir_path( __DIR__ ) . 'assets/test-attachment.txt';
 			if ( file_exists( $persistent_file ) ) {
 				$attachments[] = $persistent_file;
 			}

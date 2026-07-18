@@ -31,9 +31,18 @@ Use the test email form to verify your configuration:
 1. **To**: Enter the recipient email address
 2. **Subject**: Defaults to "MXRoute Mailer Test"
 3. **Body**: Defaults to "This is a test email from MXRoute Mailer."
-4. Click **Send Test Email**
+4. **Options**: Check **Include file attachments** to send all three attachment types
+5. Click **Send Test Email**
 
 The response shows the queued status. The email is processed in the background by WP-Cron — check the Queue page for delivery status.
+
+When the attachment checkbox is checked, the test email includes three distinct attachment types to exercise all storage paths:
+
+| Attachment | Type | Storage behavior |
+|---|---|---|
+| `test-attachment-media.txt` | Media library ID | Created via `wp_insert_attachment()`, re-resolved at send time |
+| `test-attachment.txt` | Persistent file path | Referenced as-is, no copy |
+| Temp file in `sys_get_temp_dir()` | Temp file (stored) | Copied to `wp-content/uploads/mxroute-mailer-attachments/` |
 
 ## Email Logging
 
