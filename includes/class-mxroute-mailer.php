@@ -190,7 +190,7 @@ class MXRoute_Mailer {
 					$item->reply_to,
 					$attachments
 				);
-			} catch ( \Exception $e ) {
+			} catch ( \Throwable $e ) {
 				$result = array(
 					'success'  => false,
 					'message'  => $e->getMessage(),

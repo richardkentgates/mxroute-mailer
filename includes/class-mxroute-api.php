@@ -317,6 +317,12 @@ class MXRoute_API {
 			'transport'=> 'smtp',
 		);
 
+		if ( ! class_exists( '\PHPMailer\PHPMailer\PHPMailer', true ) ) {
+			require_once ABSPATH . 'wp-includes/PHPMailer/PHPMailer.php';
+			require_once ABSPATH . 'wp-includes/PHPMailer/SMTP.php';
+			require_once ABSPATH . 'wp-includes/PHPMailer/Exception.php';
+		}
+
 		$phpmailer = new \PHPMailer\PHPMailer\PHPMailer( true ); // phpcs:ignore WordPress.WP.AlternativeFunctions
 		$phpmailer->isSMTP();
 		$phpmailer->Host       = $server;
