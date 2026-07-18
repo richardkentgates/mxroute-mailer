@@ -28,14 +28,18 @@
 
 ### Test Email Fails
 
-**Check the API response**:
+**Check the queue status**:
 
-The test email form shows the full API response. Look for:
+The test email is queued and processed by WP-Cron. To check status:
 
-- `"success": true` - Email sent successfully
-- `"success": false` with `"message": "Authentication failed"` - Wrong username or password
-- `"success": false` with `"message": "Invalid server"` - Wrong server hostname
-- `"success": false` with `"message": "MX record not found"` - Domain DNS issue
+1. Go to **Tools > MXRoute Queue** to see if the email is pending
+2. Go to **Tools > MXRoute Logs** to see if it was sent or failed
+3. If failed, click **View** to see the full API request and response details
+
+Common failure reasons:
+- `"message": "Authentication failed"` - Wrong username or password
+- `"message": "Invalid server"` - Wrong server hostname
+- `"message": "MX record not found"` - Domain DNS issue
 
 ### Emails Send but Recipient Doesn't Receive
 

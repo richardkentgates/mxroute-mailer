@@ -322,7 +322,7 @@ class MXRoute_Settings {
 				'id'      => 'mxroute-test-email',
 				'title'   => __( 'Test Email', 'mxroute-mailer' ),
 				'content' => '<p>' . esc_html__( 'Use the test form at the bottom of this page to send a test email. Enter a recipient address, then click "Send Test Email". The sender address is automatically taken from your configured username.', 'mxroute-mailer' ) . '</p>'
-					. '<p>' . esc_html__( 'If the test succeeds, you\'ll see a green notice. If it fails, you\'ll see a red notice with the error details.', 'mxroute-mailer' ) . '</p>'
+					. '<p>' . esc_html__( 'The email is queued and processed in the background by WP-Cron. You\'ll see a notice confirming it was queued. Check the Queue page for delivery status.', 'mxroute-mailer' ) . '</p>'
 					. '<p>' . esc_html__( 'Checking "Include file attachment" sends the test email with a file attachment via SMTP. This tests the smart switch that automatically routes emails with attachments through SMTP instead of the MXRoute HTTP API.', 'mxroute-mailer' ) . '</p>',
 			)
 		);
@@ -448,7 +448,7 @@ class MXRoute_Settings {
 			array(
 				'id'      => 'mxroute-log-detail-overview',
 				'title'   => __( 'Overview', 'mxroute-mailer' ),
-				'content' => '<p>' . esc_html__( 'This page shows the full details for a single email log entry, including the message content, API request payload, and API response.', 'mxroute-mailer' ) . '</p>',
+				'content' => '<p>' . esc_html__( 'This page shows the full details for a single email log entry, including the message content, attachments, API request payload, and API response.', 'mxroute-mailer' ) . '</p>',
 			)
 		);
 
@@ -460,6 +460,9 @@ class MXRoute_Settings {
 					. '<li><strong>' . esc_html__( 'Timestamp:', 'mxroute-mailer' ) . '</strong> ' . esc_html__( 'When the email was sent.', 'mxroute-mailer' ) . '</li>'
 					. '<li><strong>' . esc_html__( 'Status:', 'mxroute-mailer' ) . '</strong> ' . esc_html__( 'Whether the API accepted the email (Sent) or rejected it (Fail).', 'mxroute-mailer' ) . '</li>'
 					. '<li><strong>' . esc_html__( 'From / To / Subject:', 'mxroute-mailer' ) . '</strong> ' . esc_html__( 'The email headers as passed to the API.', 'mxroute-mailer' ) . '</li>'
+					. '<li><strong>' . esc_html__( 'Reply-To:', 'mxroute-mailer' ) . '</strong> ' . esc_html__( 'The original sender address, if different from the configured From address.', 'mxroute-mailer' ) . '</li>'
+					. '<li><strong>' . esc_html__( 'Transport:', 'mxroute-mailer' ) . '</strong> ' . esc_html__( 'How the email was sent: MXRoute API (lightweight) or SMTP (for attachments, creates sent folder copy).', 'mxroute-mailer' ) . '</li>'
+					. '<li><strong>' . esc_html__( 'Attachments:', 'mxroute-mailer' ) . '</strong> ' . esc_html__( 'File attachments with type (media library, temp file, or persistent path), original path, and storage status.', 'mxroute-mailer' ) . '</li>'
 					. '<li><strong>' . esc_html__( 'Message:', 'mxroute-mailer' ) . '</strong> ' . esc_html__( 'The email body content.', 'mxroute-mailer' ) . '</li>'
 					. '<li><strong>' . esc_html__( 'API Request:', 'mxroute-mailer' ) . '</strong> ' . esc_html__( 'The JSON payload sent to the MXRoute API (password excluded).', 'mxroute-mailer' ) . '</li>'
 					. '<li><strong>' . esc_html__( 'API Response:', 'mxroute-mailer' ) . '</strong> ' . esc_html__( 'The raw JSON response from the MXRoute API.', 'mxroute-mailer' ) . '</li>'
