@@ -146,7 +146,7 @@ defined( 'ABSPATH' ) || exit;
 					<fieldset>
 						<label for="mxroute_test_attachment">
 							<input type="checkbox" id="mxroute_test_attachment" name="mxroute_test_attachment" value="1" />
-							<?php esc_html_e( 'Include file attachment', 'mxroute-mailer' ); ?>
+							<?php esc_html_e( 'Include file attachments (persistent + temp)', 'mxroute-mailer' ); ?>
 						</label>
 					</fieldset>
 				</td>
