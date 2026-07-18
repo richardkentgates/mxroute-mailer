@@ -134,15 +134,15 @@ class MXRoute_Settings {
 	 * Sanitize batch size value.
 	 *
 	 * @param mixed $value Batch size value.
-	 * @return int Clamped integer between 1 and 500.
+	 * @return int Clamped integer between 1 and 50.
 	 */
 	public function sanitize_batch_size( $value ) {
 		$value = intval( $value );
 		if ( $value < 1 ) {
 			$value = 1;
 		}
-		if ( $value > 500 ) {
-			$value = 500;
+		if ( $value > 50 ) {
+			$value = 50;
 		}
 		return $value;
 	}
@@ -245,13 +245,6 @@ class MXRoute_Settings {
 						'failedRequeue'     => __( 'Failed to re-queue email.', 'mxroute-mailer' ),
 						'failedBulkRequeue' => __( 'Failed to re-queue emails.', 'mxroute-mailer' ),
 						'noSelection'       => __( 'No logs selected.', 'mxroute-mailer' ),
-						'logDeleted'        => __( 'Log entry deleted.', 'mxroute-mailer' ),
-						'logsCleared'       => __( 'All logs cleared.', 'mxroute-mailer' ),
-						'logsBulkDeleted'   => __( 'Selected logs deleted.', 'mxroute-mailer' ),
-						'logRequeued'       => __( 'Email re-queued.', 'mxroute-mailer' ),
-						'logsBulkRequeued'  => __( 'Selected emails re-queued.', 'mxroute-mailer' ),
-						'queueAdded'        => __( 'Email added to queue.', 'mxroute-mailer' ),
-						'failedQueueAdd'    => __( 'Failed to add email to queue.', 'mxroute-mailer' ),
 					),
 				)
 			);
@@ -330,11 +323,7 @@ class MXRoute_Settings {
 				'title'   => __( 'Test Email', 'mxroute-mailer' ),
 				'content' => '<p>' . esc_html__( 'Use the test form at the bottom of this page to send a test email. Enter a recipient address, then click "Send Test Email". The sender address is automatically taken from your configured username.', 'mxroute-mailer' ) . '</p>'
 					. '<p>' . esc_html__( 'If the test succeeds, you\'ll see a green notice. If it fails, you\'ll see a red notice with the error details.', 'mxroute-mailer' ) . '</p>'
-					. '<p><strong>' . esc_html__( 'Options:', 'mxroute-mailer' ) . '</strong></p>'
-					. '<ul>'
-					. '<li>' . esc_html__( 'Send through queue — adds the test email to the background queue instead of sending immediately. Useful for verifying queue processing.', 'mxroute-mailer' ) . '</li>'
-					. '<li>' . esc_html__( 'Include test attachment — attaches a small text file to verify attachment handling works correctly.', 'mxroute-mailer' ) . '</li>'
-					. '</ul>',
+					. '<p>' . esc_html__( 'Checking "Include file attachment" sends the test email with a file attachment via SMTP. This tests the smart switch that automatically routes emails with attachments through SMTP instead of the MXRoute HTTP API.', 'mxroute-mailer' ) . '</p>',
 			)
 		);
 
@@ -343,7 +332,7 @@ class MXRoute_Settings {
 				'id'      => 'mxroute-options',
 				'title'   => __( 'Options', 'mxroute-mailer' ),
 				'content' => '<p><strong>' . esc_html__( 'Enable Logging:', 'mxroute-mailer' ) . '</strong> ' . esc_html__( 'When checked, all sent emails are logged with request and response data. You can view logs under Tools > MXRoute Logs.', 'mxroute-mailer' ) . '</p>'
-					. '<p><strong>' . esc_html__( 'Batch Size:', 'mxroute-mailer' ) . '</strong> ' . esc_html__( 'Number of emails to process per WP-Cron run. Default is 50. Range is 1-500.', 'mxroute-mailer' ) . '</p>'
+					. '<p><strong>' . esc_html__( 'Batch Size:', 'mxroute-mailer' ) . '</strong> ' . esc_html__( 'Number of emails to process per WP-Cron run. Default is 5. Range is 1-50.', 'mxroute-mailer' ) . '</p>'
 					. '<p><strong>' . esc_html__( 'Uninstall:', 'mxroute-mailer' ) . '</strong> ' . esc_html__( 'When checked, your logs and settings are preserved when the plugin is deleted. Uncheck to remove all data on uninstall.', 'mxroute-mailer' ) . '</p>',
 			)
 		);
@@ -500,22 +489,7 @@ class MXRoute_Settings {
 			array(
 				'id'      => 'mxroute-queue-overview',
 				'title'   => __( 'Overview', 'mxroute-mailer' ),
-				'content' => '<p>' . esc_html__( 'This page shows emails waiting to be sent and allows you to add new emails to the queue. Emails are processed in the background via WP-Cron and sent in batches.', 'mxroute-mailer' ) . '</p>',
-			)
-		);
-
-		$screen->add_help_tab(
-			array(
-				'id'      => 'mxroute-queue-add',
-				'title'   => __( 'Add Email', 'mxroute-mailer' ),
-				'content' => '<p>' . esc_html__( 'Use the form to manually add an email to the queue:', 'mxroute-mailer' ) . '</p>'
-					. '<ul>'
-					. '<li><strong>' . esc_html__( 'From:', 'mxroute-mailer' ) . '</strong> ' . esc_html__( 'Sender email address.', 'mxroute-mailer' ) . '</li>'
-					. '<li><strong>' . esc_html__( 'To:', 'mxroute-mailer' ) . '</strong> ' . esc_html__( 'Recipient email address.', 'mxroute-mailer' ) . '</li>'
-					. '<li><strong>' . esc_html__( 'Subject:', 'mxroute-mailer' ) . '</strong> ' . esc_html__( 'Email subject line.', 'mxroute-mailer' ) . '</li>'
-					. '<li><strong>' . esc_html__( 'Body:', 'mxroute-mailer' ) . '</strong> ' . esc_html__( 'Email message content.', 'mxroute-mailer' ) . '</li>'
-					. '</ul>'
-					. '<p>' . esc_html__( 'Click "Add to Queue" to submit. The email will be processed by WP-Cron in the background.', 'mxroute-mailer' ) . '</p>',
+				'content' => '<p>' . esc_html__( 'This page shows emails waiting to be sent. Emails are processed in the background via WP-Cron and sent in batches.', 'mxroute-mailer' ) . '</p>',
 			)
 		);
 

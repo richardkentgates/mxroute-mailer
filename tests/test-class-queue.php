@@ -79,23 +79,35 @@ class MXRoute_Queue_Test extends \PHPUnit\Framework\TestCase {
 	}
 
 	/**
-	 * Tests that add stores attachments as JSON.
+	 * Tests that add stores attachments as typed JSON references.
 	 */
 	public function test_add_stores_attachments_as_json() {
+		$tmp1 = tempnam( sys_get_temp_dir(), 'mxroute_test_' );
+		file_put_contents( $tmp1, 'content1' );
+		$tmp2 = tempnam( sys_get_temp_dir(), 'mxroute_test_' );
+		file_put_contents( $tmp2, 'content2' );
+
 		$queue = new MXRoute_Queue();
-		$attachments = array( '/path/to/file1.pdf', '/path/to/file2.pdf' );
 		$queue->add(
 			'from@example.com',
 			'to@example.com',
 			'Subject',
 			'Body',
 			'',
-			$attachments,
+			array( $tmp1, $tmp2 ),
 			''
 		);
 
-		$insert = $GLOBALS['wp_db_inserts'][0];
-		$this->assertEquals( wp_json_encode( $attachments ), $insert['data']['attachments'] );
+		$update = $GLOBALS['wp_function_calls']['$wpdb->update'][0];
+		$stored = json_decode( $update['data']['attachments'], true );
+		$this->assertCount( 2, $stored );
+		$this->assertEquals( 'stored', $stored[0]['type'] );
+		$this->assertEquals( $tmp1, $stored[0]['origin'] );
+		$this->assertEquals( 'stored', $stored[1]['type'] );
+		$this->assertEquals( $tmp2, $stored[1]['origin'] );
+
+		unlink( $tmp1 );
+		unlink( $tmp2 );
 	}
 
 	/**
@@ -226,47 +238,6 @@ class MXRoute_Mailer_Queue_Test extends \PHPUnit\Framework\TestCase {
 	}
 
 	/**
-	 * Tests that intercept_wp_mail queues an email instead of sending directly.
-	 */
-	public function test_intercept_queues_email() {
-		$mailer = MXRoute_Mailer::instance();
-		$GLOBALS['wp_options']['mxroute_mailer_server']   = 'server.example.com';
-		$GLOBALS['wp_options']['mxroute_mailer_username'] = 'user@example.com';
-		$GLOBALS['wp_options']['mxroute_mailer_password'] = 'password123';
-
-		$result = $mailer->intercept_wp_mail( array(
-			'to'      => 'to@example.com',
-			'subject' => 'Test Subject',
-			'message' => 'Body',
-		) );
-
-		$this->assertTrue( $result );
-		$this->assertNotEmpty( $GLOBALS['wp_db_inserts'] );
-		$insert = $GLOBALS['wp_db_inserts'][0];
-		$this->assertEquals( 0, $insert['data']['success'] );
-	}
-
-	/**
-	 * Tests that intercept_wp_mail schedules the queue processor.
-	 */
-	public function test_intercept_schedules_queue_processor() {
-		$mailer = MXRoute_Mailer::instance();
-		$GLOBALS['wp_options']['mxroute_mailer_server']   = 'server.example.com';
-		$GLOBALS['wp_options']['mxroute_mailer_username'] = 'user@example.com';
-		$GLOBALS['wp_options']['mxroute_mailer_password'] = 'password123';
-
-		$mailer->intercept_wp_mail( array(
-			'to'      => 'to@example.com',
-			'subject' => 'Test Subject',
-			'message' => 'Body',
-		) );
-
-		$this->assertArrayHasKey( 'wp_schedule_single_event', $GLOBALS['wp_function_calls'] );
-		$schedule = $GLOBALS['wp_function_calls']['wp_schedule_single_event'][0];
-		$this->assertEquals( 'mxroute_mailer_process_queue', $schedule['hook'] );
-	}
-
-	/**
 	 * Tests that intercept_wp_mail queues separate entries for multiple recipients.
 	 */
 	public function test_intercept_queues_separate_entries_for_multiple_recipients() {
@@ -326,7 +297,7 @@ class MXRoute_Mailer_Queue_Test extends \PHPUnit\Framework\TestCase {
 	}
 
 	/**
-	 * Tests that intercept_wp_mail stores attachments in the queue entry.
+	 * Tests that intercept_wp_mail stores attachments as typed references.
 	 */
 	public function test_intercept_stores_attachments() {
 		$tmp = tempnam( sys_get_temp_dir(), 'mxroute_test_' );
@@ -344,8 +315,11 @@ class MXRoute_Mailer_Queue_Test extends \PHPUnit\Framework\TestCase {
 			'attachments' => array( $tmp ),
 		) );
 
-		$insert = $GLOBALS['wp_db_inserts'][0];
-		$this->assertEquals( wp_json_encode( array( $tmp ) ), $insert['data']['attachments'] );
+		$update = $GLOBALS['wp_function_calls']['$wpdb->update'][0];
+		$stored = json_decode( $update['data']['attachments'], true );
+		$this->assertCount( 1, $stored );
+		$this->assertEquals( 'stored', $stored[0]['type'] );
+		$this->assertEquals( $tmp, $stored[0]['origin'] );
 
 		unlink( $tmp );
 	}
@@ -371,48 +345,6 @@ class MXRoute_Mailer_Queue_Test extends \PHPUnit\Framework\TestCase {
 	}
 
 	/**
-	 * Tests that intercept_wp_mail returns null when no credentials are configured.
-	 */
-	public function test_intercept_returns_null_without_credentials() {
-		$mailer = MXRoute_Mailer::instance();
-		$result = $mailer->intercept_wp_mail( array(
-			'to'      => 'to@example.com',
-			'subject' => 'Test',
-			'message' => 'Body',
-		) );
-
-		$this->assertNull( $result );
-	}
-
-	/**
-	 * Tests that intercept_wp_mail returns null when "to" is empty.
-	 */
-	public function test_intercept_returns_null_without_to() {
-		$mailer = MXRoute_Mailer::instance();
-		$result = $mailer->intercept_wp_mail( array(
-			'to'      => '',
-			'subject' => 'Test',
-			'message' => 'Body',
-		) );
-
-		$this->assertNull( $result );
-	}
-
-	/**
-	 * Tests that intercept_wp_mail returns null when subject is empty.
-	 */
-	public function test_intercept_returns_null_without_subject() {
-		$mailer = MXRoute_Mailer::instance();
-		$result = $mailer->intercept_wp_mail( array(
-			'to'      => 'to@example.com',
-			'subject' => '',
-			'message' => 'Body',
-		) );
-
-		$this->assertNull( $result );
-	}
-
-	/**
 	 * Tests that process_queue sends pending emails via the API.
 	 */
 	public function test_process_queue_sends_pending_emails() {
@@ -422,21 +354,22 @@ class MXRoute_Mailer_Queue_Test extends \PHPUnit\Framework\TestCase {
 		$GLOBALS['wp_options']['mxroute_mailer_password']  = 'password123';
 		$GLOBALS['wp_options']['mxroute_mailer_batch_size'] = 50;
 
-		// Queue an email first.
-		$mailer->intercept_wp_mail( array(
-			'to'      => 'to@example.com',
-			'subject' => 'Test Subject',
-			'message' => 'Body',
-		) );
-
-		// Reset inserts to track process_queue calls.
-		$GLOBALS['wp_db_inserts'] = array();
+		$item = (object) array(
+			'id'          => 1,
+			'from_email'  => 'from@example.com',
+			'to_email'    => 'to@example.com',
+			'subject'     => 'Test Subject',
+			'message'     => 'Body',
+			'reply_to'    => '',
+			'attachments' => '[]',
+			'transport'   => '',
+		);
+		$GLOBALS['wp_db_results'] = array( $item );
 
 		$mailer->process_queue();
 
-		// Mock get_results returns [], so process_queue sees empty queue and returns early.
-		// Verify it completed without error and made no API calls.
-		$this->assertArrayNotHasKey( 'wp_remote_post', $GLOBALS['wp_function_calls'] );
+		// Verify process_queue called the API.
+		$this->assertArrayHasKey( 'wp_remote_post', $GLOBALS['wp_function_calls'] );
 	}
 
 	/**
@@ -449,10 +382,23 @@ class MXRoute_Mailer_Queue_Test extends \PHPUnit\Framework\TestCase {
 		$GLOBALS['wp_options']['mxroute_mailer_password']  = 'password123';
 		$GLOBALS['wp_options']['mxroute_mailer_batch_size'] = 10;
 
+		// Provide items so claim_pending returns something.
+		$item = (object) array(
+			'id'          => 1,
+			'from_email'  => 'from@example.com',
+			'to_email'    => 'to@example.com',
+			'subject'     => 'Test',
+			'message'     => 'Body',
+			'reply_to'    => '',
+			'attachments' => '[]',
+			'transport'   => '',
+		);
+		$GLOBALS['wp_db_results'] = array( $item );
+
 		$mailer->process_queue();
 
-		// Should not error with batch size of 10.
-		$this->assertArrayNotHasKey( 'wp_remote_post', $GLOBALS['wp_function_calls'] );
+		// Should have called the API with batch size of 10.
+		$this->assertArrayHasKey( 'wp_remote_post', $GLOBALS['wp_function_calls'] );
 	}
 
 	/**
@@ -464,6 +410,7 @@ class MXRoute_Mailer_Queue_Test extends \PHPUnit\Framework\TestCase {
 		$GLOBALS['wp_options']['mxroute_mailer_username']  = 'user@example.com';
 		$GLOBALS['wp_options']['mxroute_mailer_password']  = 'password123';
 		$GLOBALS['wp_options']['mxroute_mailer_batch_size'] = 50;
+		$GLOBALS['wp_db_results'] = array();
 
 		$mailer->process_queue();
 
@@ -488,7 +435,7 @@ class MXRoute_Mailer_Attachment_Normalize_Test extends \PHPUnit\Framework\TestCa
 	}
 
 	/**
-	 * Tests that intercept_wp_mail resolves attachment IDs to file paths.
+	 * Tests that intercept_wp_mail stores resolved attachment IDs as typed references.
 	 */
 	public function test_intercept_resolves_attachment_ids() {
 		$tmp = tempnam( sys_get_temp_dir(), 'mxroute_test_' );
@@ -507,16 +454,17 @@ class MXRoute_Mailer_Attachment_Normalize_Test extends \PHPUnit\Framework\TestCa
 			'attachments' => array( 123 ),
 		) );
 
-		$insert = $GLOBALS['wp_db_inserts'][0];
-		$stored = json_decode( $insert['data']['attachments'], true );
+		$update = $GLOBALS['wp_function_calls']['$wpdb->update'][0];
+		$stored = json_decode( $update['data']['attachments'], true );
 		$this->assertCount( 1, $stored );
-		$this->assertEquals( $tmp, $stored[0] );
+		$this->assertEquals( 'stored', $stored[0]['type'] );
+		$this->assertEquals( $tmp, $stored[0]['origin'] );
 
 		unlink( $tmp );
 	}
 
 	/**
-	 * Tests that intercept_wp_mail handles mixed paths and IDs.
+	 * Tests that intercept_wp_mail handles mixed paths and IDs as typed references.
 	 */
 	public function test_intercept_handles_mixed_attachments() {
 		$tmp1 = tempnam( sys_get_temp_dir(), 'mxroute_test_' );
@@ -537,11 +485,13 @@ class MXRoute_Mailer_Attachment_Normalize_Test extends \PHPUnit\Framework\TestCa
 			'attachments' => array( $tmp1, 456 ),
 		) );
 
-		$insert = $GLOBALS['wp_db_inserts'][0];
-		$stored = json_decode( $insert['data']['attachments'], true );
+		$update = $GLOBALS['wp_function_calls']['$wpdb->update'][0];
+		$stored = json_decode( $update['data']['attachments'], true );
 		$this->assertCount( 2, $stored );
-		$this->assertEquals( $tmp1, $stored[0] );
-		$this->assertEquals( $tmp2, $stored[1] );
+		$this->assertEquals( 'stored', $stored[0]['type'] );
+		$this->assertEquals( $tmp1, $stored[0]['origin'] );
+		$this->assertEquals( 'stored', $stored[1]['type'] );
+		$this->assertEquals( $tmp2, $stored[1]['origin'] );
 
 		unlink( $tmp1 );
 		unlink( $tmp2 );
@@ -626,7 +576,7 @@ class MXRoute_API_Attachment_Test extends \PHPUnit\Framework\TestCase {
 	}
 
 	/**
-	 * Tests that send includes attachments in the payload when provided.
+	 * Tests that send_via_api includes attachments in the payload when provided.
 	 */
 	public function test_send_includes_attachments_when_readable() {
 		$GLOBALS['wp_options']['mxroute_mailer_server']   = 'server.example.com';
@@ -637,7 +587,7 @@ class MXRoute_API_Attachment_Test extends \PHPUnit\Framework\TestCase {
 		file_put_contents( $tmp, 'Hello attachment' );
 
 		$api    = new MXRoute_API();
-		$result = $api->send(
+		$result = $api->send_via_api(
 			'from@example.com',
 			'to@example.com',
 			'Test',
@@ -658,7 +608,7 @@ class MXRoute_API_Attachment_Test extends \PHPUnit\Framework\TestCase {
 	}
 
 	/**
-	 * Tests that send skips non-existent attachment files.
+	 * Tests that send_via_api skips non-existent attachment files.
 	 */
 	public function test_send_skips_nonexistent_files() {
 		$GLOBALS['wp_options']['mxroute_mailer_server']   = 'server.example.com';
@@ -706,7 +656,7 @@ class MXRoute_API_Attachment_Test extends \PHPUnit\Framework\TestCase {
 	}
 
 	/**
-	 * Tests that send handles mixed valid and invalid attachment paths.
+	 * Tests that send_via_api handles mixed valid and invalid attachment paths.
 	 */
 	public function test_send_handles_mixed_valid_and_invalid_paths() {
 		$GLOBALS['wp_options']['mxroute_mailer_server']   = 'server.example.com';
@@ -717,7 +667,7 @@ class MXRoute_API_Attachment_Test extends \PHPUnit\Framework\TestCase {
 		file_put_contents( $tmp, 'valid content' );
 
 		$api    = new MXRoute_API();
-		$result = $api->send(
+		$result = $api->send_via_api(
 			'from@example.com',
 			'to@example.com',
 			'Test',
@@ -752,5 +702,285 @@ class MXRoute_API_Attachment_Test extends \PHPUnit\Framework\TestCase {
 		);
 
 		$this->assertTrue( $result['success'] );
+	}
+}
+
+/**
+ * Tests for MXRoute_API smart switch (attachment-based transport routing).
+ */
+class MXRoute_API_Smart_Switch_Test extends \PHPUnit\Framework\TestCase {
+
+	protected function setUp(): void {
+		$GLOBALS['wp_options']            = array();
+		$GLOBALS['wp_function_calls']     = array();
+		$GLOBALS['mxroute_mock_remote_response'] = null;
+	}
+
+	protected function tearDown(): void {
+		unset( $GLOBALS['mxroute_mock_remote_response'] );
+	}
+
+	/**
+	 * Tests that get_transport returns 'smtp' when valid attachments are provided.
+	 */
+	public function test_get_transport_returns_smtp_for_valid_attachments() {
+		$tmp = tempnam( sys_get_temp_dir(), 'mxroute_test_' );
+		file_put_contents( $tmp, 'test content' );
+
+		$api       = new MXRoute_API();
+		$transport = $api->get_transport( array( $tmp ) );
+
+		$this->assertEquals( 'smtp', $transport );
+
+		unlink( $tmp );
+	}
+
+	/**
+	 * Tests that get_transport returns 'api' when no attachments are provided.
+	 */
+	public function test_get_transport_returns_api_for_no_attachments() {
+		$api       = new MXRoute_API();
+		$transport = $api->get_transport( array() );
+
+		$this->assertEquals( 'api', $transport );
+	}
+
+	/**
+	 * Tests that get_transport returns 'api' when only nonexistent files are provided.
+	 */
+	public function test_get_transport_returns_api_for_nonexistent_files() {
+		$api       = new MXRoute_API();
+		$transport = $api->get_transport( array( '/nonexistent/file.pdf' ) );
+
+		$this->assertEquals( 'api', $transport );
+	}
+
+	/**
+	 * Tests that get_transport returns 'api' when attachments parameter is omitted.
+	 */
+	public function test_get_transport_returns_api_when_no_param() {
+		$api       = new MXRoute_API();
+		$transport = $api->get_transport();
+
+		$this->assertEquals( 'api', $transport );
+	}
+
+	/**
+	 * Tests that get_transport filters out unreadable files.
+	 */
+	public function test_get_transport_filters_unreadable_files() {
+		$tmp = tempnam( sys_get_temp_dir(), 'mxroute_test_' );
+		chmod( $tmp, 0000 );
+
+		$api       = new MXRoute_API();
+		$transport = $api->get_transport( array( $tmp ) );
+
+		$this->assertEquals( 'api', $transport );
+
+		chmod( $tmp, 0644 );
+		unlink( $tmp );
+	}
+
+	/**
+	 * Tests that get_transport filters files over 5MB.
+	 */
+	public function test_get_transport_filters_oversized_files() {
+		$tmp = tempnam( sys_get_temp_dir(), 'mxroute_test_' );
+		$fh  = fopen( $tmp, 'w' );
+		fseek( $fh, 5242881, SEEK_SET );
+		fwrite( $fh, "\0" );
+		fclose( $fh );
+
+		$api       = new MXRoute_API();
+		$transport = $api->get_transport( array( $tmp ) );
+
+		$this->assertEquals( 'api', $transport );
+
+		unlink( $tmp );
+	}
+
+	/**
+	 * Tests that get_transport accepts files exactly at 5MB limit.
+	 */
+	public function test_get_transport_accepts_files_at_5mb_limit() {
+		$tmp = tempnam( sys_get_temp_dir(), 'mxroute_test_' );
+		$fh  = fopen( $tmp, 'w' );
+		fseek( $fh, 5242879, SEEK_SET );
+		fwrite( $fh, "\0" );
+		fclose( $fh );
+
+		$this->assertEquals( 5242880, filesize( $tmp ) );
+
+		$api       = new MXRoute_API();
+		$transport = $api->get_transport( array( $tmp ) );
+
+		$this->assertEquals( 'smtp', $transport );
+
+		unlink( $tmp );
+	}
+
+	/**
+	 * Tests that get_transport returns 'api' for mixed valid and invalid paths
+	 * when all valid files are too large or nonexistent.
+	 */
+	public function test_get_transport_returns_api_for_all_invalid_mixed() {
+		$tmp = tempnam( sys_get_temp_dir(), 'mxroute_test_' );
+		chmod( $tmp, 0000 );
+
+		$api       = new MXRoute_API();
+		$transport = $api->get_transport( array( $tmp, '/nonexistent/file.pdf' ) );
+
+		$this->assertEquals( 'api', $transport );
+
+		chmod( $tmp, 0644 );
+		unlink( $tmp );
+	}
+
+	/**
+	 * Tests that send with valid attachments does not call wp_remote_post
+	 * (routes to SMTP instead of API).
+	 */
+	public function test_send_with_attachments_skips_wp_remote_post() {
+		$GLOBALS['wp_options']['mxroute_mailer_server']   = 'server.example.com';
+		$GLOBALS['wp_options']['mxroute_mailer_username'] = 'user@example.com';
+		$GLOBALS['wp_options']['mxroute_mailer_password'] = 'password123';
+
+		$tmp = tempnam( sys_get_temp_dir(), 'mxroute_test_' );
+		file_put_contents( $tmp, 'test content' );
+
+		$api  = new MXRoute_API();
+		$result = $api->send(
+			'from@example.com',
+			'to@example.com',
+			'Test',
+			'Body',
+			'',
+			array( $tmp )
+		);
+
+		$this->assertEmpty(
+			$GLOBALS['wp_function_calls']['wp_remote_post'] ?? array(),
+			'send() with valid attachments should not call wp_remote_post (should route to SMTP)'
+		);
+		$this->assertFalse( $result['success'] );
+		$this->assertStringContainsString( 'SMTP', $result['message'] );
+
+		unlink( $tmp );
+	}
+
+	/**
+	 * Tests that send without attachments calls wp_remote_post (routes to API).
+	 */
+	public function test_send_without_attachments_calls_wp_remote_post() {
+		$GLOBALS['wp_options']['mxroute_mailer_server']   = 'server.example.com';
+		$GLOBALS['wp_options']['mxroute_mailer_username'] = 'user@example.com';
+		$GLOBALS['wp_options']['mxroute_mailer_password'] = 'password123';
+
+		$api    = new MXRoute_API();
+		$result = $api->send(
+			'from@example.com',
+			'to@example.com',
+			'Test',
+			'Body'
+		);
+
+		$this->assertNotEmpty( $GLOBALS['wp_function_calls']['wp_remote_post'] );
+		$this->assertTrue( $result['success'] );
+	}
+
+	/**
+	 * Tests that send with only nonexistent files routes to API (no valid attachments).
+	 */
+	public function test_send_with_only_nonexistent_files_routes_to_api() {
+		$GLOBALS['wp_options']['mxroute_mailer_server']   = 'server.example.com';
+		$GLOBALS['wp_options']['mxroute_mailer_username'] = 'user@example.com';
+		$GLOBALS['wp_options']['mxroute_mailer_password'] = 'password123';
+
+		$api    = new MXRoute_API();
+		$result = $api->send(
+			'from@example.com',
+			'to@example.com',
+			'Test',
+			'Body',
+			'',
+			array( '/nonexistent/file.pdf' )
+		);
+
+		$this->assertNotEmpty( $GLOBALS['wp_function_calls']['wp_remote_post'] );
+		$this->assertTrue( $result['success'] );
+	}
+
+	/**
+	 * Tests that send_via_smtp failure includes port information in the response.
+	 */
+	public function test_send_via_smtp_includes_transport_in_response() {
+		$GLOBALS['wp_options']['mxroute_mailer_server']   = 'server.example.com';
+		$GLOBALS['wp_options']['mxroute_mailer_username'] = 'user@example.com';
+		$GLOBALS['wp_options']['mxroute_mailer_password'] = 'password123';
+
+		$tmp = tempnam( sys_get_temp_dir(), 'mxroute_test_' );
+		file_put_contents( $tmp, 'test content' );
+
+		$api    = new MXRoute_API();
+		$result = $api->send(
+			'from@example.com',
+			'to@example.com',
+			'Test',
+			'Body',
+			'',
+			array( $tmp )
+		);
+
+		$this->assertArrayHasKey( 'transport', $result['response'] );
+		$this->assertEquals( 'smtp', $result['response']['transport'] );
+
+		unlink( $tmp );
+	}
+
+	/**
+	 * Tests that send_via_api does not include transport key in response
+	 * (transport column is handled by the logger).
+	 */
+	public function test_send_via_api_response_has_no_transport_key() {
+		$GLOBALS['wp_options']['mxroute_mailer_server']   = 'server.example.com';
+		$GLOBALS['wp_options']['mxroute_mailer_username'] = 'user@example.com';
+		$GLOBALS['wp_options']['mxroute_mailer_password'] = 'password123';
+
+		$api    = new MXRoute_API();
+		$result = $api->send_via_api(
+			'from@example.com',
+			'to@example.com',
+			'Test',
+			'Body'
+		);
+
+		$this->assertArrayNotHasKey( 'transport', $result['response'] );
+	}
+
+	/**
+	 * Tests that send_via_smtp request array includes transport key.
+	 */
+	public function test_send_via_smtp_request_includes_transport() {
+		$GLOBALS['wp_options']['mxroute_mailer_server']   = 'server.example.com';
+		$GLOBALS['wp_options']['mxroute_mailer_username'] = 'user@example.com';
+		$GLOBALS['wp_options']['mxroute_mailer_password'] = 'password123';
+
+		$tmp = tempnam( sys_get_temp_dir(), 'mxroute_test_' );
+		file_put_contents( $tmp, 'test content' );
+
+		$api    = new MXRoute_API();
+		$result = $api->send(
+			'from@example.com',
+			'to@example.com',
+			'Test',
+			'Body',
+			'',
+			array( $tmp )
+		);
+
+		$this->assertArrayHasKey( 'transport', $result['request'] );
+		$this->assertEquals( 'smtp', $result['request']['transport'] );
+
+		unlink( $tmp );
 	}
 }

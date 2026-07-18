@@ -53,8 +53,31 @@ Each log entry includes:
 - **Message** - Full email body
 - **Headers** - Email headers passed to the API
 - **Attachments** - File attachments (supports file paths and WordPress attachment IDs)
+- **Transport** - How the email was sent: `api` (MXRoute HTTP API for simple emails) or `smtp` (SMTP for emails with attachments, creates a copy in the sent folder)
 - **API Request** - JSON payload sent to MXRoute
 - **API Response** - MXRoute's response
+
+### Attachment Details
+
+The log detail page shows an Attachments section when attachments are present. Each attachment displays:
+
+| Field | Description |
+|-------|-------------|
+| Type | `Media ID 123` (WordPress media library), `Temp file (stored)` (volatile file copied to storage), or `File` (persistent file path) |
+| Original Path | The source file path or media library resolution |
+| Stored | `OK` (copy exists in persistent storage), `Missing` (copy was deleted), or `N/A` (no copy needed — native reference) |
+
+**How attachment storage works:**
+
+The plugin handles three types of attachments intelligently to avoid unnecessary file duplication:
+
+1. **Media library IDs** — Referenced by ID only, re-resolved from WordPress at send time. No copy created — media files are already persistent in `wp-content/uploads/`.
+
+2. **File paths in temp directories** (e.g., `/tmp/`) — Copied to persistent storage at `wp-content/uploads/mxroute-mailer-attachments/`. These files are volatile and may be deleted before the queue processes, so a copy ensures reliable delivery.
+
+3. **File paths in persistent locations** (e.g., plugin upload directories) — Referenced by path only. No copy created — the file is already in a stable location.
+
+The queue page also shows attachment status for each pending entry, with a count and storage indicator (green badge for all stored, red badge if any are missing).
 
 ### Filtering Logs
 
@@ -82,18 +105,11 @@ Click **Clear All Logs** to delete all log entries. This action cannot be undone
 
 Go to **Tools > MXRoute Queue** to see emails waiting to be sent.
 
-### Adding Emails to Queue
-
-You can manually add emails to the queue from the queue page:
-1. Fill in the From, To, Subject, and Body fields
-2. Click **Add to Queue**
-3. The email is processed by WP-Cron in the background
-
 ### Batch Size
 
 The queue processes emails in batches. Configure the batch size under **Settings > MXRoute Mailer**:
-- Default: 50 emails per batch
-- Range: 1-500 emails per batch
+- Default: 5 emails per batch
+- Range: 1-50 emails per batch
 - Higher values process more emails per cron run
 
 ### How the Queue Works
@@ -111,17 +127,18 @@ When any WordPress plugin or theme calls `wp_mail()`, MXRoute Mailer:
 1. Intercepts the email via the `pre_wp_mail` filter before WordPress invokes the default mailer
 2. Queues the email for background processing via WP-Cron
 3. Schedules a single WP-Cron event to process the queue
-4. Returns `true` to WordPress so the default mailer is not invoked
+4. Returns `false` to WordPress so the default mailer is not invoked
 
 The queue processor then:
 1. Fetches pending emails from the database in batches
 2. Extracts the `From` header (if any), sanitizes it, and sets it as `Reply-To`
 3. Uses your MXRoute username as the `From` address
 4. Sanitizes the recipient (`To`) address
-5. Encodes any file attachments as base64 (resolving WordPress attachment IDs to file paths automatically)
-6. Sends the email through MXRoute's HTTP API
-7. Logs the full request and response
-8. Marks the email as sent or failed
+5. Applies the smart switch — chooses the best transport for each email:
+   - **No attachments** → MXRoute HTTP API (lightweight, no server storage)
+   - **Has attachments** → SMTP via PHPMailer (creates a copy in your MXRoute sent folder for legal records and documentation)
+6. Logs the full request and response, including which transport was used
+7. Marks the email as sent or failed
 
 If the MXRoute API call fails, the email is marked as failed in the logs. You can re-queue it from the logs page to try again. If MXRoute Mailer is not configured, the plugin returns `null` and lets WordPress fall back to the default mailer.
 
@@ -151,9 +168,10 @@ The plugin creates a database table `{prefix}_mxroute_mailer_logs` to store emai
 | subject | varchar(255) | Email subject |
 | message | longtext | Email body |
 | headers | longtext | Email headers |
-| attachments | longtext | JSON array of file paths (IDs resolved before storage) |
+| attachments | longtext | JSON array of typed attachment references (id, path, or stored) |
 | api_request | longtext | JSON API request |
 | api_response | longtext | JSON API response |
 | success | tinyint(2) | 1 = sent, -1 = failed, 0 = pending |
+| transport | varchar(10) | Transport method: 'api' or 'smtp' |
 | created_at | datetime | When the queue entry was created |
 | processed_at | datetime | When the email was sent or failed |

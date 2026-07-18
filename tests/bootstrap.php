@@ -411,6 +411,16 @@ if (!function_exists('number_format_i18n')) {
     }
 }
 
+if (!function_exists('wp_strip_all_tags')) {
+    function wp_strip_all_tags($string, $keep_newlines = false) {
+        $string = preg_replace('/<[^>]*>/', '', $string);
+        if (!$keep_newlines) {
+            $string = str_replace(array("\r\n", "\r", "\n"), ' ', $string);
+        }
+        return trim($string);
+    }
+}
+
 if (!function_exists('wp_trim_words')) {
     function wp_trim_words($text, $num_words = 55, $more = '...') {
         $words = explode(' ', $text);
@@ -488,6 +498,28 @@ if (!function_exists('wp_parse_url')) {
     }
 }
 
+if (!function_exists('wp_upload_dir')) {
+    function wp_upload_dir($time = '') {
+        $upload_dir = sys_get_temp_dir() . '/mxroute_test_uploads';
+        if (!is_dir($upload_dir)) {
+            @mkdir($upload_dir, 0755, true);
+        }
+        return array(
+            'path'    => $upload_dir,
+            'url'     => 'http://example.com/uploads',
+            'subdir'  => '',
+            'basedir' => $upload_dir,
+            'error'   => false,
+        );
+    }
+}
+
+if (!function_exists('wp_basename')) {
+    function wp_basename($path, $suffix = '') {
+        return basename($path, $suffix);
+    }
+}
+
 if (!function_exists('trailingslashit')) {
     function trailingslashit($string) {
         return rtrim($string, '/') . '/';
@@ -536,6 +568,9 @@ if (!defined('WP_UNINSTALL_PLUGIN')) {
 if (!defined('DAY_IN_SECONDS')) {
     define('DAY_IN_SECONDS', 86400);
 }
+if (!defined('MB_IN_BYTES')) {
+    define('MB_IN_BYTES', 1048576);
+}
 
 // Mock dbDelta
 if (!function_exists('dbDelta')) {
@@ -554,6 +589,7 @@ if (!file_exists('/tmp/wordpress/wp-admin/includes/upgrade.php')) {
 // Mock global $wpdb
 class MockWPDB {
     public $prefix = 'wp_';
+    public $insert_id = 0;
 
     public function get_charset_collate() {
         return 'utf8mb4';
@@ -575,6 +611,16 @@ class MockWPDB {
     }
 
     public function get_results($query = null, $output = OBJECT) {
+        if (isset($GLOBALS['wp_db_results'])) {
+            return $GLOBALS['wp_db_results'];
+        }
+        return array();
+    }
+
+    public function get_col($query = null, $x = 0) {
+        if (isset($GLOBALS['wp_db_col'])) {
+            return $GLOBALS['wp_db_col'];
+        }
         return array();
     }
 
@@ -588,6 +634,7 @@ class MockWPDB {
 
     public function insert($table, $data, $format = null) {
         $GLOBALS['wp_db_inserts'][] = compact('table', 'data');
+        $this->insert_id = count( $GLOBALS['wp_db_inserts'] );
         return true;
     }
 
@@ -652,6 +699,52 @@ if (!function_exists('is_wp_error')) {
     }
 }
 
+// Mock PHPMailer for SMTP tests (WordPress bundles PHPMailer but it's not available in test env)
+$mock_phpmailer_dir = sys_get_temp_dir() . '/mxroute_phpmailer_mock';
+if ( ! is_dir( $mock_phpmailer_dir ) ) {
+	mkdir( $mock_phpmailer_dir, 0755, true );
+}
+$mock_phpmailer_file = $mock_phpmailer_dir . '/PHPMailer.php';
+	file_put_contents(
+		$mock_phpmailer_file,
+		'<?php' . "\n"
+		. 'namespace PHPMailer\\PHPMailer;' . "\n"
+		. 'class Exception extends \\Exception {}' . "\n"
+		. 'class PHPMailer {' . "\n"
+		. '    public $Host = "";' . "\n"
+		. '    public $SMTPAuth = false;' . "\n"
+		. '    public $Username = "";' . "\n"
+		. '    public $Password = "";' . "\n"
+		. '    public $SMTPKeepAlive = false;' . "\n"
+		. '    public $CharSet = "UTF-8";' . "\n"
+		. '    public $Encoding = "base64";' . "\n"
+		. '    public $Port = 465;' . "\n"
+		. '    public $SMTPSecure = "ssl";' . "\n"
+		. '    public $Subject = "";' . "\n"
+		. '    public $Body = "";' . "\n"
+		. '    public $AltBody = "";' . "\n"
+		. '    private $sent = false;' . "\n"
+		. '    public function __construct($exceptions = false) {}' . "\n"
+		. '    public function isSMTP() {}' . "\n"
+		. '    public function setFrom($address, $name = "") {}' . "\n"
+		. '    public function addAddress($address, $name = "") {}' . "\n"
+		. '    public function addReplyTo($address, $name = "") {}' . "\n"
+		. '    public function isHTML($isHtml = true) {}' . "\n"
+		. '    public function addAttachment($path, $name = "") {}' . "\n"
+		. '    public function clearAddresses() {}' . "\n"
+		. '    public function clearAttachments() {}' . "\n"
+		. '    public function clearReplyTos() {}' . "\n"
+		. '    public function send() {' . "\n"
+		. '        $GLOBALS["wp_function_calls"]["phpmailer_send"][] = ["host" => $this->Host, "port" => $this->Port, "secure" => $this->SMTPSecure, "username" => $this->Username, "subject" => $this->Subject, "body" => $this->Body];' . "\n"
+		. '        $succeed_port = $GLOBALS["mxroute_phpmailer_succeed_port"] ?? null;' . "\n"
+		. '        if ($succeed_port !== null && (int)$succeed_port === (int)$this->Port) { $this->sent = true; return true; }' . "\n"
+		. '        throw new Exception("SMTP connection failed");' . "\n"
+		. '    }' . "\n"
+		. '    public function wasSent() { return $this->sent; }' . "\n"
+		. '}' . "\n"
+	);
+require_once $mock_phpmailer_file;
+
 // Load the plugin files
 require_once $plugin_dir . '/includes/class-mxroute-crypto.php';
 require_once $plugin_dir . '/mxroute-mailer.php';
@@ -661,3 +754,45 @@ require_once $plugin_dir . '/includes/class-mxroute-settings.php';
 require_once $plugin_dir . '/includes/class-mxroute-logger.php';
 require_once $plugin_dir . '/includes/class-mxroute-dashboard.php';
 require_once $plugin_dir . '/includes/class-mxroute-queue.php';
+
+// Mock wp_remote_get for updater tests
+if (!function_exists('wp_remote_get')) {
+    function wp_remote_get($url, $args = array()) {
+        $GLOBALS['wp_function_calls']['wp_remote_get'][] = compact('url', 'args');
+        if (isset($GLOBALS['mxroute_mock_remote_get_response'])) {
+            return $GLOBALS['mxroute_mock_remote_get_response'];
+        }
+        return array(
+            'response' => array('code' => 200),
+            'body'     => '{}',
+        );
+    }
+}
+
+// Mock get_plugin_data for updater tests
+if (!function_exists('get_plugin_data')) {
+    function get_plugin_data($file, $markup = true, $translate = true) {
+        return array(
+            'Name'        => 'MXRoute Mailer',
+            'PluginURI'   => '',
+            'Description' => 'Intercepts wp_mail to send through MXRoute.',
+            'Author'      => 'Richard Kent Gates',
+            'Version'     => '1.0.0',
+            'TextDomain'  => 'mxroute-mailer',
+        );
+    }
+}
+
+// Mock get_current_screen for help tab tests
+if (!function_exists('get_current_screen')) {
+    function get_current_screen() {
+        return $GLOBALS['mxroute_mock_screen'] ?? null;
+    }
+}
+
+// Mock plugin_basename for updater tests
+if (!function_exists('plugin_basename')) {
+    function plugin_basename($file) {
+        return ltrim(str_replace(ABSPATH, '', $file), '/');
+    }
+}

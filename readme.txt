@@ -4,7 +4,7 @@ Tags: email, smtp, mxroute, mail
 Requires at least: 5.0
 Tested up to: 7.0
 Requires PHP: 7.3
-Stable tag: 1.3.0
+Stable tag: 1.3.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -73,11 +73,11 @@ The plugin queues all outgoing emails and processes them in the background via W
 
 = Does this send through SMTP or API? =
 
-API. The plugin sends email through MXRoute's HTTPS endpoint (`https://smtpapi.mxroute.com/`), not SMTP. This is why it works when SMTP ports are blocked.
+Both. The plugin uses a smart switch to choose the best transport for each email. Emails without attachments are sent via the MXRoute HTTP API (lightweight, no server storage). Emails with attachments are sent via SMTP, which creates a copy in your MXRoute sent folder — useful for legal records and documentation. The transport is selected automatically and logged in the email details.
 
 = Does this support file attachments? =
 
-Yes. The plugin supports file attachments in all outgoing emails. Attachments are base64-encoded and sent through the MXRoute API. You can view attachment details in the email logs.
+Yes. The plugin supports file attachments in all outgoing emails. Emails with attachments are automatically routed via SMTP (PHPMailer) because the MXRoute HTTP API does not support attachments. This also creates a copy in your MXRoute sent folder for record-keeping. The transport method (API or SMTP) is logged and visible in the email log details.
 
 = How do automatic updates work? =
 
@@ -94,6 +94,40 @@ The plugin fires a `wp_mail_failed` action so other plugins can handle the failu
 3. Individual log detail view with API request and response data
 
 == Changelog ==
+
+= 1.3.4 =
+* Improvement: Attachment storage is now smart — only temp files are copied to persistent storage; media library and plugin files are referenced by native path/ID
+* Improvement: Log detail page shows attachment type, original path, and storage status (OK/Missing/N/A)
+* Improvement: Queue page shows attachment count and storage status per entry
+* Improvement: Test email goes through the queue (mirrors real sending path)
+* Improvement: Test email response shows "Queued" status with cron processing info
+* Fix: cleanup() now removes orphaned stored attachments when purging old log entries
+* Fix: resolve_attachments() properly handles all three reference types (id, path, stored)
+* Fix: Missing MB_IN_BYTES constant in test environment
+* Fix: MockWPDB now includes wp_upload_dir, wp_basename, and get_col mocks
+* Tests: All 229 tests passing
+
+= 1.3.3 =
+* Fix: SMTP smart switch now correctly retries all ports (465, 587, 2525) on failure
+* Fix: Failed email logs now visible on logs page (stored as status -1 instead of 0)
+* Fix: Race condition in queue processing — atomic row claiming prevents duplicate sends
+* Fix: Cron exceptions caught per-item so one failure doesn't block the batch
+* Fix: Batch size default consistent (5) across settings and processor
+* Fix: Batch size sanitizer capped at 50 to match UI
+* Fix: delete_log verifies log exists before deleting
+* Fix: Bulk delete filters out negative IDs
+* Improvement: Queue page uses shared query method instead of duplicating SQL
+* Cleanup: Remove unused localized strings, dead code, duplicate tests
+
+= 1.3.2 =
+* Fix: Test email attachment checkbox properly inside form with nonce
+* Fix: Settings page form restored with all fields
+* Fix: SMTP port retry properly clears Reply-To headers between attempts
+* Fix: PHPMailer mock always regenerated to prevent stale cache
+
+= 1.3.1 =
+* Fix: Remove automatic re-scheduling of failed queue items — admin reviews and manually re-queues
+* Fix: process_queue uses atomic claim to prevent concurrent duplicate processing
 
 = 1.3.0 =
 * Feature: Add email queue with background processing via WP-Cron

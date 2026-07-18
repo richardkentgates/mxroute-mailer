@@ -24,4 +24,26 @@ delete_option( 'mxroute_mailer_username' );
 delete_option( 'mxroute_mailer_password' );
 delete_option( 'mxroute_mailer_logging_enabled' );
 delete_option( 'mxroute_mailer_keep_data' );
+delete_option( 'mxroute_mailer_batch_size' );
 delete_option( 'mxroute_mailer_db_version' );
+
+// Remove stored attachment files.
+$upload_dir = wp_upload_dir();
+$attach_dir = $upload_dir['basedir'] . '/mxroute-mailer-attachments';
+
+if ( is_dir( $attach_dir ) ) {
+	$files = new RecursiveIteratorIterator(
+		new RecursiveDirectoryIterator( $attach_dir, RecursiveDirectoryIterator::SKIP_DOTS ),
+		RecursiveIteratorIterator::CHILD_FIRST
+	);
+
+	foreach ( $files as $file ) {
+		if ( $file->isDir() ) {
+			rmdir( $file->getRealPath() );
+		} else {
+			unlink( $file->getRealPath() );
+		}
+	}
+
+	rmdir( $attach_dir );
+}
