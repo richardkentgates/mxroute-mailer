@@ -31,9 +31,18 @@ Use the test email form to verify your configuration:
 1. **To**: Enter the recipient email address
 2. **Subject**: Defaults to "MXRoute Mailer Test"
 3. **Body**: Defaults to "This is a test email from MXRoute Mailer."
-4. Click **Send Test Email**
+4. **Options**: Check **Include file attachments** to send all three attachment types
+5. Click **Send Test Email**
 
-The response shows the full API request and response, which is useful for debugging.
+The response shows the queued status. The email is processed in the background by WP-Cron — check the Queue page for delivery status.
+
+When the attachment checkbox is checked, the test email includes three distinct attachment types to exercise all storage paths:
+
+| Attachment | Type | Storage behavior |
+|---|---|---|
+| `test-attachment-media.txt` | Media library ID | Created via `wp_insert_attachment()`, re-resolved at send time |
+| `test-attachment.txt` | Persistent file path | Referenced as-is, no copy |
+| Temp file in `sys_get_temp_dir()` | Temp file (stored) | Copied to `wp-content/uploads/mxroute-mailer-attachments/` |
 
 ## Email Logging
 
@@ -116,7 +125,7 @@ The queue processes emails in batches. Configure the batch size under **Settings
 
 1. All outgoing emails are queued instead of sent immediately
 2. WP-Cron triggers the queue processor in the background
-3. The processor sends emails in batches via the MXRoute API
+3. The processor sends emails in batches via the MXRoute API or SMTP (smart-switch)
 4. Each email is marked as sent or failed in the logs
 5. Pending emails are hidden from the logs page (view on queue page)
 
