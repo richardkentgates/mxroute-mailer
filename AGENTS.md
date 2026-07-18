@@ -17,10 +17,11 @@ mxroute-mailer/
 │   ├── class-mxroute-mailer.php    # Core mail interception and routing
 │   ├── class-mxroute-settings.php  # Admin settings pages and help tabs
 │   ├── class-mxroute-logger.php    # Database email logging
+│   ├── class-mxroute-queue.php     # Queue CRUD operations
 │   ├── class-mxroute-dashboard.php # AJAX log management handlers
 │   └── class-mxroute-updater.php   # GitHub release auto-updater
 ├── admin/
-│   ├── views/                      # PHP templates for settings/logs/log detail
+│   ├── views/                      # PHP templates for settings/logs/queue/log detail
 │   ├── css/admin.css
 │   └── js/admin.js
 ├── tests/                          # PHPUnit tests

@@ -8,7 +8,7 @@
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Handles sending email via the MXRoute HTTP API.
+ * Handles sending email via the MXRoute HTTP API and SMTP (smart switch for attachments).
  */
 class MXRoute_API {
 
@@ -27,7 +27,21 @@ class MXRoute_API {
 	private static $max_field_length = 5000;
 
 	/**
+	 * MXRoute SMTP port priority order.
+	 *
+	 * @var array
+	 */
+	private static $smtp_ports = array(
+		465 => 'ssl',
+		587 => 'tls',
+		2525 => 'tls',
+	);
+
+	/**
 	 * Send an email via the MXRoute API using saved settings.
+	 *
+	 * Automatically routes to SMTP when attachments are present, since the
+	 * MXRoute HTTP API does not support file attachments.
 	 *
 	 * @param string       $from        Sender email address.
 	 * @param string|array $to          Recipient email address(es).
@@ -45,6 +59,36 @@ class MXRoute_API {
 	 * }
 	 */
 	public function send( $from, $to, $subject, $body, $reply_to = '', $attachments = array() ) {
+		$valid_attachments = $this->filter_valid_attachments( $attachments );
+
+		if ( ! empty( $valid_attachments ) ) {
+			return $this->send_via_smtp( $from, $to, $subject, $body, $reply_to, $valid_attachments );
+		}
+
+		return $this->send_via_api( $from, $to, $subject, $body, $reply_to );
+	}
+
+	/**
+	 * Get the transport method that would be used for a given set of attachments.
+	 *
+	 * @param array $attachments Optional array of file paths.
+	 * @return string 'smtp' or 'api'.
+	 */
+	public function get_transport( $attachments = array() ) {
+		return ! empty( $this->filter_valid_attachments( $attachments ) ) ? 'smtp' : 'api';
+	}
+
+	/**
+	 * Send an email via the MXRoute HTTP API.
+	 *
+	 * @param string       $from     Sender email address.
+	 * @param string|array $to       Recipient email address(es).
+	 * @param string       $subject  Email subject.
+	 * @param string       $body     Email body.
+	 * @param string       $reply_to Optional Reply-To email address.
+	 * @return array Response data.
+	 */
+	public function send_via_api( $from, $to, $subject, $body, $reply_to = '', $attachments = array() ) {
 		$server   = get_option( 'mxroute_mailer_server', '' );
 		$username = get_option( 'mxroute_mailer_username', '' );
 		$password = MXRoute_Crypto::get_password();
@@ -197,5 +241,150 @@ class MXRoute_API {
 		}
 
 		return $encoded;
+	}
+
+	/**
+	 * Filter attachments to only valid, readable, under-5MB files.
+	 *
+	 * @param array $attachments Array of file paths.
+	 * @return array Filtered array of valid file paths.
+	 */
+	private function filter_valid_attachments( $attachments ) {
+		$valid = array();
+
+		foreach ( (array) $attachments as $file_path ) {
+			if ( ! is_string( $file_path ) || ! file_exists( $file_path ) || ! is_readable( $file_path ) ) {
+				continue;
+			}
+
+			$file_size = @filesize( $file_path ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_filesize
+			if ( false === $file_size || $file_size > 5242880 ) {
+				continue;
+			}
+
+			$valid[] = $file_path;
+		}
+
+		return $valid;
+	}
+
+	/**
+	 * Send an email via MXRoute SMTP with attachment support.
+	 *
+	 * Uses PHPMailer (bundled with WordPress) to send through MXRoute's SMTP
+	 * servers directly. This is used when attachments are present because the
+	 * MXRoute HTTP API does not support file attachments.
+	 *
+	 * MXRoute SMTP ports tried in order: 465 (SSL), 587 (TLS), 2525 (TLS).
+	 *
+	 * @param string       $from        Sender email address.
+	 * @param string|array $to          Recipient email address(es).
+	 * @param string       $subject     Email subject.
+	 * @param string       $body        Email body.
+	 * @param string       $reply_to    Optional Reply-To email address.
+	 * @param array        $attachments Array of file paths.
+	 * @return array Response data.
+	 */
+	private function send_via_smtp( $from, $to, $subject, $body, $reply_to = '', $attachments = array() ) {
+		$server   = get_option( 'mxroute_mailer_server', '' );
+		$username = get_option( 'mxroute_mailer_username', '' );
+		$password = MXRoute_Crypto::get_password();
+
+		if ( empty( $server ) || empty( $username ) || empty( $password ) ) {
+			return array(
+				'success'  => false,
+				'message'  => __( 'MXRoute credentials not configured.', 'mxroute-mailer' ),
+				'request'  => array(),
+				'response' => array(),
+			);
+		}
+
+		$to_single = is_array( $to ) ? reset( $to ) : $to;
+		if ( preg_match( '/<(.+?)>/', $to_single, $matches ) ) {
+			$to_single = sanitize_email( $matches[1] );
+		} else {
+			$to_single = sanitize_email( $to_single );
+		}
+		$from     = sanitize_email( $from );
+		$reply_to = sanitize_email( $reply_to );
+
+		$request = array(
+			'server'   => $server,
+			'username' => $username,
+			'from'     => $from,
+			'to'       => $to_single,
+			'subject'  => $subject,
+			'transport'=> 'smtp',
+		);
+
+		$phpmailer = new \PHPMailer\PHPMailer\PHPMailer( true ); // phpcs:ignore WordPress.WP.AlternativeFunctions
+		$phpmailer->isSMTP();
+		$phpmailer->Host       = $server;
+		$phpmailer->SMTPAuth   = true;
+		$phpmailer->Username   = $username;
+		$phpmailer->Password   = $password;
+		$phpmailer->SMTPKeepAlive = true;
+		$phpmailer->CharSet    = 'UTF-8';
+		$phpmailer->Encoding   = 'base64';
+
+		$last_error = '';
+		foreach ( self::$smtp_ports as $port => $encryption ) {
+			try {
+				$phpmailer->Port       = $port;
+				$phpmailer->SMTPSecure = $encryption;
+
+				$phpmailer->setFrom( $from, '' );
+				$phpmailer->addAddress( $to_single );
+				if ( ! empty( $reply_to ) ) {
+					$phpmailer->addReplyTo( $reply_to );
+				}
+				foreach ( $attachments as $file_path ) {
+					if ( file_exists( $file_path ) && is_readable( $file_path ) ) {
+						$phpmailer->addAttachment( $file_path, basename( $file_path ) );
+					}
+				}
+
+				$phpmailer->Subject = $subject;
+				$phpmailer->isHTML( true );
+				$phpmailer->Body    = $body;
+				$phpmailer->AltBody = wp_strip_all_tags( $body );
+
+				if ( defined( 'MXROUTE_MAILER_DEBUG' ) && MXROUTE_MAILER_DEBUG ) {
+					error_log( 'MXRoute SMTP Send: server=' . $server . ' port=' . $port . ' encryption=' . $encryption . ' from=' . $from . ' to=' . $to_single );
+				}
+
+				$phpmailer->send();
+
+				if ( defined( 'MXROUTE_MAILER_DEBUG' ) && MXROUTE_MAILER_DEBUG ) {
+					error_log( 'MXRoute SMTP Send: success via port ' . $port );
+				}
+
+				return array(
+					'success'  => true,
+					'message'  => __( 'Email sent via SMTP.', 'mxroute-mailer' ),
+					'request'  => $request,
+					'response' => array( 'transport' => 'smtp', 'port' => $port ),
+				);
+			} catch ( \PHPMailer\PHPMailer\Exception $e ) { // phpcs:ignore WordPress.WP.AlternativeFunctions
+				$last_error = $e->getMessage();
+				if ( defined( 'MXROUTE_MAILER_DEBUG' ) && MXROUTE_MAILER_DEBUG ) {
+					error_log( 'MXRoute SMTP Send: failed port ' . $port . ' - ' . $last_error );
+				}
+				$phpmailer->clearAddresses();
+				$phpmailer->clearAttachments();
+				$phpmailer->clearReplyTos();
+			}
+		}
+
+		return array(
+			'success'  => false,
+			'message'  => sprintf(
+				/* translators: %s: last SMTP error message */
+			__( 'SMTP send failed on all MXRoute ports. Last error: %s', 'mxroute-mailer' ),
+				$last_error
+			),
+			'request'  => $request,
+			'response' => array( 'transport' => 'smtp', 'error' => $last_error ),
+		);
 	}
 }

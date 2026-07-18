@@ -75,6 +75,31 @@ The test email form shows the full API response. Look for:
 3. **Batch size too small** - Increase batch size under Settings > MXRoute Mailer
 4. **Re-queue failed emails** - Go to Tools > MXRoute Logs, filter by Failed status, and re-queue
 
+### Emails with Attachments Fail
+
+**Symptoms**: Emails without attachments send fine, but emails with file attachments fail.
+
+**Cause**: Emails with file attachments are sent via SMTP (PHPMailer) instead of the MXRoute HTTP API, because the MXRoute HTTP API does not support file attachments. If your hosting environment blocks outbound SMTP ports (465, 587, 2525), these emails will fail.
+
+**Fixes**:
+
+1. **Check which transport was used** - Go to Tools > MXRoute Logs, open the failed email, and check the Transport field. If it says `smtp`, the email was routed via SMTP (smart switch for attachments).
+2. **Check attachment status** - The log detail page shows an Attachments section with storage status for each file. If any show "Missing", the stored copy was deleted before the email could be sent. Re-queue the email to try again.
+3. **Check if SMTP ports are open** - Contact your hosting provider to confirm outbound SMTP ports (465, 587, or 2525) are not blocked
+4. **Remove attachments** - If SMTP ports cannot be opened, remove file attachments from the email. Emails without attachments use the MXRoute HTTP API (port 443) and are not affected by SMTP port blocks.
+
+### Attachment Storage Issues
+
+**Symptoms**: Log detail shows "Missing" for stored attachments, or queue entries show red attachment badges.
+
+**Cause**: The plugin stores volatile (temp) file copies in `wp-content/uploads/mxroute-mailer-attachments/` to prevent loss before queue processing. Media library and persistent plugin files are referenced by native path/ID without copying.
+
+**Fixes**:
+
+1. **Check storage directory permissions** - The `wp-content/uploads/mxroute-mailer-attachments/` directory must be writable by the web server (750)
+2. **Check disk space** - Large temp files may fail to copy if disk is full
+3. **Re-queue the email** - From the Logs page, click Re-queue to re-attempt delivery with fresh attachment capture
+
 ### Plugin Causes White Screen
 
 **Symptoms**: WordPress admin shows a blank white screen.

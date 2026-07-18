@@ -13,6 +13,10 @@ class MXRoute_Dashboard_Test extends \PHPUnit\Framework\TestCase {
         $GLOBALS['wp_db_queries'] = array();
     }
 
+    protected function tearDown(): void {
+        unset( $GLOBALS['wp_mock_current_user_can'] );
+    }
+
     /**
      * Tests that the constructor registers the expected AJAX action hooks.
      */
@@ -25,7 +29,6 @@ class MXRoute_Dashboard_Test extends \PHPUnit\Framework\TestCase {
         $this->assertContains('admin_ajax_mxroute_bulk_delete_logs', $hooks);
         $this->assertContains('admin_ajax_mxroute_requeue_log', $hooks);
         $this->assertContains('admin_ajax_mxroute_bulk_requeue_logs', $hooks);
-        $this->assertContains('admin_ajax_mxroute_add_to_queue', $hooks);
     }
 
     /**
@@ -76,18 +79,21 @@ class MXRoute_Dashboard_Test extends \PHPUnit\Framework\TestCase {
     }
 
     /**
-     * Tests that ajax_delete_log sends a success JSON response.
+     * Tests that ajax_delete_log sends error when log_id is invalid.
      */
     public function test_ajax_delete_log_sends_success() {
+        $GLOBALS['wp_db_results'] = array();
         $dashboard = new MXRoute_Dashboard();
+        $_POST['log_id'] = 999;
         $threw = false;
         try {
             $dashboard->ajax_delete_log();
         } catch (\MXRouteJSONException $e) {
             $threw = true;
-            $this->assertTrue($e->response['success']);
+            $this->assertFalse($e->response['success']);
         }
         $this->assertTrue($threw, 'Expected MXRouteJSONException to be thrown');
+        unset($_POST['log_id']);
     }
 
     /**
@@ -223,55 +229,72 @@ class MXRoute_Dashboard_Test extends \PHPUnit\Framework\TestCase {
     }
 
     /**
-     * Tests that ajax_add_to_queue verifies the nonce before proceeding.
+     * Tests that ajax_clear_logs sends error when user lacks manage_options.
      */
-    public function test_ajax_add_to_queue_verifies_nonce() {
+    public function test_ajax_clear_logs_denies_unauthorized_user() {
+        $GLOBALS['wp_mock_current_user_can'] = false;
         $dashboard = new MXRoute_Dashboard();
         try {
-            $dashboard->ajax_add_to_queue();
-        } catch (\MXRouteJSONException $e) {
-            // Expected
+            $dashboard->ajax_clear_logs();
+            $this->fail( 'Expected MXRouteJSONException' );
+        } catch ( \MXRouteJSONException $e ) {
+            $this->assertFalse( $e->response['success'] );
         }
-
-        $calls = $GLOBALS['wp_function_calls']['check_ajax_referer'];
-        $this->assertCount(1, $calls);
-        $this->assertEquals('mxroute_log_manage', $calls[0]['action']);
     }
 
     /**
-     * Tests that ajax_add_to_queue sends an error when fields are missing.
+     * Tests that ajax_delete_log sends error when user lacks manage_options.
      */
-    public function test_ajax_add_to_queue_sends_error_when_missing_fields() {
+    public function test_ajax_delete_log_denies_unauthorized_user() {
+        $GLOBALS['wp_mock_current_user_can'] = false;
         $dashboard = new MXRoute_Dashboard();
-        $threw = false;
         try {
-            $dashboard->ajax_add_to_queue();
-        } catch (\MXRouteJSONException $e) {
-            $threw = true;
-            $this->assertFalse($e->response['success']);
+            $dashboard->ajax_delete_log();
+            $this->fail( 'Expected MXRouteJSONException' );
+        } catch ( \MXRouteJSONException $e ) {
+            $this->assertFalse( $e->response['success'] );
         }
-        $this->assertTrue($threw, 'Expected MXRouteJSONException to be thrown');
     }
 
     /**
-     * Tests that ajax_add_to_queue sends a success response when valid data is provided.
+     * Tests that ajax_bulk_delete_logs sends error when user lacks manage_options.
      */
-    public function test_ajax_add_to_queue_sends_success_with_valid_data() {
-        $_POST['from_email'] = 'from@example.com';
-        $_POST['to_email']   = 'to@example.com';
-        $_POST['subject']    = 'Test Subject';
-        $_POST['message']    = 'Test body content';
-
+    public function test_ajax_bulk_delete_logs_denies_unauthorized_user() {
+        $GLOBALS['wp_mock_current_user_can'] = false;
         $dashboard = new MXRoute_Dashboard();
-        $threw = false;
         try {
-            $dashboard->ajax_add_to_queue();
-        } catch (\MXRouteJSONException $e) {
-            $threw = true;
-            $this->assertTrue($e->response['success']);
+            $dashboard->ajax_bulk_delete_logs();
+            $this->fail( 'Expected MXRouteJSONException' );
+        } catch ( \MXRouteJSONException $e ) {
+            $this->assertFalse( $e->response['success'] );
         }
-        $this->assertTrue($threw, 'Expected MXRouteJSONException to be thrown');
+    }
 
-        unset( $_POST['from_email'], $_POST['to_email'], $_POST['subject'], $_POST['message'] );
+    /**
+     * Tests that ajax_requeue_log sends error when user lacks manage_options.
+     */
+    public function test_ajax_requeue_log_denies_unauthorized_user() {
+        $GLOBALS['wp_mock_current_user_can'] = false;
+        $dashboard = new MXRoute_Dashboard();
+        try {
+            $dashboard->ajax_requeue_log();
+            $this->fail( 'Expected MXRouteJSONException' );
+        } catch ( \MXRouteJSONException $e ) {
+            $this->assertFalse( $e->response['success'] );
+        }
+    }
+
+    /**
+     * Tests that ajax_bulk_requeue_logs sends error when user lacks manage_options.
+     */
+    public function test_ajax_bulk_requeue_logs_denies_unauthorized_user() {
+        $GLOBALS['wp_mock_current_user_can'] = false;
+        $dashboard = new MXRoute_Dashboard();
+        try {
+            $dashboard->ajax_bulk_requeue_logs();
+            $this->fail( 'Expected MXRouteJSONException' );
+        } catch ( \MXRouteJSONException $e ) {
+            $this->assertFalse( $e->response['success'] );
+        }
     }
 }

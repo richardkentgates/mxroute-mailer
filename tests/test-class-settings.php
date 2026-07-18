@@ -171,13 +171,12 @@ class MXRoute_Settings_Test extends \PHPUnit\Framework\TestCase {
     }
 
     /**
-     * Tests that the test email form sends the decrypted password to the API.
+     * Tests that the test email form queues the email for processing.
      */
-    public function test_test_email_form_sends_decrypted_password() {
-        $plain_password = 'test_form_secret';
+    public function test_test_email_form_queues_email() {
         $GLOBALS['wp_options']['mxroute_mailer_server'] = 'server.example.com';
         $GLOBALS['wp_options']['mxroute_mailer_username'] = 'from@example.com';
-        $GLOBALS['wp_options']['mxroute_mailer_password'] = MXRoute_Crypto::encrypt($plain_password);
+        $GLOBALS['wp_options']['mxroute_mailer_password'] = MXRoute_Crypto::encrypt('test_form_secret');
         $_POST['mxroute_test_email_nonce'] = wp_create_nonce('mxroute_test_email');
         $_POST['mxroute_test_to'] = 'to@example.com';
         $_POST['mxroute_test_subject'] = 'Subject';
@@ -186,11 +185,10 @@ class MXRoute_Settings_Test extends \PHPUnit\Framework\TestCase {
         $mailer = MXRoute_Mailer::instance();
         $mailer->handle_test_email();
 
-        $call = array_pop($GLOBALS['wp_function_calls']['wp_remote_post']);
-        $body = json_decode($call['args']['body'], true);
-
-        $this->assertEquals($plain_password, $body['password']);
-        $this->assertEquals('Basic ' . base64_encode('from@example.com:' . $plain_password), $call['args']['headers']['Authorization']);
+        $result = $GLOBALS['wp_transients']['mxroute_test_email_result'];
+        $this->assertTrue($result['success']);
+        $this->assertTrue($result['queued']);
+        $this->assertNotEmpty($GLOBALS['wp_db_inserts']);
 
         unset($_POST['mxroute_test_email_nonce']);
         unset($_POST['mxroute_test_to']);
@@ -221,12 +219,12 @@ class MXRoute_Settings_Test extends \PHPUnit\Framework\TestCase {
     }
 
     /**
-     * Tests that sanitize_batch_size clamps values above 500 to 500.
+     * Tests that sanitize_batch_size clamps values above 50 to 50.
      */
     public function test_sanitize_batch_size_clamps_above_maximum() {
         $settings = new MXRoute_Settings();
-        $this->assertEquals( 500, $settings->sanitize_batch_size( 501 ) );
-        $this->assertEquals( 500, $settings->sanitize_batch_size( 9999 ) );
+        $this->assertEquals( 50, $settings->sanitize_batch_size( 51 ) );
+        $this->assertEquals( 50, $settings->sanitize_batch_size( 9999 ) );
     }
 
     /**
@@ -235,8 +233,8 @@ class MXRoute_Settings_Test extends \PHPUnit\Framework\TestCase {
     public function test_sanitize_batch_size_passes_valid_values() {
         $settings = new MXRoute_Settings();
         $this->assertEquals( 1, $settings->sanitize_batch_size( 1 ) );
+        $this->assertEquals( 25, $settings->sanitize_batch_size( 25 ) );
         $this->assertEquals( 50, $settings->sanitize_batch_size( 50 ) );
-        $this->assertEquals( 500, $settings->sanitize_batch_size( 500 ) );
     }
 
     /**
