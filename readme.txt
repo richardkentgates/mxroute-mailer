@@ -4,7 +4,7 @@ Tags: email, smtp, mxroute, mail
 Requires at least: 5.0
 Tested up to: 7.0
 Requires PHP: 7.3
-Stable tag: 1.3.4
+Stable tag: 1.3.5
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -83,9 +83,9 @@ Yes. The plugin supports file attachments in all outgoing emails. Emails with at
 
 The plugin checks GitHub releases for new versions. When an update is available, it appears in your WordPress dashboard like any other plugin update. See the [Auto-Updates wiki page](https://github.com/richardkentgates/mxroute-mailer/wiki/Auto-Updates) for details.
 
-= What happens if the MXRoute API is down? =
+= What happens if an email fails? =
 
-The plugin fires a `wp_mail_failed` action so other plugins can handle the failure. WordPress falls back to its default mailer, so your site doesn't silently lose email.
+Failed emails are logged with status -1 and visible on the Logs page. You can re-queue any failed email to try again. The plugin does not automatically retry — it logs the failure so you can review and take action.
 
 == Screenshots ==
 
@@ -136,7 +136,6 @@ The plugin fires a `wp_mail_failed` action so other plugins can handle the failu
 * Feature: Add dedicated queue status page
 * Improvement: Pending emails hidden from logs page (view on queue page)
 * Improvement: Dynamic row removal on re-queue (no page reload)
-* Improvement: Add emails directly to queue from queue page
 * Security: Separate access between logs and queue views
 
 = 1.2.21 =
