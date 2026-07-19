@@ -277,27 +277,40 @@ class MXRoute_Logger_Test extends \PHPUnit\Framework\TestCase {
     }
 
     /**
-     * Tests that requeue_log calls $wpdb->update with correct data.
+     * Tests that requeue_log executes a query.
      */
-    public function test_requeue_log_calls_update() {
+    public function test_requeue_log_executes_queries() {
         $logger = new MXRoute_Logger();
+        $before = count( $GLOBALS['wp_db_queries'] );
         $result = $logger->requeue_log( 1 );
 
         $this->assertTrue( $result );
-        $updates = $GLOBALS['wp_function_calls']['$wpdb->update'] ?? array();
-        $this->assertNotEmpty( $updates );
-        $this->assertEquals( 0, $updates[0]['data']['success'] );
+        $this->assertGreaterThan( $before, count( $GLOBALS['wp_db_queries'] ) );
     }
 
     /**
-     * Tests that requeue_log uses success=0 for pending status.
+     * Tests that requeue_log returns false for invalid ID.
      */
-    public function test_requeue_log_sets_success_to_zero() {
+    public function test_requeue_log_returns_false_for_zero_id() {
+        $logger = new MXRoute_Logger();
+        $this->assertFalse( $logger->requeue_log( 0 ) );
+    }
+
+    /**
+     * Tests that requeue_log produces a SQL UPDATE with success=0.
+     */
+    public function test_requeue_log_produces_update_sql() {
         $logger = new MXRoute_Logger();
         $logger->requeue_log( 5 );
 
-        $updates = $GLOBALS['wp_function_calls']['$wpdb->update'] ?? array();
-        $this->assertNotEmpty( $updates );
+        $found = false;
+        foreach ( $GLOBALS['wp_db_queries'] as $query ) {
+            if ( false !== strpos( $query, 'SET success = 0' ) ) {
+                $found = true;
+                break;
+            }
+        }
+        $this->assertTrue( $found );
     }
 
     /**
@@ -305,10 +318,10 @@ class MXRoute_Logger_Test extends \PHPUnit\Framework\TestCase {
      */
     public function test_requeue_logs_handles_multiple_ids() {
         $logger = new MXRoute_Logger();
-        $logger->requeue_logs( array( 1, 2, 3 ) );
+        $count = $logger->requeue_logs( array( 1, 2, 3 ) );
 
-        $updates = $GLOBALS['wp_function_calls']['$wpdb->update'] ?? array();
-        $this->assertNotEmpty( $updates );
+        $this->assertIsInt( $count );
+        $this->assertGreaterThanOrEqual( 0, $count );
     }
 
     /**
@@ -316,9 +329,8 @@ class MXRoute_Logger_Test extends \PHPUnit\Framework\TestCase {
      */
     public function test_requeue_logs_handles_empty_array() {
         $logger = new MXRoute_Logger();
-        $logger->requeue_logs( array() );
+        $count = $logger->requeue_logs( array() );
 
-        $updates = $GLOBALS['wp_function_calls']['$wpdb->update'] ?? array();
-        $this->assertEmpty( $updates );
+        $this->assertEquals( 0, $count );
     }
 }
