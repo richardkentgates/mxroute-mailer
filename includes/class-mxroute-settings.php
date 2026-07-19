@@ -323,7 +323,7 @@ class MXRoute_Settings {
 				'id'      => 'mxroute-test-email',
 				'title'   => __( 'Test Email', 'mxroute-mailer' ),
 				'content' => '<p>' . esc_html__( 'Use the test form at the bottom of this page to send a test email. Enter a recipient address, then click "Send Test Email". The sender address is automatically taken from your configured username.', 'mxroute-mailer' ) . '</p>'
-					. '<p>' . esc_html__( 'The email is queued and processed in the background by WP-Cron. You\'ll see a notice confirming it was queued. Check the Queue page for delivery status.', 'mxroute-mailer' ) . '</p>'
+					. '<p>' . esc_html__( 'The email is queued and processed by the next cron cycle (within 60 seconds). You\'ll see a notice confirming it was queued. Check the Queue page for delivery status.', 'mxroute-mailer' ) . '</p>'
 					. '<p>' . esc_html__( 'Checking "Include file attachments" sends the test email with all three attachment types: a media library attachment (ID reference), a persistent file path, and a temp file (copied to storage). This tests the smart switch and all attachment storage paths.', 'mxroute-mailer' ) . '</p>',
 			)
 		);
@@ -333,7 +333,7 @@ class MXRoute_Settings {
 				'id'      => 'mxroute-options',
 				'title'   => __( 'Options', 'mxroute-mailer' ),
 				'content' => '<p><strong>' . esc_html__( 'Enable Logging:', 'mxroute-mailer' ) . '</strong> ' . esc_html__( 'When checked, all sent emails are logged with request and response data. You can view logs under Tools > MXRoute Logs.', 'mxroute-mailer' ) . '</p>'
-					. '<p><strong>' . esc_html__( 'Batch Size:', 'mxroute-mailer' ) . '</strong> ' . esc_html__( 'Number of emails to process per WP-Cron run. Default is 5. Range is 1-50.', 'mxroute-mailer' ) . '</p>'
+					. '<p><strong>' . esc_html__( 'Batch Size:', 'mxroute-mailer' ) . '</strong> ' . esc_html__( 'Number of emails to process per 60-second cron cycle. Default is 5. Range is 1-50.', 'mxroute-mailer' ) . '</p>'
 					. '<p><strong>' . esc_html__( 'Uninstall:', 'mxroute-mailer' ) . '</strong> ' . esc_html__( 'When checked, your logs and settings are preserved when the plugin is deleted. Uncheck to remove all data on uninstall.', 'mxroute-mailer' ) . '</p>',
 			)
 		);
@@ -493,7 +493,7 @@ class MXRoute_Settings {
 			array(
 				'id'      => 'mxroute-queue-overview',
 				'title'   => __( 'Overview', 'mxroute-mailer' ),
-				'content' => '<p>' . esc_html__( 'This page shows emails waiting to be sent. Emails are processed in the background via WP-Cron and sent in batches via the smart-switch transport (API for simple emails, SMTP for attachments).', 'mxroute-mailer' ) . '</p>'
+				'content' => '<p>' . esc_html__( 'This page shows emails waiting to be sent. A recurring WP-Cron event checks the queue every 60 seconds and processes emails in batches via the smart-switch transport (API for simple emails, SMTP for attachments).', 'mxroute-mailer' ) . '</p>'
 					. '<p>' . esc_html__( 'The page auto-refreshes every 10 seconds. Processed rows fade out automatically, and the page reloads once all pending emails are handled.', 'mxroute-mailer' ) . '</p>',
 			)
 		);

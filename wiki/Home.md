@@ -18,7 +18,7 @@ If your hosting provider blocks SMTP ports, standard WordPress email and SMTP pl
 ## Features
 
 - **Smart-switch transport** - Automatically selects the best transport: API for lightweight emails, SMTP for emails with attachments (creates a copy in your MXRoute sent folder for legal records)
-- **Email queue** - Background processing via WP-Cron with configurable batch size (1-50 emails per batch)
+- **Email queue** - Background processing via a recurring WP-Cron event (every 60 seconds) with configurable batch size (1-50 emails per batch)
 - **Persistent attachment storage** - Temp files are captured to persistent storage before sending; media library and plugin-provided files are referenced by native path/ID — no unnecessary duplication
 - **Re-queue feature** - Resend any failed or sent email directly from the logs — stored attachments survive for reliable re-delivery
 - **Email logging** - Full logs with search, filtering, and pagination; transport method (API or SMTP) displayed in both list and detail views
