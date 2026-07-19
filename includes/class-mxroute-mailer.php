@@ -198,7 +198,6 @@ class MXRoute_Mailer {
 
 			if ( $result['success'] ) {
 				$queue->mark_sent( $item->id, $result['request'], $result['response'], $item_transport );
-				$queue->delete_stored_attachments( $item->attachments );
 			} else {
 				$queue->mark_failed( $item->id, $result['request'], $result['response'], $item_transport );
 			}
