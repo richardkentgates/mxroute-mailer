@@ -540,11 +540,13 @@ class MXRoute_Queue {
 					__( 'Media ID %d', 'mxroute-mailer' ),
 					$ref['id']
 				);
-				// Resolve original path from media library for display.
+				$resolved = get_attached_file( absint( $ref['id'] ) );
 				if ( '' === $origin ) {
-					$resolved = get_attached_file( absint( $ref['id'] ) );
-					$origin   = $resolved ? $resolved : sprintf( __( '[ID %d not found]', 'mxroute-mailer' ), $ref['id'] );
+					$origin = $resolved ? $resolved : sprintf( __( '[ID %d not found]', 'mxroute-mailer' ), $ref['id'] );
 				}
+				// Media library files are persistent — check if the file exists.
+				$stored    = $resolved ? $resolved : '';
+				$exists    = ( '' !== $stored && is_readable( $stored ) );
 			} elseif ( 'stored' === $ref['type'] ) {
 				$label = __( 'Temp file (stored)', 'mxroute-mailer' );
 			} else {
