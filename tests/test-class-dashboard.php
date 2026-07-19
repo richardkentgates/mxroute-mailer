@@ -24,11 +24,11 @@ class MXRoute_Dashboard_Test extends \PHPUnit\Framework\TestCase {
         $dashboard = new MXRoute_Dashboard();
 
         $hooks = array_column($GLOBALS['wp_function_calls']['add_action'], 'hook');
-        $this->assertContains('admin_ajax_mxroute_clear_logs', $hooks);
-        $this->assertContains('admin_ajax_mxroute_delete_log', $hooks);
-        $this->assertContains('admin_ajax_mxroute_bulk_delete_logs', $hooks);
-        $this->assertContains('admin_ajax_mxroute_requeue_log', $hooks);
-        $this->assertContains('admin_ajax_mxroute_bulk_requeue_logs', $hooks);
+        $this->assertContains('wp_ajax_mxroute_clear_logs', $hooks);
+        $this->assertContains('wp_ajax_mxroute_delete_log', $hooks);
+        $this->assertContains('wp_ajax_mxroute_bulk_delete_logs', $hooks);
+        $this->assertContains('wp_ajax_mxroute_requeue_log', $hooks);
+        $this->assertContains('wp_ajax_mxroute_bulk_requeue_logs', $hooks);
     }
 
     /**

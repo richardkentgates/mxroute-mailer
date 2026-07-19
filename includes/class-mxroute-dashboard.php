@@ -16,12 +16,12 @@ class MXRoute_Dashboard {
 	 * Constructor.
 	 */
 	public function __construct() {
-		add_action( 'admin_ajax_mxroute_clear_logs', array( $this, 'ajax_clear_logs' ) );
-		add_action( 'admin_ajax_mxroute_delete_log', array( $this, 'ajax_delete_log' ) );
-		add_action( 'admin_ajax_mxroute_bulk_delete_logs', array( $this, 'ajax_bulk_delete_logs' ) );
-		add_action( 'admin_ajax_mxroute_requeue_log', array( $this, 'ajax_requeue_log' ) );
-		add_action( 'admin_ajax_mxroute_bulk_requeue_logs', array( $this, 'ajax_bulk_requeue_logs' ) );
-		add_action( 'admin_ajax_mxroute_check_queue', array( $this, 'ajax_check_queue' ) );
+		add_action( 'wp_ajax_mxroute_clear_logs', array( $this, 'ajax_clear_logs' ) );
+		add_action( 'wp_ajax_mxroute_delete_log', array( $this, 'ajax_delete_log' ) );
+		add_action( 'wp_ajax_mxroute_bulk_delete_logs', array( $this, 'ajax_bulk_delete_logs' ) );
+		add_action( 'wp_ajax_mxroute_requeue_log', array( $this, 'ajax_requeue_log' ) );
+		add_action( 'wp_ajax_mxroute_bulk_requeue_logs', array( $this, 'ajax_bulk_requeue_logs' ) );
+		add_action( 'wp_ajax_mxroute_check_queue', array( $this, 'ajax_check_queue' ) );
 	}
 
 	/**
