@@ -61,7 +61,7 @@ $total_pages = $items_per_page > 0 ? (int) ceil( $total / $items_per_page ) : 0;
 						}
 					}
 					?>
-					<tr>
+					<tr class="mxroute-queue-row" data-queue-id="<?php echo esc_attr( $item->id ); ?>">
 						<td><?php echo esc_html( $item->id ); ?></td>
 						<td><?php echo esc_html( $item->created_at ); ?></td>
 						<td><?php echo esc_html( $item->from_email ); ?></td>

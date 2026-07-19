@@ -145,12 +145,13 @@ class MXRoute_Queue {
 	/**
 	 * Mark a queue item as sent with API result data.
 	 *
-	 * @param int   $id       Queue item ID.
-	 * @param array $request  API request data sent.
-	 * @param array $response API response data.
+	 * @param int    $id        Queue item ID.
+	 * @param array  $request   API request data sent.
+	 * @param array  $response  API response data.
+	 * @param string $transport Transport method used ('api' or 'smtp').
 	 * @return bool True on success, false on failure.
 	 */
-	public function mark_sent( $id, $request = array(), $response = array() ) {
+	public function mark_sent( $id, $request = array(), $response = array(), $transport = 'api' ) {
 		global $wpdb;
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Queue update by primary key.
@@ -158,12 +159,13 @@ class MXRoute_Queue {
 			$this->table_name,
 			array(
 				'success'      => 1,
+				'transport'    => in_array( $transport, array( 'api', 'smtp' ), true ) ? $transport : 'api',
 				'api_request'  => wp_json_encode( $request ),
 				'api_response' => wp_json_encode( $response ),
 				'processed_at' => current_time( 'mysql' ),
 			),
 			array( 'id' => absint( $id ) ),
-			array( '%d', '%s', '%s', '%s' ),
+			array( '%d', '%s', '%s', '%s', '%s' ),
 			array( '%d' )
 		);
 	}
@@ -171,12 +173,13 @@ class MXRoute_Queue {
 	/**
 	 * Mark a queue item as failed with API result data.
 	 *
-	 * @param int   $id       Queue item ID.
-	 * @param array $request  API request data sent.
-	 * @param array $response API response data.
+	 * @param int    $id        Queue item ID.
+	 * @param array  $request   API request data sent.
+	 * @param array  $response  API response data.
+	 * @param string $transport Transport method used ('api' or 'smtp').
 	 * @return bool True on success, false on failure.
 	 */
-	public function mark_failed( $id, $request = array(), $response = array() ) {
+	public function mark_failed( $id, $request = array(), $response = array(), $transport = 'api' ) {
 		global $wpdb;
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Queue update by primary key.
@@ -184,12 +187,13 @@ class MXRoute_Queue {
 			$this->table_name,
 			array(
 				'success'      => -1,
+				'transport'    => in_array( $transport, array( 'api', 'smtp' ), true ) ? $transport : 'api',
 				'api_request'  => wp_json_encode( $request ),
 				'api_response' => wp_json_encode( $response ),
 				'processed_at' => current_time( 'mysql' ),
 			),
 			array( 'id' => absint( $id ) ),
-			array( '%d', '%s', '%s', '%s' ),
+			array( '%d', '%s', '%s', '%s', '%s' ),
 			array( '%d' )
 		);
 	}

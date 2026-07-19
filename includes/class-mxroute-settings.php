@@ -245,6 +245,7 @@ class MXRoute_Settings {
 						'failedRequeue'     => __( 'Failed to re-queue email.', 'mxroute-mailer' ),
 						'failedBulkRequeue' => __( 'Failed to re-queue emails.', 'mxroute-mailer' ),
 						'noSelection'       => __( 'No logs selected.', 'mxroute-mailer' ),
+					'queueItemProcessed' => __( 'Email processed and removed from queue.', 'mxroute-mailer' ),
 					),
 				)
 			);

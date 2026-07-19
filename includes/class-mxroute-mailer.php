@@ -165,21 +165,18 @@ class MXRoute_Mailer {
 	 * @return void
 	 */
 	public function process_queue() {
-		$queue    = new MXRoute_Queue();
-		$api      = new MXRoute_API();
-		$batch    = absint( get_option( 'mxroute_mailer_batch_size', 5 ) );
-		$pending  = $queue->claim_pending( $batch );
+		$queue   = new MXRoute_Queue();
+		$api     = new MXRoute_API();
+		$batch   = absint( get_option( 'mxroute_mailer_batch_size', 5 ) );
+		$pending = $queue->claim_pending( $batch );
 
 		if ( empty( $pending ) ) {
 			return;
 		}
 
-		$logger = new MXRoute_Logger();
-
 		foreach ( $pending as $item ) {
-			$attachments = $queue->resolve_attachments( $item->attachments );
-
-			$item_transport = ! empty( $item->transport ) ? $item->transport : $api->get_transport( $attachments );
+			$attachments     = $queue->resolve_attachments( $item->attachments );
+			$item_transport  = $api->get_transport( $attachments );
 
 			try {
 				$result = $api->send(
@@ -199,25 +196,11 @@ class MXRoute_Mailer {
 				);
 			}
 
-			$logger->log(
-				$item->from_email,
-				$item->to_email,
-				$item->subject,
-				$item->message,
-				$result['request'],
-				$result['response'],
-				$result['success'],
-				$item->reply_to,
-				'',
-				$attachments,
-				$item_transport
-			);
-
 			if ( $result['success'] ) {
-				$queue->mark_sent( $item->id, $result['request'], $result['response'] );
+				$queue->mark_sent( $item->id, $result['request'], $result['response'], $item_transport );
 				$queue->delete_stored_attachments( $item->attachments );
 			} else {
-				$queue->mark_failed( $item->id, $result['request'], $result['response'] );
+				$queue->mark_failed( $item->id, $result['request'], $result['response'], $item_transport );
 			}
 		}
 	}
