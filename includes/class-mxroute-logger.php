@@ -279,36 +279,23 @@ class MXRoute_Logger {
 	}
 
 	/**
-	 * Re-queue a single log entry by resetting it to pending status.
+	 * Re-queue a log entry by resetting it to pending status.
 	 *
 	 * @param int $id Log entry ID.
-	 * @return bool True on success, false on failure.
+	 * @return bool True on success, false if row not found.
 	 */
 	public function requeue_log( $id ) {
 		global $wpdb;
-
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Queue requeue by primary key.
-		$updated = $wpdb->update(
-			$this->table_name,
-			array(
-				'success'      => 0,
-				'api_request'  => '',
-				'api_response' => '',
-			),
-			array( 'id' => absint( $id ) ),
-			array( '%d', '%s', '%s' ),
-			array( '%d' )
-		);
-
-		if ( false === $updated ) {
+		$id = absint( $id );
+		if ( $id < 1 ) {
 			return false;
 		}
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Set NULL separately since $wpdb->update cannot produce SQL NULL.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$wpdb->query(
 			$wpdb->prepare(
-				"UPDATE {$this->table_name} SET processed_at = NULL WHERE id = %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-				absint( $id )
+				"UPDATE {$this->table_name} SET success = 0, api_request = '', api_response = '', processed_at = NULL WHERE id = %d",
+				$id
 			)
 		);
 
@@ -319,13 +306,16 @@ class MXRoute_Logger {
 	 * Re-queue multiple log entries by resetting them to pending status.
 	 *
 	 * @param array $ids Array of log entry IDs.
-	 * @return void
+	 * @return int Number of entries re-queued.
 	 */
 	public function requeue_logs( $ids ) {
-		$ids = array_filter( array_map( 'intval', (array) $ids ) );
-		foreach ( $ids as $id ) {
-			$this->requeue_log( $id );
+		$count = 0;
+		foreach ( (array) $ids as $id ) {
+			if ( $this->requeue_log( $id ) ) {
+				++$count;
+			}
 		}
+		return $count;
 	}
 
 }
