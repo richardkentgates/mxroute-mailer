@@ -460,11 +460,15 @@ class MXRoute_Queue {
 				if ( $file_path && is_readable( $file_path ) ) {
 					$resolved[] = $file_path;
 				}
+			} elseif ( 'stored' === $type ) {
+				// Stored copy: use it or skip. No fallback to temp origin.
+				if ( '' !== $path && is_readable( $path ) ) {
+					$resolved[] = $path;
+				}
 			} elseif ( '' !== $path && is_readable( $path ) ) {
-				// type: 'stored' or type: 'path' — use the stored/recorded path.
+				// type: 'path' — use the recorded path, fallback to origin.
 				$resolved[] = $path;
 			} elseif ( '' !== $origin && is_readable( $origin ) ) {
-				// Fallback to original path.
 				$resolved[] = $origin;
 			}
 		}
