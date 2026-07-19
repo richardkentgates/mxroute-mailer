@@ -97,6 +97,7 @@ $total_pages = $result['pages'];
 					<th scope="col"><?php esc_html_e( 'From', 'mxroute-mailer' ); ?></th>
 					<th scope="col"><?php esc_html_e( 'To', 'mxroute-mailer' ); ?></th>
 					<th scope="col"><?php esc_html_e( 'Subject', 'mxroute-mailer' ); ?></th>
+					<th scope="col" style="width:80px;"><?php esc_html_e( 'Transport', 'mxroute-mailer' ); ?></th>
 					<th scope="col" style="width:80px;"><?php esc_html_e( 'Actions', 'mxroute-mailer' ); ?></th>
 				</tr>
 			</thead>
@@ -126,6 +127,7 @@ $total_pages = $result['pages'];
 					<td><?php echo esc_html( $log->from_email ); ?></td>
 					<td><?php echo esc_html( $log->to_email ); ?></td>
 					<td><?php echo esc_html( wp_trim_words( $log->subject, 8 ) ); ?></td>
+					<td><?php echo esc_html( 'smtp' === ( $log->transport ?? '' ) ? __( 'SMTP', 'mxroute-mailer' ) : __( 'API', 'mxroute-mailer' ) ); ?></td>
 					<td>
 						<a href="<?php echo esc_url( admin_url( 'tools.php?page=mxroute-log-view&id=' . $log->id ) ); ?>" class="button button-small" aria-label="<?php echo esc_attr( $view_label ); ?>"><?php esc_html_e( 'View', 'mxroute-mailer' ); ?></a>
 						<button class="button button-small mxroute-requeue-log" data-log-id="<?php echo esc_attr( $log->id ); ?>" aria-label="<?php echo esc_attr( $requeue_label ); ?>"><?php esc_html_e( 'Re-queue', 'mxroute-mailer' ); ?></button>
