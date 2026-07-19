@@ -493,7 +493,21 @@ class MXRoute_Settings {
 			array(
 				'id'      => 'mxroute-queue-overview',
 				'title'   => __( 'Overview', 'mxroute-mailer' ),
-				'content' => '<p>' . esc_html__( 'This page shows emails waiting to be sent. Emails are processed in the background via WP-Cron and sent in batches.', 'mxroute-mailer' ) . '</p>',
+				'content' => '<p>' . esc_html__( 'This page shows emails waiting to be sent. Emails are processed in the background via WP-Cron and sent in batches via the smart-switch transport (API for simple emails, SMTP for attachments).', 'mxroute-mailer' ) . '</p>'
+					. '<p>' . esc_html__( 'The page auto-refreshes every 10 seconds. Processed rows fade out automatically, and the page reloads once all pending emails are handled.', 'mxroute-mailer' ) . '</p>',
+			)
+		);
+
+		$screen->add_help_tab(
+			array(
+				'id'      => 'mxroute-queue-attachments',
+				'title'   => __( 'Attachments', 'mxroute-mailer' ),
+				'content' => '<p>' . esc_html__( 'Each queue entry displays an attachment count with a storage status badge:', 'mxroute-mailer' ) . '</p>'
+					. '<ul>'
+					. '<li>' . esc_html__( 'Green badge: All stored attachments are present', 'mxroute-mailer' ) . '</li>'
+					. '<li>' . esc_html__( 'Red badge: One or more stored attachments are missing', 'mxroute-mailer' ) . '</li>'
+					. '</ul>'
+					. '<p>' . esc_html__( 'The queue relies entirely on captured/stored attachments. The originating software may have deleted its temp copy by queue send time.', 'mxroute-mailer' ) . '</p>',
 			)
 		);
 
