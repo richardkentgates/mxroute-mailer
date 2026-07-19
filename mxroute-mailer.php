@@ -3,7 +3,7 @@
  * Plugin Name: MXRoute Mailer
  * Plugin URI: https://richardkentgates.com
  * Description: Sends WordPress email through MXRoute's HTTP API over port 443. Includes logging, test tools, and automatic updates.
- * Version: 1.3.18
+ * Version: 1.3.19
  * Author: Richard Kent Gates
  * Author URI: https://richardkentgates.com
  * License: GPL v2 or later
@@ -21,7 +21,7 @@ defined( 'ABSPATH' ) || exit;
  *
  * @var string
  */
-define( 'MXROUTE_MAILER_VERSION', '1.3.18' );
+define( 'MXROUTE_MAILER_VERSION', '1.3.19' );
 
 /**
  * Enable debug logging for API calls.
@@ -144,6 +144,21 @@ function mxroute_mailer_schedule_cleanup() {
 	}
 }
 add_action( 'init', 'mxroute_mailer_schedule_cleanup' );
+
+/**
+ * Register custom cron intervals for queue processing.
+ *
+ * @param array $schedules Existing cron schedules.
+ * @return array Modified schedules with the MXRoute interval added.
+ */
+function mxroute_mailer_cron_schedules( $schedules ) {
+	$schedules['mxroute_mailer_interval'] = array(
+		'interval' => 60,
+		'display'  => __( 'Every Minute', 'mxroute-mailer' ),
+	);
+	return $schedules;
+}
+add_filter( 'cron_schedules', 'mxroute_mailer_cron_schedules' );
 
 /**
  * Run daily queue cleanup to remove old processed entries.
