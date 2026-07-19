@@ -2,12 +2,12 @@
 
 [![Latest Release](https://img.shields.io/github/v/release/richardkentgates/mxroute-mailer?label=Version&color=0073aa)](https://github.com/richardkentgates/mxroute-mailer/releases)
 [![License](https://img.shields.io/github/license/richardkentgates/mxroute-mailer?label=License&color=0073aa)](https://github.com/richardkentgates/mxroute-mailer/blob/main/LICENSE)
-[![PHP](https://img.shields.io/packagist/php-v/richardkentgates/mxroute-mailer?label=PHP&color=777bb4)](https://www.php.net/)
+[![PHP](https://img.shields.io/badge/PHP-7.3+-777bb4?logo=php)](https://www.php.net/)
 [![WordPress](https://img.shields.io/badge/WordPress-5.0+-0073aa?logo=wordpress)](https://wordpress.org/)
 [![CI](https://img.shields.io/github/actions/workflow/status/richardkentgates/mxroute-mailer/ci.yml?branch=dev&label=CI)](https://github.com/richardkentgates/mxroute-mailer/actions/workflows/ci.yml)
 [![GitHub release](https://img.shields.io/github/release/richardkentgates/mxroute-mailer?label=Release&color=0073aa)](https://github.com/richardkentgates/mxroute-mailer/releases/latest)
 
-Route all WordPress email through MXRoute's HTTP API to bypass SMTP port blocks.
+Route all WordPress email through MXRoute's API — HTTP for simple emails, SMTP for attachments.
 
 ## Overview
 
