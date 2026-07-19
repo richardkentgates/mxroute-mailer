@@ -196,4 +196,43 @@
         }
     });
 
+    // Queue page: poll for processed items and remove rows dynamically.
+    function mxroutePollQueue() {
+        var ids = [];
+        $('.mxroute-queue-row').each(function () {
+            var id = parseInt($(this).data('queue-id'), 10);
+            if (id) {
+                ids.push(id);
+            }
+        });
+
+        if (ids.length === 0) {
+            return;
+        }
+
+        $.post(mxrouteMailer.ajaxUrl, {
+            action: 'mxroute_check_queue',
+            nonce: mxrouteMailer.logManageNonce,
+            ids: ids
+        }, function (response) {
+            if (response.success && response.data.processed.length > 0) {
+                var processedIds = response.data.processed;
+                processedIds.forEach(function (id) {
+                    var $row = $('.mxroute-queue-row[data-queue-id="' + id + '"]');
+                    $row.fadeOut(300, function () {
+                        $(this).remove();
+                        mxrouteAnnounce(mxrouteMailer.i18n.queueItemProcessed || 'Email processed.');
+                        if ($('.mxroute-queue-row').length === 0) {
+                            location.reload();
+                        }
+                    });
+                });
+            }
+        });
+    }
+
+    if ($('.mxroute-queue-row').length > 0) {
+        setInterval(mxroutePollQueue, 10000);
+    }
+
 })(jQuery);
