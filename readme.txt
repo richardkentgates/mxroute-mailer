@@ -4,7 +4,7 @@ Tags: email, smtp, mxroute, mail
 Requires at least: 5.0
 Tested up to: 7.0
 Requires PHP: 7.3
-Stable tag: 1.3.5
+Stable tag: 1.3.16
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -94,6 +94,28 @@ Failed emails are logged with status -1 and visible on the Logs page. You can re
 3. Individual log detail view with API request and response data
 
 == Changelog ==
+
+= 1.3.16 =
+* Fix: Stored temp attachments use stored copy only — no fallback to originating software's temp path
+* Improvement: Stored attachments kept after successful send for re-queue capability
+
+= 1.3.15 =
+* Fix: Stored column for media library attachments now resolves file path and checks existence
+
+= 1.3.14 =
+* Improvement: Transport column shown in logs list view (API or SMTP)
+* Improvement: Queue page auto-refreshes every 10 seconds — processed rows fade out automatically
+
+= 1.3.13 =
+* Fix: Transport always computed from actual attachments instead of stored value
+* Fix: Remove duplicate log rows — queue entry IS the log entry, no extra row inserted
+* Improvement: Queue page polling checks pending status of visible rows
+
+= 1.3.12 =
+* Documentation update for v1.3.10
+
+= 1.3.11 =
+* Fix: Test email media library attachment uses its own distinct file
 
 = 1.3.10 =
 * Fix: Load PHPMailer classes before SMTP use — prevents fatal when WordPress hasn't autoloaded them
@@ -259,6 +281,18 @@ Failed emails are logged with status -1 and visible on the Logs page. You can re
 * Initial release
 
 == Upgrade Notice ==
+
+= 1.3.16 =
+Stored temp attachments now use stored copy only — no fallback. Stored attachments survive send for re-queue.
+
+= 1.3.14 =
+Transport column in logs list view. Queue page auto-refreshes with processed row fade-out.
+
+= 1.3.13 =
+Fixes duplicate log rows and ensures transport is always computed from actual attachments.
+
+= 1.3.10 =
+PHPMailer classes loaded before SMTP use. Test email exercises all three attachment types.
 
 = 1.2.17 =
 Documentation and help tab updates. No functional changes.

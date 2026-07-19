@@ -4,7 +4,7 @@ Route all WordPress email through MXRoute's HTTP API to bypass SMTP port blocks.
 
 ## Overview
 
-MXRoute Mailer is a WordPress plugin that intercepts all emails sent via `wp_mail()` and routes them through MXRoute's HTTPS API (port 443). This solves the common problem of hosting providers blocking outbound SMTP ports (25, 465, 587), which causes WordPress emails to silently fail.
+MXRoute Mailer is a WordPress plugin that intercepts all emails sent via `wp_mail()` and routes them through MXRoute's HTTPS API (port 443) or SMTP — automatically choosing the best transport for each email. This solves the common problem of hosting providers blocking outbound SMTP ports (25, 465, 587), which causes WordPress emails to silently fail.
 
 ## Why Use MXRoute Mailer?
 
@@ -17,13 +17,14 @@ If your hosting provider blocks SMTP ports, standard WordPress email and SMTP pl
 
 ## Features
 
-- **Automatic email routing** - Intercepts `wp_mail()` and sends through MXRoute API
-- **Email queue** - Background processing via WP-Cron with configurable batch size
-- **File attachments** - Full attachment support for all email types
-- **Re-queue feature** - Resend any failed or sent email directly from logs
-- **Email logging** - Full logs with search, filtering, and pagination
+- **Smart-switch transport** - Automatically selects the best transport: API for lightweight emails, SMTP for emails with attachments (creates a copy in your MXRoute sent folder for legal records)
+- **Email queue** - Background processing via WP-Cron with configurable batch size (1-50 emails per batch)
+- **Persistent attachment storage** - Temp files are captured to persistent storage before sending; media library and plugin-provided files are referenced by native path/ID — no unnecessary duplication
+- **Re-queue feature** - Resend any failed or sent email directly from the logs — stored attachments survive for reliable re-delivery
+- **Email logging** - Full logs with search, filtering, and pagination; transport method (API or SMTP) displayed in both list and detail views
+- **Queue auto-refresh** - Queue page polls every 10 seconds, processed rows fade out automatically
 - **Reply-To support** - Preserves form sender addresses as Reply-To headers
-- **Test email** - Verify your configuration with a single click
+- **Test email** - Verify your configuration with a single click — sends all three attachment types (media library ID, persistent path, temp file) through the queue
 - **Automatic updates** - Get new versions directly from GitHub
 - **Developer-friendly** - Full CI/CD pipeline, coding standards, comprehensive tests
 
