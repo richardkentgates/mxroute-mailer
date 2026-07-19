@@ -65,6 +65,21 @@ class MXRoute_Mailer {
 		add_filter( 'pre_wp_mail', array( $this, 'intercept_wp_mail' ), 999, 2 );
 		add_action( 'load-settings_page_mxroute-mailer', array( $this, 'handle_test_email' ) );
 		add_action( 'mxroute_mailer_process_queue', array( $this, 'process_queue' ) );
+		add_action( 'init', array( $this, 'schedule_queue_processor' ) );
+	}
+
+	/**
+	 * Schedule the recurring queue processor event.
+	 *
+	 * Ensures the recurring cron event is always active. The interval
+	 * is 60 seconds (the minimum WP-Cron supports).
+	 *
+	 * @return void
+	 */
+	public function schedule_queue_processor() {
+		if ( ! wp_next_scheduled( 'mxroute_mailer_process_queue' ) ) {
+			wp_schedule_event( time(), 'mxroute_mailer_interval', 'mxroute_mailer_process_queue' );
+		}
 	}
 
 	/**
@@ -146,11 +161,6 @@ class MXRoute_Mailer {
 
 		if ( 0 === $queued ) {
 			return $pre;
-		}
-
-		// Schedule the queue processor if not already scheduled.
-		if ( ! wp_next_scheduled( 'mxroute_mailer_process_queue' ) ) {
-			wp_schedule_single_event( time(), 'mxroute_mailer_process_queue' );
 		}
 
 		return true;
@@ -372,11 +382,6 @@ class MXRoute_Mailer {
 		// Queue the test email so it goes through the same path as real emails.
 		$queue = new MXRoute_Queue();
 		$queue->add( $from, $to, $subject, $body, '', $attachments, '' );
-
-		// Schedule the queue processor.
-		if ( ! wp_next_scheduled( 'mxroute_mailer_process_queue' ) ) {
-			wp_schedule_single_event( time(), 'mxroute_mailer_process_queue' );
-		}
 
 		set_transient(
 			'mxroute_test_email_result',

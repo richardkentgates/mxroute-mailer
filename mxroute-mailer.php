@@ -146,6 +146,21 @@ function mxroute_mailer_schedule_cleanup() {
 add_action( 'init', 'mxroute_mailer_schedule_cleanup' );
 
 /**
+ * Register custom cron intervals for queue processing.
+ *
+ * @param array $schedules Existing cron schedules.
+ * @return array Modified schedules with the MXRoute interval added.
+ */
+function mxroute_mailer_cron_schedules( $schedules ) {
+	$schedules['mxroute_mailer_interval'] = array(
+		'interval' => 60,
+		'display'  => __( 'Every Minute', 'mxroute-mailer' ),
+	);
+	return $schedules;
+}
+add_filter( 'cron_schedules', 'mxroute_mailer_cron_schedules' );
+
+/**
  * Run daily queue cleanup to remove old processed entries.
  *
  * @return void

@@ -463,9 +463,10 @@ if (!function_exists('wp_die')) {
     }
 }
 
-if (!function_exists('wp_schedule_single_event')) {
-    function wp_schedule_single_event($timestamp, $hook, $args = array()) {
-        $GLOBALS['wp_function_calls']['wp_schedule_single_event'][] = compact('timestamp', 'hook', 'args');
+if (!function_exists('wp_schedule_event')) {
+    function wp_schedule_event($timestamp, $recurrence, $hook, $args = array()) {
+        $GLOBALS['wp_function_calls']['wp_schedule_event'][] = compact('timestamp', 'recurrence', 'hook', 'args');
+        $GLOBALS['wp_scheduled_events'][$hook] = true;
         return true;
     }
 }
@@ -475,8 +476,7 @@ if (!function_exists('wp_next_scheduled')) {
         if (isset($GLOBALS['wp_scheduled_events'][$hook])) {
             return $GLOBALS['wp_scheduled_events'][$hook];
         }
-        // Check if wp_schedule_single_event was called for this hook.
-        $calls = $GLOBALS['wp_function_calls']['wp_schedule_single_event'] ?? array();
+        $calls = $GLOBALS['wp_function_calls']['wp_schedule_event'] ?? array();
         foreach ( $calls as $call ) {
             if ( $call['hook'] === $hook ) {
                 return true;

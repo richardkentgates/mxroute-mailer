@@ -22,7 +22,7 @@ defined( 'ABSPATH' ) || exit;
 		<div class="notice <?php echo esc_attr( $css_class ); ?> is-dismissible">
 			<p><strong><?php echo esc_html( $label ); ?>:</strong> <?php echo esc_html( $test_result['message'] ?? '' ); ?></p>
 			<?php if ( $is_queued ) : ?>
-				<p class="description"><?php esc_html_e( 'The email has been placed in the queue and will be processed shortly by the background cron job. Check the Queue page for status.', 'mxroute-mailer' ); ?></p>
+				<p class="description"><?php esc_html_e( 'The email has been placed in the queue and will be processed by the next cron cycle (within 60 seconds). Check the Queue page for status.', 'mxroute-mailer' ); ?></p>
 			<?php endif; ?>
 			<?php if ( ! empty( $test_result['response'] ) ) : ?>
 				<pre class="mxroute-json"><?php echo esc_html( wp_json_encode( $test_result['response'], JSON_PRETTY_PRINT ) ); ?></pre>
@@ -106,7 +106,7 @@ defined( 'ABSPATH' ) || exit;
 					<input type="number" id="mxroute_mailer_batch_size" name="mxroute_mailer_batch_size"
 							value="<?php echo esc_attr( get_option( 'mxroute_mailer_batch_size', 5 ) ); ?>"
 							class="small-text" min="1" max="50" />
-					<p class="description"><?php esc_html_e( 'Number of queued emails to process per cron run.', 'mxroute-mailer' ); ?></p>
+					<p class="description"><?php esc_html_e( 'Number of queued emails to process per 60-second cron cycle.', 'mxroute-mailer' ); ?></p>
 				</td>
 			</tr>
 		</table>

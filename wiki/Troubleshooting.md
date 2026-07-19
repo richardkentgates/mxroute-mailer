@@ -74,9 +74,9 @@ Common failure reasons:
 
 **Causes and Fixes**:
 
-1. **WP-Cron not running** - Ensure WP-Cron is triggered by an external uptime monitor or page visits
+1. **WP-Cron not running** - A recurring WP-Cron event checks the queue every 60 seconds. Ensure WP-Cron is triggered by an external uptime monitor or page visits. Without traffic, WP-Cron won't fire.
 2. **MXRoute credentials wrong** - Check Settings > MXRoute Mailer for correct server, username, password
-3. **Batch size too small** - Increase batch size under Settings > MXRoute Mailer
+3. **Batch size too small** - Increase batch size under Settings > MXRoute Mailer (more emails per 60-second cycle)
 4. **Re-queue failed emails** - Go to Tools > MXRoute Logs, filter by Failed status, and re-queue
 
 ### Emails with Attachments Fail

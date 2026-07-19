@@ -69,7 +69,7 @@ Go to **Tools > MXRoute Logs** in your WordPress admin. You can search, filter b
 
 = What is the email queue? =
 
-The plugin queues all outgoing emails and processes them in the background via WP-Cron. This ensures reliable delivery even during high-traffic periods. You can view pending emails on the Queue page and re-queue any sent or failed email from the Logs page.
+The plugin queues all outgoing emails and processes them in the background via a recurring WP-Cron event that runs every 60 seconds. Emails are sent in configurable batches (1-50 per cycle). This ensures reliable delivery even during high-traffic periods. You can view pending emails on the Queue page and re-queue any sent or failed email from the Logs page.
 
 = Does this send through SMTP or API? =
 
