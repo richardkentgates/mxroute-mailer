@@ -21,6 +21,7 @@ class MXRoute_Dashboard {
 		add_action( 'admin_ajax_mxroute_bulk_delete_logs', array( $this, 'ajax_bulk_delete_logs' ) );
 		add_action( 'admin_ajax_mxroute_requeue_log', array( $this, 'ajax_requeue_log' ) );
 		add_action( 'admin_ajax_mxroute_bulk_requeue_logs', array( $this, 'ajax_bulk_requeue_logs' ) );
+		add_action( 'admin_ajax_mxroute_check_queue', array( $this, 'ajax_check_queue' ) );
 	}
 
 	/**
@@ -176,6 +177,54 @@ class MXRoute_Dashboard {
 		wp_send_json_success(
 			array(
 				'message' => $message,
+			)
+		);
+	}
+
+	/**
+	 * AJAX handler to check queue status.
+	 *
+	 * Returns which of the provided IDs are no longer pending,
+	 * so the queue page can remove processed rows dynamically.
+	 *
+	 * @return void
+	 */
+	public function ajax_check_queue() {
+		check_ajax_referer( 'mxroute_log_manage', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Unauthorized.', 'mxroute-mailer' ) ) );
+			return;
+		}
+
+		$ids = isset( $_POST['ids'] ) ? array_map( 'intval', (array) $_POST['ids'] ) : array();
+		$ids = array_filter( $ids, function ( $id ) {
+			return $id > 0;
+		} );
+
+		if ( empty( $ids ) ) {
+			wp_send_json_success( array( 'processed' => array() ) );
+			return;
+		}
+
+		global $wpdb;
+		$table_name = $wpdb->prefix . 'mxroute_mailer_logs';
+		$format     = array_fill( 0, count( $ids ), '%d' );
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Queue status check by primary keys.
+		$pending = $wpdb->get_col(
+			$wpdb->prepare(
+				"SELECT id FROM {$table_name} WHERE id IN (" . implode( ',', $format ) . ') AND success = 0 AND processed_at IS NULL',
+				$ids
+			)
+		);
+
+		$pending_ids = array_map( 'intval', $pending );
+		$processed   = array_diff( $ids, $pending_ids );
+
+		wp_send_json_success(
+			array(
+				'processed' => array_values( $processed ),
 			)
 		);
 	}

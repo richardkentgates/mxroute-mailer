@@ -65,10 +65,13 @@ class MXRoute_Process_Queue_Test extends \PHPUnit\Framework\TestCase {
 		}
 		$this->assertNotNull( $sent_update, 'Expected mark_sent with success=1. Got: ' . wp_json_encode( array_map( function( $u ) { return $u['data']['success'] ?? 'N/A'; }, $updates ) ) );
 
+		$this->assertArrayHasKey( 'transport', $sent_update['data'], 'mark_sent should include transport' );
+		$this->assertEquals( 'api', $sent_update['data']['transport'], 'Empty attachments should default to api transport' );
+
 		$log_inserts = array_filter( $GLOBALS['wp_db_inserts'], function ( $insert ) {
 			return isset( $insert['data']['from_email'] );
 		} );
-		$this->assertNotEmpty( $log_inserts, 'Expected logger to insert a log entry' );
+		$this->assertEmpty( $log_inserts, 'process_queue should not create duplicate log rows' );
 	}
 
 	/**
@@ -131,34 +134,36 @@ class MXRoute_Queue_Mark_Test extends \PHPUnit\Framework\TestCase {
 	}
 
 	/**
-	 * Tests that mark_sent calls $wpdb->update with success=1.
+	 * Tests that mark_sent calls $wpdb->update with success=1 and transport.
 	 */
 	public function test_mark_sent_sets_success_1() {
 		$queue = new MXRoute_Queue();
-		$queue->mark_sent( 42, array( 'from' => 'a@b.com' ), array( 'success' => true ) );
+		$queue->mark_sent( 42, array( 'from' => 'a@b.com' ), array( 'success' => true ), 'smtp' );
 
 		$updates = $GLOBALS['wp_function_calls']['$wpdb->update'];
 		$this->assertCount( 1, $updates );
 
 		$data = $updates[0]['data'];
 		$this->assertEquals( 1, $data['success'] );
+		$this->assertEquals( 'smtp', $data['transport'] );
 		$this->assertEquals( '{"from":"a@b.com"}', $data['api_request'] );
 		$this->assertEquals( '{"success":true}', $data['api_response'] );
 		$this->assertNotEmpty( $data['processed_at'] );
 	}
 
 	/**
-	 * Tests that mark_failed calls $wpdb->update with success=-1.
+	 * Tests that mark_failed calls $wpdb->update with success=-1 and transport.
 	 */
 	public function test_mark_failed_sets_success_minus_1() {
 		$queue = new MXRoute_Queue();
-		$queue->mark_failed( 99, array(), array( 'error' => 'fail' ) );
+		$queue->mark_failed( 99, array(), array( 'error' => 'fail' ), 'api' );
 
 		$updates = $GLOBALS['wp_function_calls']['$wpdb->update'];
 		$this->assertCount( 1, $updates );
 
 		$data = $updates[0]['data'];
 		$this->assertEquals( -1, $data['success'] );
+		$this->assertEquals( 'api', $data['transport'] );
 		$this->assertEquals( '{"error":"fail"}', $data['api_response'] );
 	}
 
