@@ -4,7 +4,7 @@ Tags: email, smtp, mxroute, mail
 Requires at least: 5.0
 Tested up to: 7.0
 Requires PHP: 7.3
-Stable tag: 1.3.16
+Stable tag: 1.3.22
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -94,6 +94,21 @@ Failed emails are logged with status -1 and visible on the Logs page. You can re
 3. Individual log detail view with API request and response data
 
 == Changelog ==
+
+= 1.3.22 =
+* Fix: AJAX action hooks use correct WordPress `wp_ajax_` prefix — requeue, delete, clear logs, and queue check now work
+
+= 1.3.21 =
+* Fix: Requeue operation uses single SQL query for atomicity
+
+= 1.3.20 =
+* Fix: Bulk requeue and delete operations use individual method calls for reliability
+
+= 1.3.19 =
+* Improvement: Queue processor runs on a recurring 60-second cron cycle instead of per-email scheduling
+
+= 1.3.18 =
+* Documentation update for v1.3.16
 
 = 1.3.16 =
 * Fix: Stored temp attachments use stored copy only — no fallback to originating software's temp path
@@ -281,6 +296,9 @@ Failed emails are logged with status -1 and visible on the Logs page. You can re
 * Initial release
 
 == Upgrade Notice ==
+
+= 1.3.22 =
+Fixes requeue, delete, and queue check buttons not working. Recommended update for all users.
 
 = 1.3.16 =
 Stored temp attachments now use stored copy only — no fallback. Stored attachments survive send for re-queue.
