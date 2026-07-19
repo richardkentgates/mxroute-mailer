@@ -272,32 +272,10 @@ class MXRoute_Logger {
 	 * @return void
 	 */
 	public function delete_logs( $ids ) {
-		global $wpdb;
 		$ids = array_filter( array_map( 'intval', (array) $ids ) );
-		if ( empty( $ids ) ) {
-			return;
+		foreach ( $ids as $id ) {
+			$this->delete_log( $id );
 		}
-
-		// Fetch attachments before deleting to clean up stored copies.
-		$ids    = array_values( $ids );
-		$format = array_fill( 0, count( $ids ), '%d' ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Fetch by primary keys.
-		$rows = $wpdb->get_col(
-			$wpdb->prepare(
-				"SELECT attachments FROM {$this->table_name} WHERE id IN (" . implode( ',', $format ) . ')',
-				$ids
-			)
-		);
-		$queue = new MXRoute_Queue();
-		foreach ( (array) $rows as $json ) {
-			$queue->delete_stored_attachments( $json );
-		}
-
-		$wpdb->delete( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-			$this->table_name,
-			array( 'id' => $ids ),
-			$format
-		);
 	}
 
 	/**
@@ -344,33 +322,10 @@ class MXRoute_Logger {
 	 * @return void
 	 */
 	public function requeue_logs( $ids ) {
-		global $wpdb;
 		$ids = array_filter( array_map( 'intval', (array) $ids ) );
-		if ( empty( $ids ) ) {
-			return;
+		foreach ( $ids as $id ) {
+			$this->requeue_log( $id );
 		}
-		$ids = array_values( $ids );
-
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		$wpdb->update(
-			$this->table_name,
-			array(
-				'success'      => 0,
-				'api_request'  => '',
-				'api_response' => '',
-			),
-			array( 'id' => $ids ),
-			array( '%d', '%s', '%s' ),
-			array( '%d' )
-		);
-
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Set NULL separately since $wpdb->update cannot produce SQL NULL.
-		$wpdb->query(
-			$wpdb->prepare(
-				"UPDATE {$this->table_name} SET processed_at = NULL WHERE id IN (" . implode( ',', array_fill( 0, count( $ids ), '%d' ) ) . ")", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
-				$ids
-			)
-		);
 	}
 
 }
