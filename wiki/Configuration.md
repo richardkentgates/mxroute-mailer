@@ -34,7 +34,7 @@ Use the test email form to verify your configuration:
 4. **Options**: Check **Include file attachments** to send all three attachment types
 5. Click **Send Test Email**
 
-The response shows the queued status. The email is processed in the background by WP-Cron — check the Queue page for delivery status.
+The response shows the queued status. The email is processed by the recurring WP-Cron event (every 60 seconds) — check the Queue page for delivery status.
 
 When the attachment checkbox is checked, the test email includes three distinct attachment types to exercise all storage paths:
 
@@ -101,7 +101,7 @@ You can filter logs by:
 From the logs page, you can re-queue any sent or failed email to be sent again:
 - Click the **Re-queue** button on any log entry
 - Use bulk actions to re-queue multiple entries at once
-- Re-queued emails move to the queue and are processed by WP-Cron
+- Re-queued emails move to the queue and are processed by the next cron cycle (within 60 seconds)
 - The log entry is removed from the logs view (appears on queue page)
 
 ### Clearing Logs
@@ -124,7 +124,7 @@ The queue processes emails in batches. Configure the batch size under **Settings
 ### How the Queue Works
 
 1. All outgoing emails are queued instead of sent immediately
-2. WP-Cron triggers the queue processor in the background
+2. A recurring WP-Cron event checks the queue every 60 seconds
 3. The processor sends emails in batches via the MXRoute API or SMTP (smart-switch)
 4. Each email is marked as sent or failed in the logs
 5. Pending emails are hidden from the logs page (view on queue page)
@@ -134,11 +134,10 @@ The queue processes emails in batches. Configure the batch size under **Settings
 When any WordPress plugin or theme calls `wp_mail()`, MXRoute Mailer:
 
 1. Intercepts the email via the `pre_wp_mail` filter before WordPress invokes the default mailer
-2. Queues the email for background processing via WP-Cron
-3. Schedules a single WP-Cron event to process the queue
-4. Returns `false` to WordPress so the default mailer is not invoked
+2. Queues the email in the database
+3. Returns `true` to WordPress so the default mailer is not invoked
 
-The queue processor then:
+A recurring WP-Cron event (every 60 seconds) then:
 1. Fetches pending emails from the database in batches
 2. Extracts the `From` header (if any), sanitizes it, and sets it as `Reply-To`
 3. Uses your MXRoute username as the `From` address

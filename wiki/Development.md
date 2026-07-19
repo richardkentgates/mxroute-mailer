@@ -73,7 +73,9 @@ mxroute-mailer/
 │   ├── test-class-queue.php        # Queue and API tests
 │   ├── test-class-crypto.php       # Encryption tests
 │   ├── test-class-updater.php      # Updater tests
-│   └── test-edge-cases.php         # Edge case and boundary tests
+│   ├── test-class-mxroute-api.php  # API client tests
+│   ├── test-edge-cases.php         # Edge case and boundary tests
+│   └── test-coverage-gaps.php      # Coverage gap tests
 ├── .github/
 │   ├── workflows/
 │   │   ├── ci.yml                  # Quality and security checks
