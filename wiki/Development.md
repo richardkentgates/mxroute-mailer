@@ -292,7 +292,27 @@ The test bootstrap mocks WordPress functions to allow testing without a full Wor
 - PHPMailer mock with configurable success port for SMTP smart switch testing
 - `wp_remote_post`, `wp_remote_get` mocks with configurable responses
 - `current_user_can` mock with configurable return value via `$GLOBALS['wp_mock_current_user_can']`
+- `check_ajax_referer` mock with configurable return value via `$GLOBALS['wp_mock_ajax_referer']`
+- `wp_safe_remote_get` mock (delegates to same response as `wp_remote_post`)
 - Constants: `MB_IN_BYTES`, `DAY_IN_SECONDS`, `ABSPATH`, `OBJECT`, `ARRAY_A`, `ARRAY_N`
+- `MXROUTE_MAILER_DEBUG` constant defined in bootstrap for testing debug-gated code paths
+- `MXRoute_Mailer::reset()` resets the singleton so `init_hooks()` re-runs in each test
+
+### MXRouteJSONException
+
+`wp_send_json_success()` and `wp_send_json_error()` throw `MXRouteJSONException` instead of calling `wp_die()`. This allows tests to assert on the JSON response:
+
+```php
+$dashboard = new MXRoute_Dashboard();
+$threw = false;
+try {
+    $dashboard->ajax_delete_log();
+} catch (\MXRouteJSONException $e) {
+    $threw = true;
+    $this->assertTrue($e->response['success']);
+}
+$this->assertTrue($threw, 'Expected MXRouteJSONException to be thrown');
+```
 
 ## Database Migrations
 

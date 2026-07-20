@@ -4,7 +4,7 @@ Tags: email, smtp, mxroute, mail
 Requires at least: 5.0
 Tested up to: 7.0
 Requires PHP: 7.3
-Stable tag: 1.3.22
+Stable tag: 1.3.26
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -95,6 +95,25 @@ Failed emails are logged with status -1 and visible on the Logs page. You can re
 
 == Changelog ==
 
+= 1.3.26 =
+* Security: Crypto encrypt() returns WP_Error instead of plaintext when OpenSSL unavailable
+* Security: Updater rejects updates missing .sha256 checksum asset
+* Security: Added nonce verification to log detail page
+* Security: Updater uses wp_safe_remote_get for GitHub API calls
+* Fix: Debug logging no longer resets json_last_error, preventing silent JSON decode failures
+* Fix: Redacted username, server, port, and encryption from debug logs
+* Improvement: Singleton reset for proper test isolation
+* Tests: 237 tests passing across PHP 7.3–8.3
+
+= 1.3.25 =
+* Docs: Remove duplicate release badge from README
+
+= 1.3.24 =
+* Docs: Fix PHP badge and update plugin description
+
+= 1.3.23 =
+* Docs: Add badges to README, changelog entries for v1.3.17–v1.3.22
+
 = 1.3.22 =
 * Fix: AJAX action hooks use correct WordPress `wp_ajax_` prefix — requeue, delete, clear logs, and queue check now work
 
@@ -110,9 +129,12 @@ Failed emails are logged with status -1 and visible on the Logs page. You can re
 = 1.3.18 =
 * Documentation update for v1.3.16
 
-= 1.3.16 =
+= 1.3.17 =
 * Fix: Stored temp attachments use stored copy only — no fallback to originating software's temp path
 * Improvement: Stored attachments kept after successful send for re-queue capability
+
+= 1.3.16 =
+* Documentation update for v1.3.14
 
 = 1.3.15 =
 * Fix: Stored column for media library attachments now resolves file path and checks existence
@@ -296,6 +318,9 @@ Failed emails are logged with status -1 and visible on the Logs page. You can re
 * Initial release
 
 == Upgrade Notice ==
+
+= 1.3.26 =
+Security hardening: encryption failure protection, update signature verification, debug log sanitization. Recommended for all users.
 
 = 1.3.22 =
 Fixes requeue, delete, and queue check buttons not working. Recommended update for all users.
