@@ -13,6 +13,8 @@ class MXRoute_Mailer_Test extends \PHPUnit\Framework\TestCase {
         $GLOBALS['wp_db_inserts'] = array();
         $GLOBALS['wp_db_queries'] = array();
         $GLOBALS['wp_scheduled_events'] = array();
+        $GLOBALS['wp_hooks_registered'] = array();
+        MXRoute_Mailer::reset();
     }
 
     /**
@@ -375,18 +377,24 @@ class MXRoute_Mailer_Test extends \PHPUnit\Framework\TestCase {
      * Tests that MXRoute_Mailer registers the pre_wp_mail filter.
      */
     public function test_init_hooks_registers_wp_mail_filter() {
+        $before_filters = $GLOBALS['wp_hooks_registered']['filter'] ?? array();
         $mailer = MXRoute_Mailer::instance();
         $this->assertInstanceOf('MXRoute_Mailer', $mailer);
-        $this->assertContains('pre_wp_mail', $GLOBALS['wp_hooks_registered']['filter'] ?? array());
+        $after_filters = $GLOBALS['wp_hooks_registered']['filter'] ?? array();
+        $new_filters   = array_diff( $after_filters, $before_filters );
+        $this->assertContains( 'pre_wp_mail', $new_filters, 'pre_wp_mail should be registered by instance()' );
     }
 
     /**
      * Tests that MXRoute_Mailer registers the process_queue action.
      */
     public function test_init_hooks_registers_init_action() {
+        $before_actions = $GLOBALS['wp_hooks_registered']['action'] ?? array();
         $mailer = MXRoute_Mailer::instance();
         $this->assertInstanceOf('MXRoute_Mailer', $mailer);
-        $this->assertContains('mxroute_mailer_process_queue', $GLOBALS['wp_hooks_registered']['action'] ?? array());
+        $after_actions = $GLOBALS['wp_hooks_registered']['action'] ?? array();
+        $new_actions   = array_diff( $after_actions, $before_actions );
+        $this->assertContains( 'mxroute_mailer_process_queue', $new_actions, 'mxroute_mailer_process_queue should be registered by instance()' );
     }
 
     /**

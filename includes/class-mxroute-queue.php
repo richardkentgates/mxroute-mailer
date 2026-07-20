@@ -46,6 +46,12 @@ class MXRoute_Queue {
 	public function add( $from, $to, $subject, $message, $headers = '', $attachments = array(), $reply_to = '' ) {
 		global $wpdb;
 
+		$to_single = is_string( $to ) ? $to : ( is_array( $to ) ? reset( $to ) : '' );
+		if ( preg_match( '/<(.+?)>/', $to_single, $matches ) ) {
+			$to_single = $matches[1];
+		}
+		$to_single = sanitize_email( $to_single );
+
 		// Insert the queue row first to get the log ID for attachment storage.
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Queue write.
 		$inserted = $wpdb->insert(
@@ -54,7 +60,7 @@ class MXRoute_Queue {
 				'success'      => 0,
 				'from_email'   => sanitize_email( $from ),
 				'reply_to'     => sanitize_email( $reply_to ),
-				'to_email'     => sanitize_email( $to ),
+				'to_email'     => $to_single,
 				'subject'      => sanitize_text_field( $subject ),
 				'message'      => $message,
 				'headers'      => is_array( $headers ) ? wp_json_encode( $headers ) : (string) $headers,

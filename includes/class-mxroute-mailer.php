@@ -33,6 +33,20 @@ class MXRoute_Mailer {
 	}
 
 	/**
+	 * Reset the singleton instance for testing.
+	 *
+	 * Only available when MXROUTE_MAILER_DEBUG is enabled to prevent
+	 * accidental use in production.
+	 *
+	 * @return void
+	 */
+	public static function reset() {
+		if ( defined( 'MXROUTE_MAILER_DEBUG' ) && MXROUTE_MAILER_DEBUG ) {
+			self::$instance = null;
+		}
+	}
+
+	/**
 	 * Constructor.
 	 */
 	private function __construct() {

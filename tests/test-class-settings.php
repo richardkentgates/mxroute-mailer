@@ -9,6 +9,7 @@ class MXRoute_Settings_Test extends \PHPUnit\Framework\TestCase {
     protected function setUp(): void {
         $GLOBALS['wp_options'] = array();
         $GLOBALS['wp_function_calls'] = array();
+        MXRoute_Mailer::reset();
     }
 
     /**

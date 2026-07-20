@@ -233,6 +233,7 @@ class MXRoute_Mailer_Edge_Test extends \PHPUnit\Framework\TestCase {
 		$GLOBALS['wp_transients']       = array();
 		$GLOBALS['wp_db_inserts']       = array();
 		$GLOBALS['wp_db_queries']       = array();
+		MXRoute_Mailer::reset();
 	}
 
 	protected function tearDown(): void {
