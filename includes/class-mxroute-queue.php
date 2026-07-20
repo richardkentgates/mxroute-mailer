@@ -296,8 +296,16 @@ class MXRoute_Queue {
 		$dir = $this->get_storage_dir();
 
 		if ( ! is_dir( $dir ) ) {
-			// phpcs:ignore WordPress.WP.AlternativeFunctions.mkdir_filesystem_mkdir -- WordPress filesystem not available at queue time.
-			if ( ! @mkdir( $dir, 0750, true ) ) {
+			if ( ! function_exists( 'wp_mkdir_p' ) ) {
+				require_once ABSPATH . 'wp-admin/includes/file.php';
+			}
+			if ( function_exists( 'wp_mkdir_p' ) ) {
+				wp_mkdir_p( $dir );
+			} else {
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.mkdir_filesystem_mkdir -- Fallback when WP_Filesystem unavailable.
+				@mkdir( $dir, 0750, true );
+			}
+			if ( ! is_dir( $dir ) ) {
 				return false;
 			}
 		}
@@ -363,7 +371,7 @@ class MXRoute_Queue {
 		$copy_size = @filesize( $stored_path );
 		if ( false === $copy_size || $copy_size !== $file_size ) {
 			// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_file_system_operations -- Cleanup failed copy.
-			@unlink( $stored_path );
+			wp_delete_file( $stored_path );
 			return false;
 		}
 
@@ -500,7 +508,7 @@ class MXRoute_Queue {
 			if ( is_array( $ref ) && 'stored' === ( $ref['type'] ?? '' ) && ! empty( $ref['path'] ) ) {
 				if ( is_readable( $ref['path'] ) ) {
 					// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_file_system_operations -- Cleaning up sent attachment copy.
-					@unlink( $ref['path'] );
+					wp_delete_file( $ref['path'] );
 				}
 			}
 		}

@@ -353,10 +353,16 @@ class MXRoute_Mailer {
 
 		$attachments = array();
 		if ( ! empty( $_POST['mxroute_test_attachment'] ) ) {
+			$upload_dir = wp_upload_dir();
+
 			// Media library ID — re-resolved from WordPress at send time.
 			// Uses its own file so all three attachment types are distinct.
-			$media_file = plugin_dir_path( __DIR__ ) . 'assets/test-attachment-media.txt';
+			$media_dir  = trailingslashit( $upload_dir['basedir'] ) . 'mxroute-test';
+			$media_file = trailingslashit( $media_dir ) . 'test-attachment-media.txt';
 			if ( ! file_exists( $media_file ) ) {
+				if ( ! is_dir( $media_dir ) ) {
+					wp_mkdir_p( $media_dir );
+				}
 				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
 				file_put_contents( $media_file, 'MXRoute Mailer test attachment (media library ID test).' );
 			}

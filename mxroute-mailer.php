@@ -79,7 +79,7 @@ function mxroute_mailer_db_upgrade() {
 		global $wpdb;
 		$table_name = $wpdb->prefix . 'mxroute_mailer_logs';
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Schema upgrade.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Table name from $wpdb->prefix, safe. Schema upgrade.
 		$columns = $wpdb->get_col( "DESCRIBE `$table_name`", 0 );
 
 		if ( ! in_array( 'reply_to', $columns, true ) ) {
