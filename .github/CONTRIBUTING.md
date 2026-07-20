@@ -109,22 +109,16 @@ find . -type f -name '*.php' ! -path './vendor/*' ! -path './tests/*' -print0 | 
 
 - Place tests in the `tests/` directory
 - Name test files `test-*.php`
-- Extend `WP_UnitTestCase` for unit tests
+- Extend `\PHPUnit\Framework\TestCase` (not `WP_UnitTestCase` — the bootstrap provides its own mocks)
 - Use descriptive method names: `test_sanitize_username_strips_domain()`
-
-### Running Tests
-
-```bash
-# Run all tests
-./phpunit.phar --configuration phpunit.xml
-
-# Run a specific test file
-./phpunit.phar --configuration phpunit.xml tests/test-class-settings.php
-```
 
 ### Mock System
 
-The test bootstrap mocks WordPress functions to allow testing without a full WordPress installation.
+The test bootstrap mocks WordPress functions to allow testing without a full WordPress installation. See `tests/bootstrap.php` for the full list. Key patterns:
+
+- AJAX handlers throw `MXRouteJSONException` instead of calling `wp_die()`
+- `$wpdb` uses `MockWPDB` with configurable responses via globals
+- `MXRoute_Mailer::reset()` resets the singleton between tests
 
 ## Pull Request Guidelines
 

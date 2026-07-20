@@ -61,4 +61,4 @@ Repository reference files:
 
 ## License
 
-GPL v2 or later - see [LICENSE](LICENSE) for details.
+GPL v2 or later - see [LICENSE](https://github.com/richardkentgates/mxroute-mailer/blob/main/LICENSE) for details.
