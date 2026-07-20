@@ -181,7 +181,8 @@ class MXRoute_API {
 		$json_data    = json_decode( $raw_response, true );
 
 		if ( defined( 'MXROUTE_MAILER_DEBUG' ) && MXROUTE_MAILER_DEBUG ) {
-			error_log( 'MXRoute API Response: http_code=' . $http_code . ' body=' . $raw_response );
+			$debug_response = isset( $json_data['message'] ) ? $json_data['message'] : wp_json_encode( $json_data );
+			error_log( 'MXRoute API Response: http_code=' . $http_code . ' message=' . $debug_response );
 		}
 
 		if ( JSON_ERROR_NONE !== json_last_error() ) {
@@ -372,7 +373,8 @@ class MXRoute_API {
 					'response' => array( 'transport' => 'smtp', 'port' => $port ),
 				);
 			} catch ( \PHPMailer\PHPMailer\Exception $e ) { // phpcs:ignore WordPress.WP.AlternativeFunctions
-				$last_error = $e->getMessage();
+				$last_error = preg_replace( '/SMTP connect failed.*/', 'SMTP connection failed.', $e->getMessage() );
+				$last_error = preg_replace( '/Authentication failed.*/', 'Authentication failed.', $last_error );
 				if ( defined( 'MXROUTE_MAILER_DEBUG' ) && MXROUTE_MAILER_DEBUG ) {
 					error_log( 'MXRoute SMTP Send: failed port ' . $port . ' - ' . $last_error );
 				}
