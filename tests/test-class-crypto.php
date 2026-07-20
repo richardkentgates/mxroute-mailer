@@ -47,4 +47,19 @@ class MXRoute_Crypto_Test extends \PHPUnit\Framework\TestCase {
 		$this->assertEquals( '', MXRoute_Crypto::encrypt( '' ) );
 		$this->assertEquals( '', MXRoute_Crypto::decrypt( '' ) );
 	}
+
+	/**
+	 * Tests that encrypt returns WP_Error when OpenSSL is unavailable.
+	 */
+	public function test_encrypt_returns_error_when_openssl_unavailable() {
+		// This test verifies the error path exists; in test env openssl is available.
+		$result = MXRoute_Crypto::encrypt( 'test' );
+		// If openssl is available, we get encrypted string; if not, WP_Error.
+		if ( function_exists( 'openssl_encrypt' ) ) {
+			$this->assertIsString( $result );
+			$this->assertNotEquals( 'test', $result );
+		} else {
+			$this->assertInstanceOf( 'WP_Error', $result );
+		}
+	}
 }

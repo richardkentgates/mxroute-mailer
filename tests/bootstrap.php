@@ -22,7 +22,9 @@ $GLOBALS['wp_db_queries'] = array();
 // Track function calls
 $GLOBALS['wp_function_calls'] = array();
 
-// Persistent hook registry (survives setUp resets — tracks singleton registrations)
+// Persistent hook registry — intentionally survives setUp resets because
+// MXRoute_Mailer is a singleton; init_hooks() runs only once, so the hooks
+// it registers must persist across all tests that call instance().
 $GLOBALS['wp_hooks_registered'] = array();
 
 // Mock WordPress functions
@@ -208,6 +210,9 @@ if (!class_exists('WP_Error')) {
 if (!function_exists('check_ajax_referer')) {
     function check_ajax_referer($action, $nonce = false) {
         $GLOBALS['wp_function_calls']['check_ajax_referer'][] = compact('action', 'nonce');
+        if (isset($GLOBALS['wp_mock_ajax_referer'])) {
+            return $GLOBALS['wp_mock_ajax_referer'];
+        }
         return true;
     }
 }
@@ -553,6 +558,10 @@ if (!function_exists('wp_tempnam')) {
 if (!defined('ABSPATH')) {
     define('ABSPATH', '/tmp/wordpress/');
 }
+
+if (!defined('MXROUTE_MAILER_DEBUG')) {
+    define('MXROUTE_MAILER_DEBUG', true);
+}
 if (!defined('OBJECT')) {
     define('OBJECT', 'OBJECT');
 }
@@ -625,6 +634,9 @@ class MockWPDB {
     }
 
     public function get_row($query = null, $output = OBJECT, $offset = 0) {
+        if (isset($GLOBALS['wp_db_row'])) {
+            return $GLOBALS['wp_db_row'];
+        }
         return null;
     }
 
@@ -759,6 +771,19 @@ require_once $plugin_dir . '/includes/class-mxroute-queue.php';
 if (!function_exists('wp_remote_get')) {
     function wp_remote_get($url, $args = array()) {
         $GLOBALS['wp_function_calls']['wp_remote_get'][] = compact('url', 'args');
+        if (isset($GLOBALS['mxroute_mock_remote_get_response'])) {
+            return $GLOBALS['mxroute_mock_remote_get_response'];
+        }
+        return array(
+            'response' => array('code' => 200),
+            'body'     => '{}',
+        );
+    }
+}
+
+if (!function_exists('wp_safe_remote_get')) {
+    function wp_safe_remote_get($url, $args = array()) {
+        $GLOBALS['wp_function_calls']['wp_safe_remote_get'][] = compact('url', 'args');
         if (isset($GLOBALS['mxroute_mock_remote_get_response'])) {
             return $GLOBALS['mxroute_mock_remote_get_response'];
         }

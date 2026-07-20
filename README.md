@@ -10,7 +10,7 @@ Route all WordPress email through MXRoute's API — HTTP for simple emails, SMTP
 
 ## Overview
 
-MXRoute Mailer is a WordPress plugin that intercepts all emails sent via `wp_mail()` and routes them through MXRoute's HTTPS API on port 443. It solves the common problem of hosting providers blocking outbound SMTP ports (25, 465, 587), which causes WordPress emails to silently fail.
+MXRoute Mailer is a WordPress plugin that intercepts all emails sent via `wp_mail()` and routes them through MXRoute's API. Emails without attachments are sent via MXRoute's HTTP API, while emails with attachments are sent via SMTP.
 
 ## Features
 

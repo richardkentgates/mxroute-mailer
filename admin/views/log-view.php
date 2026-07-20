@@ -8,6 +8,11 @@
 defined( 'ABSPATH' ) || exit;
 
 $log_id = isset( $_GET['id'] ) ? intval( wp_unslash( $_GET['id'] ) ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+
+if ( ! isset( $_GET['_wpnonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'mxroute_log_view_' . $log_id ) ) {
+	wp_die( esc_html__( 'Security check failed.', 'mxroute-mailer' ), 403 );
+}
+
 $logger = new MXRoute_Logger();
 $log    = $logger->get_log( $log_id );
 

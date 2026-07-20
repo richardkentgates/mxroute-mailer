@@ -12,11 +12,11 @@ Route all WordPress email through MXRoute's HTTP API with logging and automatic 
 
 == Description ==
 
-MXRoute Mailer replaces WordPress's default mail function with MXRoute's HTTP API, ensuring all email is sent through port 443. This bypasses Google Cloud and other hosting environments that block SMTP ports.
+MXRoute Mailer intercepts all emails sent via `wp_mail()` and routes them through MXRoute's API. Emails without attachments use the HTTP API; emails with attachments use SMTP.
 
 **Why use MXRoute Mailer?**
 
-If your hosting provider blocks outbound SMTP ports (common on Google Cloud, AWS, and shared hosting), WordPress emails -- password resets, contact form submissions, notifications -- silently fail. MXRoute Mailer solves this by sending email through MXRoute's HTTPS API instead.
+If you use MXRoute for email hosting, this plugin integrates it directly with WordPress. All emails sent via `wp_mail()` — password resets, contact form submissions, notifications — are routed through MXRoute's API.
 
 **Features:**
 
@@ -49,11 +49,11 @@ If your hosting provider blocks outbound SMTP ports (common on Google Cloud, AWS
 
 = What is MXRoute? =
 
-MXRoute is an email hosting provider that offers SMTP and HTTP API access for sending email. Their API works over HTTPS (port 443), making it ideal for environments where traditional SMTP ports are blocked.
+MXRoute is an email hosting provider that offers SMTP and HTTP API access for sending email. MXRoute Mailer integrates their API with WordPress so you can send email through your MXRoute account.
 
 = How does this plugin differ from other SMTP plugins? =
 
-Most SMTP plugins require outbound port access (587, 465, 25). MXRoute Mailer uses MXRoute's HTTP API over port 443, so it works on hosting environments that block SMTP traffic -- including Google Cloud, AWS, and many shared hosts.
+Most SMTP plugins require you to configure an SMTP server. MXRoute Mailer uses MXRoute's API directly — HTTP for simple emails, SMTP for emails with attachments — so you only need your MXRoute credentials.
 
 = Will this work with my contact form plugin? =
 

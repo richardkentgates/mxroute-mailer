@@ -163,7 +163,17 @@ class MXRoute_Settings {
 		if ( $existing !== '' && $existing === $value ) {
 			return $existing;
 		}
-		return MXRoute_Crypto::encrypt( $value );
+		$encrypted = MXRoute_Crypto::encrypt( $value );
+		if ( is_wp_error( $encrypted ) ) {
+			add_settings_error(
+				'mxroute_mailer',
+				'mxroute_encryption_failed',
+				$encrypted->get_error_message(),
+				'error'
+			);
+			return $existing;
+		}
+		return $encrypted;
 	}
 
 	/**
