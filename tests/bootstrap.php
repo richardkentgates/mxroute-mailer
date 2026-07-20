@@ -525,6 +525,12 @@ if (!function_exists('wp_basename')) {
     }
 }
 
+if (!function_exists('wp_mkdir_p')) {
+    function wp_mkdir_p($path) {
+        return @mkdir($path, 0755, true);
+    }
+}
+
 if (!function_exists('trailingslashit')) {
     function trailingslashit($string) {
         return rtrim($string, '/') . '/';

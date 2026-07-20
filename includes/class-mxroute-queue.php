@@ -299,13 +299,7 @@ class MXRoute_Queue {
 			if ( ! function_exists( 'wp_mkdir_p' ) ) {
 				require_once ABSPATH . 'wp-admin/includes/file.php';
 			}
-			if ( function_exists( 'wp_mkdir_p' ) ) {
-				wp_mkdir_p( $dir );
-			} else {
-				// phpcs:ignore WordPress.WP.AlternativeFunctions.mkdir_filesystem_mkdir -- Fallback when WP_Filesystem unavailable.
-				@mkdir( $dir, 0750, true );
-			}
-			if ( ! is_dir( $dir ) ) {
+			if ( ! wp_mkdir_p( $dir ) ) {
 				return false;
 			}
 		}
@@ -560,6 +554,7 @@ class MXRoute_Queue {
 				);
 				$resolved = get_attached_file( absint( $ref['id'] ) );
 				if ( '' === $origin ) {
+					/* translators: %d: WordPress attachment ID */
 					$origin = $resolved ? $resolved : sprintf( __( '[ID %d not found]', 'mxroute-mailer' ), $ref['id'] );
 				}
 				// Media library files are persistent — check if the file exists.
