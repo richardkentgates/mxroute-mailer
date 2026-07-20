@@ -72,7 +72,7 @@ class MXRoute_Updater {
 		}
 
 		$endpoint = 'https://api.github.com/repos/' . $this->repo . '/releases/latest';
-		$response = wp_remote_get(
+		$response = wp_safe_remote_get(
 			$endpoint,
 			array(
 				'timeout' => 15,
@@ -214,7 +214,7 @@ class MXRoute_Updater {
 	 *
 	 * Looks for a release asset named like `mxroute-mailer-vX.Y.Z.zip.sha256`
 	 * and returns the hex hash string. Returns false if no checksum asset is
-	 * found, allowing updates to continue for older releases.
+	 * found, which will cause the update to be rejected for security.
 	 *
 	 * @param array $release GitHub release data.
 	 * @return string|false Expected hash or false.
@@ -236,7 +236,7 @@ class MXRoute_Updater {
 			return false;
 		}
 
-		$response = wp_remote_get(
+		$response = wp_safe_remote_get(
 			$hash_url,
 			array(
 				'timeout' => 15,
@@ -285,7 +285,10 @@ class MXRoute_Updater {
 
 		$expected_hash = get_site_transient( 'mxroute_mailer_package_hash' );
 		if ( false === $expected_hash || '' === $expected_hash ) {
-			return $response;
+			return new WP_Error(
+				'mxroute_checksum_missing',
+				__( 'MXRoute Mailer update package is missing a checksum file. Update cancelled for security.', 'mxroute-mailer' )
+			);
 		}
 
 		$body = wp_remote_retrieve_body( $response );

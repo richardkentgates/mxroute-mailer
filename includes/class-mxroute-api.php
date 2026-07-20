@@ -148,7 +148,7 @@ class MXRoute_API {
 		$auth_header = 'Basic ' . base64_encode( $username . ':' . $password ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
 
 		if ( defined( 'MXROUTE_MAILER_DEBUG' ) && MXROUTE_MAILER_DEBUG ) {
-			error_log( 'MXRoute API Send: server=' . $server . ' username=' . $username . ' from=' . $payload['from'] . ' to=' . $payload['to'] );
+			error_log( 'MXRoute API Send: server=' . $server . ' from=' . $payload['from'] . ' to=' . $payload['to'] );
 		}
 
 		$response = wp_remote_post(
@@ -179,13 +179,14 @@ class MXRoute_API {
 		$raw_response = wp_remote_retrieve_body( $response );
 		$http_code    = wp_remote_retrieve_response_code( $response );
 		$json_data    = json_decode( $raw_response, true );
+		$json_error   = json_last_error();
 
 		if ( defined( 'MXROUTE_MAILER_DEBUG' ) && MXROUTE_MAILER_DEBUG ) {
 			$debug_response = isset( $json_data['message'] ) ? $json_data['message'] : wp_json_encode( $json_data );
 			error_log( 'MXRoute API Response: http_code=' . $http_code . ' message=' . $debug_response );
 		}
 
-		if ( JSON_ERROR_NONE !== json_last_error() ) {
+		if ( JSON_ERROR_NONE !== $json_error ) {
 			return array(
 				'success'  => false,
 				'message'  => __( 'Invalid JSON response from API.', 'mxroute-mailer' ),
@@ -230,7 +231,7 @@ class MXRoute_API {
 				continue;
 			}
 
-			$content = file_get_contents( $file_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+			$content = @file_get_contents( $file_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents, WordPress.PHP.DiscouragedPHPFunctions.obfuscation_file_get_contents
 			if ( false === $content ) {
 				continue;
 			}
@@ -357,7 +358,7 @@ class MXRoute_API {
 				$phpmailer->AltBody = wp_strip_all_tags( $body );
 
 				if ( defined( 'MXROUTE_MAILER_DEBUG' ) && MXROUTE_MAILER_DEBUG ) {
-					error_log( 'MXRoute SMTP Send: server=' . $server . ' port=' . $port . ' encryption=' . $encryption . ' from=' . $from . ' to=' . $to_single );
+					error_log( 'MXRoute SMTP Send: from=' . $from . ' to=' . $to_single );
 				}
 
 				$phpmailer->send();

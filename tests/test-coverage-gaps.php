@@ -20,6 +20,7 @@ class MXRoute_Process_Queue_Test extends \PHPUnit\Framework\TestCase {
 		$GLOBALS['wp_scheduled_events']   = array();
 		$GLOBALS['mxroute_mock_remote_response'] = null;
 		$GLOBALS['mxroute_phpmailer_succeed_port'] = null;
+		MXRoute_Mailer::reset();
 	}
 
 	protected function tearDown(): void {

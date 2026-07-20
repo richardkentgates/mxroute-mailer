@@ -4,8 +4,11 @@
  *
  * Provides reversible encryption for sensitive option values such as the
  * MXRoute API password. Uses AES-256-GCM with a key derived from the site's
- * WordPress auth salt. If OpenSSL is unavailable the helper falls back to
- * returning the value unchanged.
+ * WordPress auth salt. Encryption requires the OpenSSL extension; if it is
+ * unavailable a WP_Error is returned so passwords are never stored in
+ * plaintext. Decryption falls back to returning the input unchanged to
+ * preserve backwards compatibility with passwords stored before encryption
+ * was added.
  *
  * @package MXRoute_Mailer
  */
@@ -55,11 +58,15 @@ class MXRoute_Crypto {
 	 * Encrypt a plaintext string.
 	 *
 	 * @param string $plain Plaintext value.
-	 * @return string Encrypted base64 value, or plaintext on failure.
+	 * @return string|WP_Error Encrypted base64 value, or WP_Error on failure.
 	 */
 	public static function encrypt( $plain ) {
-		if ( ! function_exists( 'openssl_encrypt' ) || '' === $plain ) {
+		if ( '' === $plain ) {
 			return $plain;
+		}
+
+		if ( ! function_exists( 'openssl_encrypt' ) ) {
+			return new WP_Error( 'mxroute_crypto', __( 'OpenSSL extension is not available for password encryption.', 'mxroute-mailer' ) );
 		}
 
 		$key = self::get_key();
@@ -78,7 +85,7 @@ class MXRoute_Crypto {
 		);
 
 		if ( false === $cipher_raw ) {
-			return $plain;
+			return new WP_Error( 'mxroute_crypto', __( 'Failed to encrypt the MXRoute password.', 'mxroute-mailer' ) );
 		}
 
 		return base64_encode( $iv . $tag . $cipher_raw ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode

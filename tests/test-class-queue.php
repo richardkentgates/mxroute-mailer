@@ -12,6 +12,7 @@ class MXRoute_Queue_Test extends \PHPUnit\Framework\TestCase {
 		$GLOBALS['wp_db_inserts']     = array();
 		$GLOBALS['wp_db_queries']     = array();
 		$GLOBALS['wp_scheduled_events'] = array();
+		MXRoute_Mailer::reset();
 	}
 
 	/**
@@ -235,6 +236,7 @@ class MXRoute_Mailer_Queue_Test extends \PHPUnit\Framework\TestCase {
 		$GLOBALS['wp_db_inserts']       = array();
 		$GLOBALS['wp_db_queries']       = array();
 		$GLOBALS['wp_scheduled_events'] = array();
+		MXRoute_Mailer::reset();
 	}
 
 	/**
