@@ -27,6 +27,9 @@ mxroute-mailer/
 ├── tests/                          # PHPUnit tests
 ├── .github/workflows/              # CI/CD and promotion workflows
 ├── wiki/                           # Local copies of GitHub wiki pages
+├── phpunit.xml                     # PHPUnit configuration
+├── phpcs.xml.dist                  # PHP CodeSniffer configuration
+├── .gitignore                      # Git ignore rules
 ├── readme.txt                      # WordPress.org-style readme
 ├── PROMOTION.md                    # Exact promotion workflow directive
 └── AGENTS.md                       # This file
