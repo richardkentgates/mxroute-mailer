@@ -78,11 +78,6 @@ require_once MXROUTE_MAILER_PLUGIN_DIR . 'includes/class-mxroute-crypto.php';
 require_once MXROUTE_MAILER_PLUGIN_DIR . 'includes/class-mxroute-mailer.php';
 require_once MXROUTE_MAILER_PLUGIN_DIR . 'includes/class-mxroute-updater.php';
 
-/**
- * Load the plugin text domain for translations.
- */
-load_plugin_textdomain( 'mxroute-mailer', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
-
 register_activation_hook(
 	__FILE__,
 	static function () {

@@ -72,9 +72,9 @@ function mxroute_mailer_uninstall_site( $site_id = 0 ) {
 }
 
 if ( is_multisite() ) {
-	$sites = get_sites( array( 'fields' => 'ids' ) );
-	foreach ( $sites as $site_id ) {
-		mxroute_mailer_uninstall_site( $site_id );
+	$mxroute_sites = get_sites( array( 'fields' => 'ids' ) );
+	foreach ( $mxroute_sites as $mxroute_site_id ) {
+		mxroute_mailer_uninstall_site( $mxroute_site_id );
 	}
 
 	// Remove network-wide options.
