@@ -69,7 +69,7 @@ class MXRoute_Queue {
 				'api_response' => '',
 				'created_at'   => current_time( 'mysql' ),
 			),
-			array( '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s' )
+			array( '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s' )
 		);
 
 		if ( false === $inserted ) {
@@ -171,7 +171,7 @@ class MXRoute_Queue {
 				'processed_at' => current_time( 'mysql' ),
 			),
 			array( 'id' => absint( $id ) ),
-			array( '%d', '%s', '%s', '%s', '%s' ),
+			array( '%d', '%s', '%s', '%s', '%s', '%s' ),
 			array( '%d' )
 		);
 	}
@@ -199,7 +199,7 @@ class MXRoute_Queue {
 				'processed_at' => current_time( 'mysql' ),
 			),
 			array( 'id' => absint( $id ) ),
-			array( '%d', '%s', '%s', '%s', '%s' ),
+			array( '%d', '%s', '%s', '%s', '%s', '%s' ),
 			array( '%d' )
 		);
 	}

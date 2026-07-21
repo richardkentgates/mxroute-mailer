@@ -219,6 +219,10 @@ if (!function_exists('check_ajax_referer')) {
 
 if (!function_exists('current_user_can')) {
     function current_user_can($capability) {
+        $GLOBALS['wp_function_calls']['current_user_can'][] = compact('capability');
+        if (isset($GLOBALS['wp_current_user_can_value'])) {
+            return $GLOBALS['wp_current_user_can_value'];
+        }
         if (isset($GLOBALS['wp_mock_current_user_can'])) {
             return $GLOBALS['wp_mock_current_user_can'];
         }
@@ -517,6 +521,9 @@ if (!function_exists('load_plugin_textdomain')) {
 
 if (!function_exists('is_multisite')) {
     function is_multisite() {
+        if (isset($GLOBALS['is_multisite_value'])) {
+            return $GLOBALS['is_multisite_value'];
+        }
         return false;
     }
 }
@@ -683,6 +690,9 @@ class MockWPDB {
     }
 
     public function get_var($query = null, $x = 0, $y = 0) {
+        if (isset($GLOBALS['wp_db_var'])) {
+            return $GLOBALS['wp_db_var'];
+        }
         return 0;
     }
 

@@ -17,6 +17,9 @@
             <file>./tests/test-mxroute-mailer.php</file>
             <file>./tests/test-edge-cases.php</file>
             <file>./tests/test-coverage-gaps.php</file>
+            <file>./tests/test-can-manage.php</file>
+            <file>./tests/test-class-cli.php</file>
+            <file>./tests/test-db-upgrade.php</file>
         </testsuite>
     </testsuites>
 </phpunit>
