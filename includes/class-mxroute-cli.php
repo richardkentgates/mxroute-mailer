@@ -28,10 +28,10 @@ class MXRoute_CLI_Commands extends WP_CLI_Command {
 	 * ## OPTIONS
 	 *
 	 * [<action>]
-	 * : The action to perform: get or set.
+	 * : The action to perform: get or set. Defaults to get all.
 	 *
 	 * [<key>]
-	 * : The option key: server, username, password, logging_enabled, keep_data, batch_size.
+	 * : The option key: server, username, password, logging_enabled, keep_data, batch_size. Required for get/set specific key.
 	 *
 	 * [<value>]
 	 * : The value to set (required for set action).
@@ -40,12 +40,13 @@ class MXRoute_CLI_Commands extends WP_CLI_Command {
 	 *
 	 *     wp mxroute option get server
 	 *     wp mxroute option set batch_size 10
+	 *     wp mxroute option
 	 *
 	 * @param array $args       Positional arguments.
 	 * @param array $assoc_args Associative arguments.
 	 * @return void
 	 */
-	public function option( $args, $assoc_args ) {
+	public function option( $args = array(), $assoc_args = array() ) {
 		$action = $args[0] ?? '';
 		$key    = $args[1] ?? '';
 		$value  = $args[2] ?? '';
