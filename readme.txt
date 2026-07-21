@@ -4,7 +4,7 @@ Tags: email, smtp, mxroute, mail
 Requires at least: 5.0
 Tested up to: 7.0
 Requires PHP: 7.3
-Stable tag: 1.3.29
+Stable tag: 1.4.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -94,6 +94,16 @@ Failed emails are logged with status -1 and visible on the Logs page. You can re
 3. Individual log detail view with API request and response data
 
 == Changelog ==
+
+= 1.4.0 =
+* Feature: Multisite support — per-site settings, logs, and cron; network activate/deactivate; per-site keep_data on uninstall
+* Feature: WP-CLI commands — manage settings, logs, queue, and send emails from the command line
+* Feature: Internationalization — text domain loaded, Domain Path header added, languages directory ready
+* Improvement: Multisite capability check — network admins see settings pages; helper function mxroute_mailer_can_manage()
+* Improvement: Activation hook creates tables on all existing sites when network activated
+* Improvement: New site initialization hook creates tables automatically on multisite
+* Improvement: Uninstall handler cleans up all sites on multisite networks
+* Improvement: Menu pages use correct capability for multisite (manage_network_options)
 
 = 1.3.29 =
 * Fix: Resolve all WordPress Plugin Check errors — stable tag, i18n placeholders, file system functions

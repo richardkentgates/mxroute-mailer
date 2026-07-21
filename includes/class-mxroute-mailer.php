@@ -323,7 +323,7 @@ class MXRoute_Mailer {
 			return;
 		}
 
-		if ( ! current_user_can( 'manage_options' ) ) {
+		if ( ! mxroute_mailer_can_manage() ) {
 			return;
 		}
 

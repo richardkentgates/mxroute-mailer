@@ -3,11 +3,12 @@
  * Plugin Name: MXRoute Mailer
  * Plugin URI: https://richardkentgates.com
  * Description: Sends WordPress email through MXRoute's HTTP API over port 443. Includes logging, test tools, and automatic updates.
- * Version: 1.3.31
+ * Version: 1.4.0
  * Author: Richard Kent Gates
  * Author URI: https://richardkentgates.com
  * License: GPL v2 or later
  * Text Domain: mxroute-mailer
+ * Domain Path: /languages
  * Requires PHP: 7.3
  * Requires at least: 5.0
  *
@@ -21,7 +22,7 @@ defined( 'ABSPATH' ) || exit;
  *
  * @var string
  */
-define( 'MXROUTE_MAILER_VERSION', '1.3.31' );
+define( 'MXROUTE_MAILER_VERSION', '1.4.0' );
 
 /**
  * Enable debug logging for API calls.
@@ -58,14 +59,44 @@ function mxroute_mailer() {
 	return MXRoute_Mailer::instance();
 }
 
+/**
+ * Check if the current user can manage MXRoute Mailer settings.
+ *
+ * On multisite, checks for manage_network_options capability.
+ * On single site, checks for manage_options capability.
+ *
+ * @return bool True if the user can manage settings.
+ */
+function mxroute_mailer_can_manage() {
+	if ( is_multisite() ) {
+		return current_user_can( 'manage_network_options' );
+	}
+	return current_user_can( 'manage_options' );
+}
+
 require_once MXROUTE_MAILER_PLUGIN_DIR . 'includes/class-mxroute-crypto.php';
 require_once MXROUTE_MAILER_PLUGIN_DIR . 'includes/class-mxroute-mailer.php';
 require_once MXROUTE_MAILER_PLUGIN_DIR . 'includes/class-mxroute-updater.php';
+
+/**
+ * Load the plugin text domain for translations.
+ */
+load_plugin_textdomain( 'mxroute-mailer', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
 
 register_activation_hook(
 	__FILE__,
 	static function () {
 		MXRoute_Logger::create_table();
+
+		// On multisite, create tables for all existing sites.
+		if ( is_multisite() ) {
+			$sites = get_sites( array( 'fields' => 'ids' ) );
+			foreach ( $sites as $site_id ) {
+				switch_to_blog( $site_id );
+				MXRoute_Logger::create_table();
+				restore_current_blog();
+			}
+		}
 	}
 );
 
@@ -170,3 +201,25 @@ function mxroute_mailer_daily_cleanup() {
 	$queue->cleanup( 30 );
 }
 add_action( 'mxroute_mailer_daily_cleanup', 'mxroute_mailer_daily_cleanup' );
+
+/**
+ * Create the logs table when a new site is added on multisite.
+ *
+ * @param WP_Site $new_site New site object.
+ * @return void
+ */
+function mxroute_mailer_new_site( $new_site ) {
+	switch_to_blog( $new_site->blog_id );
+	MXRoute_Logger::create_table();
+	restore_current_blog();
+}
+if ( is_multisite() ) {
+	add_action( 'wp_initialize_site', 'mxroute_mailer_new_site' );
+}
+
+/**
+ * Load WP-CLI commands if available.
+ */
+if ( defined( 'WP_CLI' ) && WP_CLI ) {
+	require_once MXROUTE_MAILER_PLUGIN_DIR . 'includes/class-mxroute-cli.php';
+}

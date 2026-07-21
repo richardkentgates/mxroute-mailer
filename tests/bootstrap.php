@@ -503,6 +503,42 @@ if (!function_exists('wp_parse_url')) {
     }
 }
 
+if (!function_exists('plugin_basename')) {
+    function plugin_basename($file) {
+        return ltrim(str_replace(ABSPATH, '', $file), '/');
+    }
+}
+
+if (!function_exists('load_plugin_textdomain')) {
+    function load_plugin_textdomain($domain, $deprecated = false, $plugin_rel_path = false) {
+        return true;
+    }
+}
+
+if (!function_exists('is_multisite')) {
+    function is_multisite() {
+        return false;
+    }
+}
+
+if (!function_exists('get_sites')) {
+    function get_sites($args = array()) {
+        return array();
+    }
+}
+
+if (!function_exists('switch_to_blog')) {
+    function switch_to_blog($site_id) {
+        return true;
+    }
+}
+
+if (!function_exists('restore_current_blog')) {
+    function restore_current_blog() {
+        return true;
+    }
+}
+
 if (!function_exists('wp_upload_dir')) {
     function wp_upload_dir($time = '') {
         $upload_dir = sys_get_temp_dir() . '/mxroute_test_uploads';
@@ -818,12 +854,5 @@ if (!function_exists('get_plugin_data')) {
 if (!function_exists('get_current_screen')) {
     function get_current_screen() {
         return $GLOBALS['mxroute_mock_screen'] ?? null;
-    }
-}
-
-// Mock plugin_basename for updater tests
-if (!function_exists('plugin_basename')) {
-    function plugin_basename($file) {
-        return ltrim(str_replace(ABSPATH, '', $file), '/');
     }
 }
