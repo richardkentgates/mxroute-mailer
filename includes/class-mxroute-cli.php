@@ -342,7 +342,7 @@ class MXRoute_CLI_Commands extends WP_CLI_Command {
 
 		if ( 'count' === $action ) {
 			$count = $queue->count_pending();
-			WP_CLI::log( $count );
+			WP_CLI::log( (string) $count );
 			return;
 		}
 
