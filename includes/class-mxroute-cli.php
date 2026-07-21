@@ -11,20 +11,19 @@ defined( 'ABSPATH' ) || exit;
  * Manage MXRoute Mailer settings, logs, queue, and emails via WP-CLI.
  *
  * ## EXAMPLES
- *
- *     wp mxroute settings get server
- *     wp mxroute settings set password mypassword
- *     wp mxroute logs list --status=1
- *     wp mxroute queue count
- *     wp mxroute send user@example.com "Test Subject" "Test body"
- *     wp mxroute test user@example.com
- *
- * @since 1.4.0
- */
+	 *
+	 *     wp mxroute option get server
+	 *     wp mxroute logs list
+	 *     wp mxroute queue count
+	 *     wp mxroute send user@example.com "Test" "Body"
+	 *     wp mxroute test user@example.com
+	 *
+	 * @since 1.4.0
+	 */
 class MXRoute_CLI_Commands extends WP_CLI_Command {
 
 	/**
-	 * Get or set MXRoute Mailer configuration.
+	 * Get or set a MXRoute Mailer option.
 	 *
 	 * ## OPTIONS
 	 *
@@ -32,21 +31,21 @@ class MXRoute_CLI_Commands extends WP_CLI_Command {
 	 * : The action to perform: get or set.
 	 *
 	 * [<key>]
-	 * : The setting key: server, username, password, logging_enabled, keep_data, batch_size.
+	 * : The option key: server, username, password, logging_enabled, keep_data, batch_size.
 	 *
 	 * [<value>]
 	 * : The value to set (required for set action).
 	 *
 	 * ## EXAMPLES
 	 *
-	 *     wp mxroute config get server
-	 *     wp mxroute config set batch_size 10
+	 *     wp mxroute option get server
+	 *     wp mxroute option set batch_size 10
 	 *
 	 * @param array $args       Positional arguments.
 	 * @param array $assoc_args Associative arguments.
 	 * @return void
 	 */
-	public function config( $args, $assoc_args ) {
+	public function option( $args, $assoc_args ) {
 		$action = $args[0] ?? '';
 		$key    = $args[1] ?? '';
 		$value  = $args[2] ?? '';
