@@ -7,8 +7,6 @@
 
 defined( 'ABSPATH' ) || exit;
 
-use WP_CLI;
-
 /**
  * Manage MXRoute Mailer settings, logs, queue, and emails via WP-CLI.
  *
@@ -52,6 +50,11 @@ class MXRoute_CLI_Commands extends WP_CLI_Command {
 		$action = $args[0] ?? '';
 		$key    = $args[1] ?? '';
 		$value  = $args[2] ?? '';
+
+		// Default to 'get' with no key (show all settings).
+		if ( '' === $action ) {
+			$action = 'get';
+		}
 
 		$valid_keys = array(
 			'server',
