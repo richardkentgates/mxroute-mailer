@@ -121,8 +121,6 @@ The plugin registers the `wp mxroute` command with these subcommands:
 
 Commands are loaded conditionally via `WP_CLI` constant check. The CLI class is in `includes/class-mxroute-cli.php`.
 
-**Known limitation:** `wp mxroute option` with no arguments fails due to WP-CLI's argument parser requiring at least one positional argument. Use `wp mxroute option get` instead.
-
 ## Multisite Support
 
 - Per-site settings, logs, and cron
@@ -138,7 +136,6 @@ Commands are loaded conditionally via `WP_CLI` constant check. The CLI class is 
 - **Tag not on latest main.** Promote to Main checks out `origin/main` before tagging so the tag points to the merge commit.
 - **Version drift.** Do not manually bump patch versions. The Auto Bump Version workflow handles it. Only bump minor/major versions manually when needed.
 - **`GITHUB_TOKEN` cannot trigger workflows.** Promote to Main explicitly runs `gh workflow run Release --ref $tag` because tag pushes from `GITHUB_TOKEN` do not trigger workflow runs.
-- **WP-CLI `option` with no args.** WP-CLI's argument parser requires at least one positional argument for the `option` command. Always use `wp mxroute option get` rather than `wp mxroute option`.
 
 ## Documentation
 
