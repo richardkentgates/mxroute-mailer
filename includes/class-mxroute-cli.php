@@ -346,7 +346,7 @@ class MXRoute_CLI_Commands extends WP_CLI_Command {
 		if ( 'clear' === $action ) {
 			global $wpdb;
 			$table_name = $wpdb->prefix . 'mxroute_mailer_logs';
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Table name from $wpdb->prefix, safe.
 			$count = (int) $wpdb->query( "DELETE FROM {$table_name} WHERE success = 0 AND processed_at IS NULL" );
 			WP_CLI::success( sprintf( '%d pending items cleared.', $count ) );
 			return;
