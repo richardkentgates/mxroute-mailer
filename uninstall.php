@@ -32,6 +32,11 @@ $upload_dir = wp_upload_dir();
 $attach_dir = $upload_dir['basedir'] . '/mxroute-mailer-attachments';
 
 if ( is_dir( $attach_dir ) ) {
+	require_once ABSPATH . 'wp-admin/includes/file.php';
+	WP_Filesystem();
+
+	global $wp_filesystem;
+
 	$files = new RecursiveIteratorIterator(
 		new RecursiveDirectoryIterator( $attach_dir, RecursiveDirectoryIterator::SKIP_DOTS ),
 		RecursiveIteratorIterator::CHILD_FIRST
@@ -39,11 +44,11 @@ if ( is_dir( $attach_dir ) ) {
 
 	foreach ( $files as $file ) {
 		if ( $file->isDir() ) {
-			rmdir( $file->getRealPath() );
+			$wp_filesystem->rmdir( $file->getRealPath() );
 		} else {
-			unlink( $file->getRealPath() );
+			$wp_filesystem->delete( $file->getRealPath() );
 		}
 	}
 
-	rmdir( $attach_dir );
+	$wp_filesystem->rmdir( $attach_dir );
 }

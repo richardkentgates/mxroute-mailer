@@ -71,9 +71,17 @@ $total_pages = $items_per_page > 0 ? (int) ceil( $total / $items_per_page ) : 0;
 							<?php if ( 0 === $att_count ) : ?>
 								<?php esc_html_e( 'None', 'mxroute-mailer' ); ?>
 							<?php elseif ( $att_ok === $att_count ) : ?>
-								<span class="mxroute-status-badge mxroute-success"><?php echo esc_html( sprintf( _n( '%d file', '%d files', $att_count, 'mxroute-mailer' ), $att_count ) ); ?></span>
+								<?php
+								// translators: %d: number of attachment files.
+								$att_label = sprintf( _n( '%d file', '%d files', $att_count, 'mxroute-mailer' ), $att_count );
+								?>
+								<span class="mxroute-status-badge mxroute-success"><?php echo esc_html( $att_label ); ?></span>
 							<?php else : ?>
-								<span class="mxroute-status-badge mxroute-fail"><?php echo esc_html( sprintf( __( '%d/%d stored', 'mxroute-mailer' ), $att_ok, $att_count ) ); ?></span>
+								<?php
+								// translators: %1$d: number of stored attachments, %2$d: total attachment count.
+								$att_label = sprintf( __( '%1$d/%2$d stored', 'mxroute-mailer' ), $att_ok, $att_count );
+								?>
+								<span class="mxroute-status-badge mxroute-fail"><?php echo esc_html( $att_label ); ?></span>
 							<?php endif; ?>
 						</td>
 					</tr>
