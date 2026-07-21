@@ -110,6 +110,22 @@ curl -I https://api.github.com/repos/richardkentgates/mxroute-mailer/releases/la
 - Version comparison prevents accidental downgrades
 - Starting with `v1.2.19`, each release includes a SHA-256 checksum file; the plugin verifies the downloaded zip against this checksum before WordPress installs the update
 
+## Multisite Considerations
+
+On WordPress Multisite, auto-updates apply per-site. To update MXRoute Mailer across all sites:
+
+1. Go to **Network Admin > Updates**
+2. MXRoute Mailer will appear if an update is available
+3. Select all sites and click **Update**
+
+Alternatively, use WP-CLI to update on the network:
+
+```bash
+wp plugin update mxroute-mailer --network
+```
+
+After updating, verify each subsite's settings and queue are intact. The update preserves per-site settings and database tables.
+
 ## Disabling Auto-Updates
 
 If you prefer to update manually, you can disable WordPress auto-updates for this plugin:

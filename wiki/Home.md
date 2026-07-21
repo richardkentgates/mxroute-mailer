@@ -19,14 +19,15 @@ If your hosting provider blocks SMTP ports, standard WordPress email and SMTP pl
 
 - **Smart-switch transport** - Automatically selects the best transport: API for lightweight emails, SMTP for emails with attachments (creates a copy in your MXRoute sent folder for legal records)
 - **Email queue** - Background processing via a recurring WP-Cron event (every 60 seconds) with configurable batch size (1-50 emails per batch)
-- **Persistent attachment storage** - Temp files are captured to persistent storage before sending; media library and plugin-provided files are referenced by native path/ID — no unnecessary duplication
-- **Re-queue feature** - Resend any failed or sent email directly from the logs — stored attachments survive for reliable re-delivery
-- **Email logging** - Full logs with search, filtering, and pagination; transport method (API or SMTP) displayed in both list and detail views
-- **Queue auto-refresh** - Queue page polls every 10 seconds, processed rows fade out automatically
+- **Persistent attachment storage** - Temp files are captured to persistent storage before sending; media library and plugin-provided files are referenced by native path/ID
+- **Re-queue feature** - Resend any failed or sent email directly from the logs
+- **Email logging** - Full logs with search, filtering, and pagination; transport method displayed in both list and detail views
+- **WP-CLI commands** - Manage settings, logs, queue, and send emails from the command line
+- **Multisite support** - Per-site settings and logs, network activate/deactivate, automatic table creation
 - **Reply-To support** - Preserves form sender addresses as Reply-To headers
-- **Test email** - Verify your configuration with a single click — sends all three attachment types (media library ID, persistent path, temp file) through the queue
-- **Automatic updates** - Get new versions directly from GitHub
-- **Developer-friendly** - Full CI/CD pipeline, coding standards, comprehensive tests
+- **Test email** - Verify your configuration with a single click
+- **Automatic updates** - Get new versions directly from GitHub with SHA-256 checksum verification
+- **Developer-friendly** - Full CI/CD pipeline, coding standards, comprehensive tests (237 tests, 476 assertions)
 
 ## Requirements
 
@@ -44,6 +45,7 @@ If your hosting provider blocks SMTP ports, standard WordPress email and SMTP pl
 
 - [Installation](https://github.com/richardkentgates/mxroute-mailer/wiki/Installation) - Step-by-step setup guide
 - [Configuration](https://github.com/richardkentgates/mxroute-mailer/wiki/Configuration) - Server settings, credentials, logging
+- [CLI Commands](https://github.com/richardkentgates/mxroute-mailer/wiki/CLI-Commands) - WP-CLI command reference
 - [Troubleshooting](https://github.com/richardkentgates/mxroute-mailer/wiki/Troubleshooting) - Common issues and fixes
 - [Auto-Updates](https://github.com/richardkentgates/mxroute-mailer/wiki/Auto-Updates) - How GitHub-based updates work
 - [Development](https://github.com/richardkentgates/mxroute-mailer/wiki/Development) - Contributing, testing, CI/CD
