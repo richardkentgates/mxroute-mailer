@@ -4,27 +4,32 @@ This file is for AI agents and contributors who need to work on the MXRoute Mail
 
 ## Project Purpose
 
-MXRoute Mailer is a WordPress plugin that intercepts `wp_mail()` and sends email through MXRoute's HTTPS API (port 443) instead of SMTP. It is designed for hosting environments where outbound SMTP ports are blocked.
+MXRoute Mailer is a WordPress plugin that intercepts `wp_mail()` and sends email through MXRoute's HTTPS API (port 443) instead of SMTP. It is designed for hosting environments where outbound SMTP ports are blocked. It supports WordPress Multisite and includes WP-CLI commands for command-line management.
 
 ## Repository Layout
 
 ```
 mxroute-mailer/
-├── mxroute-mailer.php              # Plugin header, constants, activation hook
+├── mxroute-mailer.php              # Plugin header, constants, activation hook, multisite support
 ├── includes/
-│   ├── class-mxroute-api.php       # MXRoute HTTP API client
-│   ├── class-mxroute-crypto.php    # Reversible encryption for sensitive options
-│   ├── class-mxroute-mailer.php    # Core mail interception and routing
-│   ├── class-mxroute-settings.php  # Admin settings pages and help tabs
-│   ├── class-mxroute-logger.php    # Database email logging
-│   ├── class-mxroute-queue.php     # Queue CRUD operations
+│   ├── class-mxroute-api.php       # MXRoute HTTP API client (smart switch: API for no attachments, SMTP for attachments)
+│   ├── class-mxroute-crypto.php    # Reversible AES-256-GCM encryption for sensitive options
+│   ├── class-mxroute-mailer.php    # Core mail interception and queue routing
+│   ├── class-mxroute-settings.php  # Admin settings pages, menus, and help tabs
+│   ├── class-mxroute-logger.php    # Database email logging with filtering and pagination
+│   ├── class-mxroute-queue.php     # Queue CRUD, attachment storage, and cleanup
 │   ├── class-mxroute-dashboard.php # AJAX log management handlers
-│   └── class-mxroute-updater.php   # GitHub release auto-updater
+│   ├── class-mxroute-updater.php   # GitHub release auto-updater with SHA-256 verification
+│   └── class-mxroute-cli.php       # WP-CLI commands: option, logs, queue, send, test
 ├── admin/
 │   ├── views/                      # PHP templates for settings/logs/queue/log detail
 │   ├── css/admin.css
 │   └── js/admin.js
-├── tests/                          # PHPUnit tests
+├── languages/
+│   └── index.php                   # i18n directory (translations go here)
+├── assets/
+│   └── test-attachment.txt         # Persistent test attachment file
+├── tests/                          # PHPUnit tests (237 tests, 476 assertions)
 ├── .github/workflows/              # CI/CD and promotion workflows
 ├── wiki/                           # Local copies of GitHub wiki pages
 ├── phpunit.xml                     # PHPUnit configuration
@@ -96,6 +101,36 @@ chmod +x phpunit.phar
 find . -type f -name '*.php' ! -path './vendor/*' ! -path './tests/*' -print0 | xargs -0 -n1 php -l
 ```
 
+## WP-CLI Commands
+
+The plugin registers the `wp mxroute` command with these subcommands:
+
+| Command | Description |
+|---------|-------------|
+| `wp mxroute option get [key]` | Get all settings or a specific setting |
+| `wp mxroute option set <key> <value>` | Update a setting |
+| `wp mxroute logs list` | List email logs with pagination |
+| `wp mxroute logs view <id>` | View a specific log entry |
+| `wp mxroute logs delete <id>` | Delete a log entry |
+| `wp mxroute logs clear` | Clear all processed logs |
+| `wp mxroute queue list` | List pending queue items |
+| `wp mxroute queue count` | Count pending items |
+| `wp mxroute queue clear` | Clear all pending items |
+| `wp mxroute send <to> [subject] [message]` | Send email directly via MXRoute API |
+| `wp mxroute test <to>` | Send a test email through the queue |
+
+Commands are loaded conditionally via `WP_CLI` constant check. The CLI class is in `includes/class-mxroute-cli.php`.
+
+**Known limitation:** `wp mxroute option` with no arguments fails due to WP-CLI's argument parser requiring at least one positional argument. Use `wp mxroute option get` instead.
+
+## Multisite Support
+
+- Per-site settings, logs, and cron
+- Network activate/deactivate via `wpmu_activate_site` and `wpmu_deactivate_plugins`
+- Automatic table creation on new sites via `wp_initialize_site` hook
+- Per-site `keep_data` on uninstall
+- Capability check helper: `mxroute_mailer_can_manage()` checks `manage_network_options` on multisite, `manage_options` on single site
+
 ## Common Pitfalls
 
 - **Triggering promotions from the wrong branch.** Promote to Test must use `--ref dev`; Promote to Main must use `--ref test`. The workflows validate the branch and fail if it is wrong.
@@ -103,6 +138,7 @@ find . -type f -name '*.php' ! -path './vendor/*' ! -path './tests/*' -print0 | 
 - **Tag not on latest main.** Promote to Main checks out `origin/main` before tagging so the tag points to the merge commit.
 - **Version drift.** Do not manually bump patch versions. The Auto Bump Version workflow handles it. Only bump minor/major versions manually when needed.
 - **`GITHUB_TOKEN` cannot trigger workflows.** Promote to Main explicitly runs `gh workflow run Release --ref $tag` because tag pushes from `GITHUB_TOKEN` do not trigger workflow runs.
+- **WP-CLI `option` with no args.** WP-CLI's argument parser requires at least one positional argument for the `option` command. Always use `wp mxroute option get` rather than `wp mxroute option`.
 
 ## Documentation
 
