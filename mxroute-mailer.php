@@ -3,7 +3,7 @@
  * Plugin Name: MXRoute Mailer
  * Plugin URI: https://richardkentgates.com
  * Description: Sends WordPress email through MXRoute's HTTP API over port 443. Includes logging, test tools, and automatic updates.
- * Version: 1.3.27
+ * Version: 1.3.29
  * Author: Richard Kent Gates
  * Author URI: https://richardkentgates.com
  * License: GPL v2 or later
@@ -21,7 +21,7 @@ defined( 'ABSPATH' ) || exit;
  *
  * @var string
  */
-define( 'MXROUTE_MAILER_VERSION', '1.3.27' );
+define( 'MXROUTE_MAILER_VERSION', '1.3.29' );
 
 /**
  * Enable debug logging for API calls.
@@ -79,7 +79,7 @@ function mxroute_mailer_db_upgrade() {
 		global $wpdb;
 		$table_name = $wpdb->prefix . 'mxroute_mailer_logs';
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Schema upgrade.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Table name from $wpdb->prefix, safe. Schema upgrade.
 		$columns = $wpdb->get_col( "DESCRIBE `$table_name`", 0 );
 
 		if ( ! in_array( 'reply_to', $columns, true ) ) {

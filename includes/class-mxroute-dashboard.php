@@ -209,12 +209,12 @@ class MXRoute_Dashboard {
 
 		global $wpdb;
 		$table_name = $wpdb->prefix . 'mxroute_mailer_logs';
-		$format     = array_fill( 0, count( $ids ), '%d' );
+		$placeholders = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Queue status check by primary keys.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Table name from $wpdb->prefix, safe. Placeholders built from count().
 		$pending = $wpdb->get_col(
 			$wpdb->prepare(
-				"SELECT id FROM {$table_name} WHERE id IN (" . implode( ',', $format ) . ') AND success = 0 AND processed_at IS NULL',
+				"SELECT id FROM {$table_name} WHERE id IN ($placeholders) AND success = 0 AND processed_at IS NULL",
 				$ids
 			)
 		);
