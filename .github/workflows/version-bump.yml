@@ -35,7 +35,8 @@ jobs:
 
           sed -i "s/Version: $current/Version: $new_version/" mxroute-mailer.php
           sed -i "s/define( 'MXROUTE_MAILER_VERSION', '$current' )/define( 'MXROUTE_MAILER_VERSION', '$new_version' )/" mxroute-mailer.php
+          sed -i "s/Stable tag: $current/Stable tag: $new_version/" readme.txt
 
-          git add mxroute-mailer.php
+          git add mxroute-mailer.php readme.txt
           git commit -m "chore: bump version to $new_version [version] [skip ci]"
           git push origin dev
