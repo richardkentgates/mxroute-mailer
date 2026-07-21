@@ -4,7 +4,7 @@ Tags: email, smtp, mxroute, mail
 Requires at least: 5.0
 Tested up to: 7.0
 Requires PHP: 7.3
-Stable tag: 1.3.27
+Stable tag: 1.3.29
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -94,6 +94,18 @@ Failed emails are logged with status -1 and visible on the Logs page. You can re
 3. Individual log detail view with API request and response data
 
 == Changelog ==
+
+= 1.3.29 =
+* Fix: Resolve all WordPress Plugin Check errors — stable tag, i18n placeholders, file system functions
+* Fix: Test attachment writes use wp_upload_dir instead of plugin directory
+* Fix: Replaced unlink() with wp_delete_file(), mkdir() with wp_mkdir_p()
+* Fix: WP_Filesystem used for directory removal in uninstall handler
+* Fix: Added translators comments for all placeholder strings
+* Fix: Dashboard IN query uses prepared placeholders directly
+* Tests: 237 tests passing, zero Plugin Check ERRORs
+
+= 1.3.27 =
+* Docs: Fix stable tag, changelog gaps, and documentation accuracy
 
 = 1.3.26 =
 * Security: Crypto encrypt() returns WP_Error instead of plaintext when OpenSSL unavailable
@@ -318,6 +330,9 @@ Failed emails are logged with status -1 and visible on the Logs page. You can re
 * Initial release
 
 == Upgrade Notice ==
+
+= 1.3.29 =
+WordPress Plugin Check compliance — resolves all ERROR-level findings. Recommended for all users.
 
 = 1.3.26 =
 Security hardening: encryption failure protection, update signature verification, debug log sanitization. Recommended for all users.
