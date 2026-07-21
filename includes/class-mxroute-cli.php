@@ -24,7 +24,7 @@ defined( 'ABSPATH' ) || exit;
 class MXRoute_CLI_Commands extends WP_CLI_Command {
 
 	/**
-	 * Get or set MXRoute Mailer settings.
+	 * Get or set MXRoute Mailer configuration.
 	 *
 	 * ## OPTIONS
 	 *
@@ -39,14 +39,14 @@ class MXRoute_CLI_Commands extends WP_CLI_Command {
 	 *
 	 * ## EXAMPLES
 	 *
-	 *     wp mxroute settings get server
-	 *     wp mxroute settings set batch_size 10
+	 *     wp mxroute config get server
+	 *     wp mxroute config set batch_size 10
 	 *
 	 * @param array $args       Positional arguments.
 	 * @param array $assoc_args Associative arguments.
 	 * @return void
 	 */
-	public function settings( $args, $assoc_args ) {
+	public function config( $args, $assoc_args ) {
 		$action = $args[0] ?? '';
 		$key    = $args[1] ?? '';
 		$value  = $args[2] ?? '';
