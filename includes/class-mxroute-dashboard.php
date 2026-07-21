@@ -32,7 +32,7 @@ class MXRoute_Dashboard {
 	public function ajax_clear_logs() {
 		check_ajax_referer( 'mxroute_log_manage', 'nonce' );
 
-		if ( ! current_user_can( 'manage_options' ) ) {
+		if ( ! mxroute_mailer_can_manage() ) {
 			wp_send_json_error( array( 'message' => __( 'Unauthorized.', 'mxroute-mailer' ) ) );
 			return;
 		}
@@ -51,7 +51,7 @@ class MXRoute_Dashboard {
 	public function ajax_delete_log() {
 		check_ajax_referer( 'mxroute_log_manage', 'nonce' );
 
-		if ( ! current_user_can( 'manage_options' ) ) {
+		if ( ! mxroute_mailer_can_manage() ) {
 			wp_send_json_error( array( 'message' => __( 'Unauthorized.', 'mxroute-mailer' ) ) );
 			return;
 		}
@@ -82,7 +82,7 @@ class MXRoute_Dashboard {
 	public function ajax_bulk_delete_logs() {
 		check_ajax_referer( 'mxroute_log_manage', 'nonce' );
 
-		if ( ! current_user_can( 'manage_options' ) ) {
+		if ( ! mxroute_mailer_can_manage() ) {
 			wp_send_json_error( array( 'message' => __( 'Unauthorized.', 'mxroute-mailer' ) ) );
 			return;
 		}
@@ -122,7 +122,7 @@ class MXRoute_Dashboard {
 	public function ajax_requeue_log() {
 		check_ajax_referer( 'mxroute_log_manage', 'nonce' );
 
-		if ( ! current_user_can( 'manage_options' ) ) {
+		if ( ! mxroute_mailer_can_manage() ) {
 			wp_send_json_error( array( 'message' => __( 'Unauthorized.', 'mxroute-mailer' ) ) );
 			return;
 		}
@@ -153,7 +153,7 @@ class MXRoute_Dashboard {
 	public function ajax_bulk_requeue_logs() {
 		check_ajax_referer( 'mxroute_log_manage', 'nonce' );
 
-		if ( ! current_user_can( 'manage_options' ) ) {
+		if ( ! mxroute_mailer_can_manage() ) {
 			wp_send_json_error( array( 'message' => __( 'Unauthorized.', 'mxroute-mailer' ) ) );
 			return;
 		}
@@ -192,7 +192,7 @@ class MXRoute_Dashboard {
 	public function ajax_check_queue() {
 		check_ajax_referer( 'mxroute_log_manage', 'nonce' );
 
-		if ( ! current_user_can( 'manage_options' ) ) {
+		if ( ! mxroute_mailer_can_manage() ) {
 			wp_send_json_error( array( 'message' => __( 'Unauthorized.', 'mxroute-mailer' ) ) );
 			return;
 		}

@@ -36,7 +36,7 @@ class MXRoute_Settings {
 		add_options_page(
 			__( 'MXRoute Mailer', 'mxroute-mailer' ),
 			__( 'MXRoute Mailer', 'mxroute-mailer' ),
-			'manage_options',
+			is_multisite() ? 'manage_network_options' : 'manage_options',
 			'mxroute-mailer',
 			array( $this, 'render_settings_page' )
 		);
@@ -44,7 +44,7 @@ class MXRoute_Settings {
 		add_management_page(
 			__( 'MXRoute Email Logs', 'mxroute-mailer' ),
 			__( 'MXRoute Logs', 'mxroute-mailer' ),
-			'manage_options',
+			is_multisite() ? 'manage_network_options' : 'manage_options',
 			'mxroute-logs',
 			array( $this, 'render_logs_page' )
 		);
@@ -52,7 +52,7 @@ class MXRoute_Settings {
 		add_management_page(
 			__( 'MXRoute Email Queue', 'mxroute-mailer' ),
 			__( 'MXRoute Queue', 'mxroute-mailer' ),
-			'manage_options',
+			is_multisite() ? 'manage_network_options' : 'manage_options',
 			'mxroute-queue',
 			array( $this, 'render_queue_page' )
 		);
@@ -61,7 +61,7 @@ class MXRoute_Settings {
 			null,
 			__( 'MXRoute Log Detail', 'mxroute-mailer' ),
 			__( 'MXRoute Log Detail', 'mxroute-mailer' ),
-			'manage_options',
+			is_multisite() ? 'manage_network_options' : 'manage_options',
 			'mxroute-log-view',
 			array( $this, 'render_log_view_page' )
 		);
