@@ -55,7 +55,7 @@ mxroute-mailer/
 │   ├── class-mxroute-logger.php    # Email logging to database
 │   ├── class-mxroute-queue.php     # Queue CRUD operations
 │   ├── class-mxroute-dashboard.php # AJAX handlers for log management
-│   └── class-mxroute-updater.php   # GitHub-based auto-updater
+│   ├── class-mxroute-updater.php   # GitHub-based auto-updater
 │   └── class-mxroute-cli.php       # WP-CLI commands: option, logs, queue, send, test
 ├── admin/
 │   ├── views/
@@ -65,6 +65,10 @@ mxroute-mailer/
 │   │   └── queue.php               # Queue status page template
 │   ├── css/admin.css               # Admin styles
 │   └── js/admin.js                 # Admin scripts
+├── languages/
+│   └── index.php                   # i18n directory (translations go here)
+├── assets/
+│   └── test-attachment.txt         # Persistent test attachment file
 ├── tests/
 │   ├── bootstrap.php               # Test bootstrap with mocks
 │   ├── test-mxroute-mailer.php     # Core mailer tests
@@ -87,6 +91,8 @@ mxroute-mailer/
 │   └── CONTRIBUTING.md             # Contribution guidelines
 ├── wiki/                           # GitHub wiki pages (local copies)
 ├── readme.txt                      # WordPress plugin readme
+├── phpcs.xml.dist                  # PHP CodeSniffer configuration
+├── .gitignore                      # Git ignore rules
 ├── LICENSE                         # GPLv2 license
 ├── phpunit.xml                     # PHPUnit configuration
 └── PROMOTION.md                    # Exact promotion workflow directive

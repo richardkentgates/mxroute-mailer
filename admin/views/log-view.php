@@ -10,7 +10,7 @@ defined( 'ABSPATH' ) || exit;
 $log_id = isset( $_GET['id'] ) ? intval( wp_unslash( $_GET['id'] ) ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
 if ( ! isset( $_GET['_wpnonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'mxroute_log_view_' . $log_id ) ) {
-	wp_die( esc_html__( 'Security check failed.', 'mxroute-mailer' ), 403 );
+	wp_die( esc_html__( 'Security check failed.', 'mxroute-mailer' ), '', array( 'response' => 403 ) );
 }
 
 $logger = new MXRoute_Logger();
@@ -51,8 +51,16 @@ $response = json_decode( $log->api_response, true );
 		<tr>
 			<th scope="row"><?php esc_html_e( 'Status', 'mxroute-mailer' ); ?></th>
 		<td>
-			<span class="mxroute-status-badge <?php echo esc_attr( $log->success > 0 ? 'mxroute-success' : 'mxroute-fail' ); ?>" role="status">
-				<?php echo esc_html( $log->success > 0 ? __( 'Sent', 'mxroute-mailer' ) : __( 'Failed', 'mxroute-mailer' ) ); ?>
+			<span class="mxroute-status-badge <?php echo esc_attr( $log->success > 0 ? 'mxroute-success' : ( $log->success < 0 ? 'mxroute-fail' : 'mxroute-pending' ) ); ?>" role="status">
+				<?php
+				if ( $log->success > 0 ) {
+					echo esc_html__( 'Sent', 'mxroute-mailer' );
+				} elseif ( $log->success < 0 ) {
+					echo esc_html__( 'Failed', 'mxroute-mailer' );
+				} else {
+					echo esc_html__( 'Pending', 'mxroute-mailer' );
+				}
+				?>
 			</span>
 		</td>
 		</tr>

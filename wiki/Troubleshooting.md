@@ -226,21 +226,6 @@ To set the password via CLI:
 wp mxroute option set password 'your-new-password'
 ```
 
-### WP-CLI: "Invalid field: key" Error
-
-**Symptoms**: `wp mxroute option` with no arguments returns `Error: Invalid field: key`.
-
-**Cause**: WP-CLI's argument parser requires at least one positional argument for the `option` command.
-
-**Fix**: Always use a subcommand:
-
-```bash
-wp mxroute option get server
-wp mxroute option get username
-wp mxroute option get password
-wp mxroute option get batch_size
-```
-
 ## Getting Help
 
 If your issue isn't listed here:

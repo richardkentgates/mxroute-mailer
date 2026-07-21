@@ -119,8 +119,16 @@ $total_pages = $result['pages'];
 					</td>
 					<td><?php echo esc_html( $log->id ); ?></td>
 				<td>
-					<span class="mxroute-status-badge <?php echo esc_attr( $log->success > 0 ? 'mxroute-success' : 'mxroute-fail' ); ?>" role="status">
-						<?php echo esc_html( $log->success > 0 ? __( 'Sent', 'mxroute-mailer' ) : __( 'Fail', 'mxroute-mailer' ) ); ?>
+					<span class="mxroute-status-badge <?php echo esc_attr( $log->success > 0 ? 'mxroute-success' : ( $log->success < 0 ? 'mxroute-fail' : 'mxroute-pending' ) ); ?>" role="status">
+						<?php
+						if ( $log->success > 0 ) {
+							echo esc_html__( 'Sent', 'mxroute-mailer' );
+						} elseif ( $log->success < 0 ) {
+							echo esc_html__( 'Failed', 'mxroute-mailer' );
+						} else {
+							echo esc_html__( 'Pending', 'mxroute-mailer' );
+						}
+						?>
 					</span>
 				</td>
 					<td><?php echo esc_html( $log->timestamp ); ?></td>
