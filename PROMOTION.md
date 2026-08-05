@@ -26,7 +26,7 @@ This document records the exact promotion workflow. Do not modify or expand thes
      ```bash
      gh workflow run "Promote to Test" --repo richardkentgates/mxroute-mailer --ref dev
      ```
-   - This workflow creates/merges a PR from `dev` to `test` and uploads a test artifact.
+   - This workflow merges `dev` into `test`, builds the zip, and deploys it to the apt server test channel (`/var/www/html/mxroute-mailer-test/`).
    - Green means promoted. Red means not promoted.
 
 5. **Promote `test` to `main`.**
@@ -34,8 +34,7 @@ This document records the exact promotion workflow. Do not modify or expand thes
      ```bash
      gh workflow run "Promote to Main" --repo richardkentgates/mxroute-mailer --ref test
      ```
-   - This workflow creates/merges a PR from `test` to `main`, creates the release tag on `origin/main`, and triggers the Release workflow.
-   - The Release workflow builds the zip with a top-level `mxroute-mailer/` folder and creates the GitHub release.
+   - This workflow merges `test` into `main`, creates the release tag, builds the zip, creates the GitHub release, and deploys to the apt server production channel (`/var/www/html/mxroute-mailer/`).
    - Checks are not re-run because `test` already contains only promoted, checked code.
 
 ## Constraints

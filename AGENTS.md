@@ -19,7 +19,7 @@ mxroute-mailer/
 │   ├── class-mxroute-logger.php    # Database email logging with filtering and pagination
 │   ├── class-mxroute-queue.php     # Queue CRUD, attachment storage, and cleanup
 │   ├── class-mxroute-dashboard.php # AJAX log management handlers
-│   ├── class-mxroute-updater.php   # GitHub release auto-updater with SHA-256 verification
+│   ├── class-mxroute-updater.php   # Apt server auto-updater with metadata.json
 │   └── class-mxroute-cli.php       # WP-CLI commands: option, logs, queue, send, test
 ├── admin/
 │   ├── views/                      # PHP templates for settings/logs/queue/log detail
@@ -72,8 +72,8 @@ define( 'MXROUTE_MAILER_DEBUG', true );
 3. When ready, promote:
    - `gh workflow run "Promote to Test" --repo richardkentgates/mxroute-mailer --ref dev`
    - `gh workflow run "Promote to Main" --repo richardkentgates/mxroute-mailer --ref test`
-4. Promote to Main creates the release tag and triggers the Release workflow.
-5. The Release workflow builds the zip and creates the GitHub release.
+4. Promote to Test deploys the zip to the apt server test channel.
+5. Promote to Main creates the release tag, triggers the Release workflow, and deploys to the apt server production channel.
 
 See `PROMOTION.md` for the authoritative steps.
 
@@ -83,8 +83,8 @@ See `PROMOTION.md` for the authoritative steps.
 |----------|------|---------|
 | Quality and Security Checks | `.github/workflows/ci.yml` | Runs on push to `dev`. PHP lint, PHPUnit on PHP 7.3-8.3, zizmor, Semgrep, CodeQL, pinned-action check, artifact build. |
 | Auto Bump Version | `.github/workflows/version-bump.yml` | Runs on push to `dev`. Bumps patch version in `mxroute-mailer.php`. |
-| Promote to Test | `.github/workflows/promote-to-test.yml` | Manual. Merges `dev` into `test`, uploads test artifact. Must be run with `--ref dev`. |
-| Promote to Main | `.github/workflows/promote-to-main.yml` | Manual. Merges `test` into `main`, creates tag, triggers Release. Must be run with `--ref test`. |
+| Promote to Test | `.github/workflows/promote-to-test.yml` | Manual. Merges `dev` into `test`, builds zip, deploys to apt server (test channel). Must be run with `--ref dev`. |
+| Promote to Main | `.github/workflows/promote-to-main.yml` | Manual. Merges `test` into `main`, creates tag, builds zip, creates GitHub release, deploys to apt server (production channel). Must be run with `--ref test`. |
 | Release | `.github/workflows/release.yml` | Builds release zip in `/tmp` with top-level `mxroute-mailer/` folder, creates GitHub release. |
 
 ## Running Tests Locally
@@ -136,6 +136,7 @@ Commands are loaded conditionally via `WP_CLI` constant check. The CLI class is 
 - **Tag not on latest main.** Promote to Main checks out `origin/main` before tagging so the tag points to the merge commit.
 - **Version drift.** Do not manually bump patch versions. The Auto Bump Version workflow handles it. Only bump minor/major versions manually when needed.
 - **`GITHUB_TOKEN` cannot trigger workflows.** Promote to Main explicitly runs `gh workflow run Release --ref $tag` because tag pushes from `GITHUB_TOKEN` do not trigger workflow runs.
+- **Apt server deployment requires secrets.** The promotion workflows use `DEPLOY_SSH_KEY`, `DEPLOY_HOST`, and `DEPLOY_USER` secrets for SSH access to the apt server.
 
 ## Documentation
 

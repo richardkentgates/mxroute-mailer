@@ -12,7 +12,7 @@ defined( 'ABSPATH' ) || exit;
  *
  * ## EXAMPLES
 	 *
-	 *     wp mxroute option get server
+	 *     wp mxroute settings get server
 	 *     wp mxroute logs list
 	 *     wp mxroute queue count
 	 *     wp mxroute send user@example.com "Test" "Body"
@@ -23,7 +23,7 @@ defined( 'ABSPATH' ) || exit;
 class MXRoute_CLI_Commands extends WP_CLI_Command {
 
 	/**
-	 * Get or set a MXRoute Mailer option.
+	 * Get or set a MXRoute Mailer setting.
 	 *
 	 * ## OPTIONS
 	 *
@@ -31,22 +31,22 @@ class MXRoute_CLI_Commands extends WP_CLI_Command {
 	 * : The action to perform: get or set. Defaults to get all.
 	 *
 	 * [<key>]
-	 * : The option key: server, username, password, logging_enabled, keep_data, batch_size. Required for get/set specific key.
+	 * : The setting key: server, username, password, logging_enabled, keep_data, batch_size. Required for get/set specific key.
 	 *
 	 * [<value>]
 	 * : The value to set (required for set action).
 	 *
 	 * ## EXAMPLES
 	 *
-	 *     wp mxroute option get server
-	 *     wp mxroute option set batch_size 10
-	 *     wp mxroute option
+	 *     wp mxroute settings get server
+	 *     wp mxroute settings set batch_size 10
+	 *     wp mxroute settings
 	 *
 	 * @param array $args       Positional arguments.
 	 * @param array $assoc_args Associative arguments.
 	 * @return void
 	 */
-	public function option( $args = array(), $assoc_args = array() ) {
+	public function settings( $args = array(), $assoc_args = array() ) {
 		$action = $args[0] ?? '';
 		$key    = $args[1] ?? '';
 		$value  = $args[2] ?? '';

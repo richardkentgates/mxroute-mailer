@@ -27,7 +27,7 @@ If you use MXRoute for email hosting, this plugin integrates it directly with Wo
 * Email logging with filtering, search, and pagination
 * Reply-To header support for contact forms
 * Test email functionality with full API response details
-* GitHub-based automatic updates
+* Apt server-based automatic updates
 * Works with all WordPress plugins that use `wp_mail()`
 * Developer-friendly with full CI/CD pipeline and coding standards
 
@@ -81,7 +81,7 @@ Yes. The plugin supports file attachments in all outgoing emails. Emails with at
 
 = How do automatic updates work? =
 
-The plugin checks GitHub releases for new versions. When an update is available, it appears in your WordPress dashboard like any other plugin update. See the [Auto-Updates wiki page](https://github.com/richardkentgates/mxroute-mailer/wiki/Auto-Updates) for details.
+The plugin checks a private apt server for new versions. When an update is available, it appears in your WordPress dashboard like any other plugin update. See the [Auto-Updates wiki page](https://github.com/richardkentgates/mxroute-mailer/wiki/Auto-Updates) for details.
 
 = What happens if an email fails? =
 
