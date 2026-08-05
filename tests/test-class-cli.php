@@ -80,10 +80,10 @@ class MXRoute_CLI_Test extends \PHPUnit\Framework\TestCase {
 	}
 
 	/**
-	 * Tests that option with no args defaults to 'get' all settings.
+	 * Tests that settings with no args defaults to 'get' all settings.
 	 */
-	public function test_option_no_args_defaults_to_get_all() {
-		$this->cli->option( array(), array() );
+	public function test_settings_no_args_defaults_to_get_all() {
+		$this->cli->settings( array(), array() );
 
 		$this->assertNotEmpty( $GLOBALS['wp_cli_format_items'] );
 		$this->assertEquals( 'table', $GLOBALS['wp_cli_format_items']['format'] );
@@ -92,75 +92,75 @@ class MXRoute_CLI_Test extends \PHPUnit\Framework\TestCase {
 	}
 
 	/**
-	 * Tests that option get returns a specific setting value.
+	 * Tests that settings get returns a specific setting value.
 	 */
-	public function test_option_get_specific_key() {
+	public function test_settings_get_specific_key() {
 		$GLOBALS['wp_options']['mxroute_mailer_server'] = 'chocobo.mxrouting.net';
 
-		$this->cli->option( array( 'get', 'server' ), array() );
+		$this->cli->settings( array( 'get', 'server' ), array() );
 
 		$this->assertContains( 'chocobo.mxrouting.net', WP_CLI::$log_output );
 	}
 
 	/**
-	 * Tests that option get masks the password.
+	 * Tests that settings get masks the password.
 	 */
-	public function test_option_get_masks_password() {
+	public function test_settings_get_masks_password() {
 		$GLOBALS['wp_options']['mxroute_mailer_password'] = 'encrypted-value';
 
-		$this->cli->option( array( 'get', 'password' ), array() );
+		$this->cli->settings( array( 'get', 'password' ), array() );
 
 		$this->assertContains( '********', WP_CLI::$log_output );
 		$this->assertNotContains( 'encrypted-value', WP_CLI::$log_output );
 	}
 
 	/**
-	 * Tests that option get shows '(not set)' for empty password.
+	 * Tests that settings get shows '(not set)' for empty password.
 	 */
-	public function test_option_get_empty_password() {
-		$this->cli->option( array( 'get', 'password' ), array() );
+	public function test_settings_get_empty_password() {
+		$this->cli->settings( array( 'get', 'password' ), array() );
 
 		$this->assertContains( '(not set)', WP_CLI::$log_output );
 	}
 
 	/**
-	 * Tests that option get converts boolean settings to true/false strings.
+	 * Tests that settings get converts boolean settings to true/false strings.
 	 */
-	public function test_option_get_boolean_settings() {
+	public function test_settings_get_boolean_settings() {
 		$GLOBALS['wp_options']['mxroute_mailer_logging_enabled'] = 1;
 		$GLOBALS['wp_options']['mxroute_mailer_keep_data']       = 0;
 
-		$this->cli->option( array( 'get', 'logging_enabled' ), array() );
+		$this->cli->settings( array( 'get', 'logging_enabled' ), array() );
 		$this->assertContains( 'true', WP_CLI::$log_output );
 
 		WP_CLI::$log_output = array();
-		$this->cli->option( array( 'get', 'keep_data' ), array() );
+		$this->cli->settings( array( 'get', 'keep_data' ), array() );
 		$this->assertContains( 'false', WP_CLI::$log_output );
 	}
 
 	/**
-	 * Tests that option get errors on invalid key.
+	 * Tests that settings get errors on invalid key.
 	 */
-	public function test_option_get_invalid_key() {
+	public function test_settings_get_invalid_key() {
 		$this->expectException( \MXRouteCLIException::class );
-		$this->cli->option( array( 'get', 'invalid_key' ), array() );
+		$this->cli->settings( array( 'get', 'invalid_key' ), array() );
 	}
 
 	/**
-	 * Tests that option set updates a setting.
+	 * Tests that settings set updates a setting.
 	 */
-	public function test_option_set_updates_setting() {
-		$this->cli->option( array( 'set', 'server', 'new.server.com' ), array() );
+	public function test_settings_set_updates_setting() {
+		$this->cli->settings( array( 'set', 'server', 'new.server.com' ), array() );
 
 		$this->assertEquals( 'new.server.com', $GLOBALS['wp_options']['mxroute_mailer_server'] );
 		$this->assertNotEmpty( WP_CLI::$success_output );
 	}
 
 	/**
-	 * Tests that option set encrypts the password.
+	 * Tests that settings set encrypts the password.
 	 */
-	public function test_option_set_encrypts_password() {
-		$this->cli->option( array( 'set', 'password', 'my-secret-pw' ), array() );
+	public function test_settings_set_encrypts_password() {
+		$this->cli->settings( array( 'set', 'password', 'my-secret-pw' ), array() );
 
 		$stored = $GLOBALS['wp_options']['mxroute_mailer_password'];
 		$this->assertNotEquals( 'my-secret-pw', $stored );
@@ -169,54 +169,54 @@ class MXRoute_CLI_Test extends \PHPUnit\Framework\TestCase {
 	}
 
 	/**
-	 * Tests that option set rejects empty password.
+	 * Tests that settings set rejects empty password.
 	 */
-	public function test_option_set_rejects_empty_password() {
+	public function test_settings_set_rejects_empty_password() {
 		$this->expectException( \MXRouteCLIException::class );
-		$this->cli->option( array( 'set', 'password', '' ), array() );
+		$this->cli->settings( array( 'set', 'password', '' ), array() );
 	}
 
 	/**
-	 * Tests that option set validates batch_size range.
+	 * Tests that settings set validates batch_size range.
 	 */
-	public function test_option_set_batch_size_validates_range() {
+	public function test_settings_set_batch_size_validates_range() {
 		$this->expectException( \MXRouteCLIException::class );
-		$this->cli->option( array( 'set', 'batch_size', '100' ), array() );
+		$this->cli->settings( array( 'set', 'batch_size', '100' ), array() );
 	}
 
 	/**
-	 * Tests that option set accepts valid batch_size.
+	 * Tests that settings set accepts valid batch_size.
 	 */
-	public function test_option_set_batch_size_valid() {
-		$this->cli->option( array( 'set', 'batch_size', '10' ), array() );
+	public function test_settings_set_batch_size_valid() {
+		$this->cli->settings( array( 'set', 'batch_size', '10' ), array() );
 		$this->assertEquals( 10, $GLOBALS['wp_options']['mxroute_mailer_batch_size'] );
 	}
 
 	/**
-	 * Tests that option set converts boolean settings.
+	 * Tests that settings set converts boolean settings.
 	 */
-	public function test_option_set_converts_boolean() {
-		$this->cli->option( array( 'set', 'logging_enabled', '1' ), array() );
+	public function test_settings_set_converts_boolean() {
+		$this->cli->settings( array( 'set', 'logging_enabled', '1' ), array() );
 		$this->assertEquals( 1, $GLOBALS['wp_options']['mxroute_mailer_logging_enabled'] );
 
-		$this->cli->option( array( 'set', 'logging_enabled', '' ), array() );
+		$this->cli->settings( array( 'set', 'logging_enabled', '' ), array() );
 		$this->assertEquals( 0, $GLOBALS['wp_options']['mxroute_mailer_logging_enabled'] );
 	}
 
 	/**
-	 * Tests that option set errors on invalid key.
+	 * Tests that settings set errors on invalid key.
 	 */
-	public function test_option_set_invalid_key() {
+	public function test_settings_set_invalid_key() {
 		$this->expectException( \MXRouteCLIException::class );
-		$this->cli->option( array( 'set', 'nonexistent', 'value' ), array() );
+		$this->cli->settings( array( 'set', 'nonexistent', 'value' ), array() );
 	}
 
 	/**
-	 * Tests that option errors on invalid action.
+	 * Tests that settings errors on invalid action.
 	 */
-	public function test_option_invalid_action() {
+	public function test_settings_invalid_action() {
 		$this->expectException( \MXRouteCLIException::class );
-		$this->cli->option( array( 'delete', 'server' ), array() );
+		$this->cli->settings( array( 'delete', 'server' ), array() );
 	}
 
 	/**

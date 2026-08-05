@@ -153,11 +153,7 @@ add_action( 'admin_init', 'mxroute_mailer_db_upgrade' );
 
 mxroute_mailer();
 
-new MXRoute_Updater(
-	__FILE__,
-	'richardkentgates/mxroute-mailer',
-	MXROUTE_MAILER_VERSION
-);
+MXRoute_Updater::init();
 
 /**
  * Schedule the daily queue cleanup cron event.
