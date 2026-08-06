@@ -3,8 +3,6 @@ name: Promote to Test
 on:
   workflow_dispatch:
 
-# Promotes dev → test: merges, builds zip, deploys to apt server test channel
-
 permissions:
   contents: write
 

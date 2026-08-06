@@ -3,8 +3,6 @@ name: Promote to Main
 on:
   workflow_dispatch:
 
-# Promotes test → main: merges, tags, creates release, deploys zip to apt server
-
 permissions:
   contents: write
 
