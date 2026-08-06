@@ -11,18 +11,19 @@ defined( 'ABSPATH' ) || exit;
 <div class="wrap mxroute-settings-wrap">
 	<h1><?php esc_html_e( 'MXRoute Mailer Settings', 'mxroute-mailer' ); ?></h1>
 
-	<?php if ( isset( $_GET['test_sent'] ) ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>
-		<div class="notice notice-success is-dismissible">
-			<p><?php esc_html_e( 'Test email sent. Check the result below.', 'mxroute-mailer' ); ?></p>
-		</div>
-	<?php endif; ?>
-
 	<?php
 	$test_result = get_transient( 'mxroute_test_email_result' );
 	if ( $test_result ) :
+		$is_queued = ( $test_result['queued'] ?? false );
+		$success   = ( $test_result['success'] ?? false );
+		$css_class = $is_queued ? 'notice-info' : ( $success ? 'notice-success' : 'notice-error' );
+		$label     = $is_queued ? __( 'Queued', 'mxroute-mailer' ) : ( $success ? __( 'Sent', 'mxroute-mailer' ) : __( 'Failed', 'mxroute-mailer' ) );
 		?>
-		<div class="notice <?php echo esc_attr( ( $test_result['success'] ?? false ) ? 'notice-success' : 'notice-error' ); ?> is-dismissible">
-			<p><strong><?php echo esc_html( ( $test_result['success'] ?? false ) ? __( 'Sent', 'mxroute-mailer' ) : __( 'Failed', 'mxroute-mailer' ) ); ?>:</strong> <?php echo esc_html( $test_result['message'] ?? '' ); ?></p>
+		<div class="notice <?php echo esc_attr( $css_class ); ?> is-dismissible">
+			<p><strong><?php echo esc_html( $label ); ?>:</strong> <?php echo esc_html( $test_result['message'] ?? '' ); ?></p>
+			<?php if ( $is_queued ) : ?>
+				<p class="description"><?php esc_html_e( 'The email has been placed in the queue and will be processed by the next cron cycle (within 60 seconds). Check the Queue page for status.', 'mxroute-mailer' ); ?></p>
+			<?php endif; ?>
 			<?php if ( ! empty( $test_result['response'] ) ) : ?>
 				<pre class="mxroute-json"><?php echo esc_html( wp_json_encode( $test_result['response'], JSON_PRETTY_PRINT ) ); ?></pre>
 			<?php endif; ?>
@@ -99,6 +100,15 @@ defined( 'ABSPATH' ) || exit;
 					</label>
 				</td>
 			</tr>
+			<tr>
+				<th scope="row"><label for="mxroute_mailer_batch_size"><?php esc_html_e( 'Batch Size', 'mxroute-mailer' ); ?></label></th>
+				<td>
+					<input type="number" id="mxroute_mailer_batch_size" name="mxroute_mailer_batch_size"
+							value="<?php echo esc_attr( get_option( 'mxroute_mailer_batch_size', 5 ) ); ?>"
+							class="small-text" min="1" max="50" />
+					<p class="description"><?php esc_html_e( 'Number of queued emails to process per 60-second cron cycle.', 'mxroute-mailer' ); ?></p>
+				</td>
+			</tr>
 		</table>
 
 		<?php submit_button( __( 'Save Settings', 'mxroute-mailer' ) ); ?>
@@ -128,6 +138,17 @@ defined( 'ABSPATH' ) || exit;
 				<th scope="row"><label for="mxroute_test_body"><?php esc_html_e( 'Body', 'mxroute-mailer' ); ?></label></th>
 				<td>
 					<textarea id="mxroute_test_body" name="mxroute_test_body" rows="4" class="large-text"><?php echo esc_textarea( __( 'This is a test email from MXRoute Mailer.', 'mxroute-mailer' ) ); ?></textarea>
+				</td>
+			</tr>
+			<tr>
+				<th scope="row"><?php esc_html_e( 'Options', 'mxroute-mailer' ); ?></th>
+				<td>
+					<fieldset>
+						<label for="mxroute_test_attachment">
+							<input type="checkbox" id="mxroute_test_attachment" name="mxroute_test_attachment" value="1" />
+							<?php esc_html_e( 'Include file attachments (persistent + temp)', 'mxroute-mailer' ); ?>
+						</label>
+					</fieldset>
 				</td>
 			</tr>
 		</table>

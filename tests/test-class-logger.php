@@ -89,15 +89,6 @@ class MXRoute_Logger_Test extends \PHPUnit\Framework\TestCase {
     }
 
     /**
-     * Tests that get_recent_logs returns an array.
-     */
-    public function test_get_recent_logs_returns_array() {
-        $logger = new MXRoute_Logger();
-        $result = $logger->get_recent_logs(5);
-        $this->assertIsArray($result);
-    }
-
-    /**
      * Tests that get_log returns null for a nonexistent log ID.
      */
     public function test_get_log_returns_null_for_nonexistent_id() {
@@ -121,11 +112,11 @@ class MXRoute_Logger_Test extends \PHPUnit\Framework\TestCase {
      */
     public function test_delete_log_calls_delete() {
         $logger = new MXRoute_Logger();
-        $logger->delete_log(1);
+        $logger->delete_log( 1 );
 
-        // delete_log uses $wpdb->delete() which doesn't go through $wpdb->query()
-        // so we verify it doesn't throw
-        $this->assertTrue(true);
+        $deletes = $GLOBALS['wp_function_calls']['$wpdb->delete'] ?? array();
+        $this->assertNotEmpty( $deletes );
+        $this->assertEquals( 1, $deletes[0]['where']['id'] );
     }
 
     /**
@@ -135,7 +126,8 @@ class MXRoute_Logger_Test extends \PHPUnit\Framework\TestCase {
         $logger = new MXRoute_Logger();
         $logger->delete_logs( array( 1, 2, 3 ) );
 
-        $this->assertTrue(true);
+        $deletes = $GLOBALS['wp_function_calls']['$wpdb->delete'] ?? array();
+        $this->assertNotEmpty( $deletes );
     }
 
     /**
@@ -145,7 +137,8 @@ class MXRoute_Logger_Test extends \PHPUnit\Framework\TestCase {
         $logger = new MXRoute_Logger();
         $logger->delete_logs( array() );
 
-        $this->assertTrue(true);
+        $deletes = $GLOBALS['wp_function_calls']['$wpdb->delete'] ?? array();
+        $this->assertEmpty( $deletes );
     }
 
     /**
@@ -280,6 +273,64 @@ class MXRoute_Logger_Test extends \PHPUnit\Framework\TestCase {
 
         $this->assertNotEmpty($GLOBALS['wp_db_inserts']);
         $insert = $GLOBALS['wp_db_inserts'][0];
-        $this->assertEquals(0, $insert['data']['success']);
+        $this->assertEquals(-1, $insert['data']['success']);
+    }
+
+    /**
+     * Tests that requeue_log executes a query.
+     */
+    public function test_requeue_log_executes_queries() {
+        $logger = new MXRoute_Logger();
+        $before = count( $GLOBALS['wp_db_queries'] );
+        $result = $logger->requeue_log( 1 );
+
+        $this->assertTrue( $result );
+        $this->assertGreaterThan( $before, count( $GLOBALS['wp_db_queries'] ) );
+    }
+
+    /**
+     * Tests that requeue_log returns false for invalid ID.
+     */
+    public function test_requeue_log_returns_false_for_zero_id() {
+        $logger = new MXRoute_Logger();
+        $this->assertFalse( $logger->requeue_log( 0 ) );
+    }
+
+    /**
+     * Tests that requeue_log produces a SQL UPDATE with success=0.
+     */
+    public function test_requeue_log_produces_update_sql() {
+        $logger = new MXRoute_Logger();
+        $logger->requeue_log( 5 );
+
+        $found = false;
+        foreach ( $GLOBALS['wp_db_queries'] as $query ) {
+            if ( false !== strpos( $query, 'SET success = 0' ) ) {
+                $found = true;
+                break;
+            }
+        }
+        $this->assertTrue( $found );
+    }
+
+    /**
+     * Tests that requeue_logs handles multiple IDs without error.
+     */
+    public function test_requeue_logs_handles_multiple_ids() {
+        $logger = new MXRoute_Logger();
+        $count = $logger->requeue_logs( array( 1, 2, 3 ) );
+
+        $this->assertIsInt( $count );
+        $this->assertGreaterThanOrEqual( 0, $count );
+    }
+
+    /**
+     * Tests that requeue_logs handles an empty array gracefully.
+     */
+    public function test_requeue_logs_handles_empty_array() {
+        $logger = new MXRoute_Logger();
+        $count = $logger->requeue_logs( array() );
+
+        $this->assertEquals( 0, $count );
     }
 }

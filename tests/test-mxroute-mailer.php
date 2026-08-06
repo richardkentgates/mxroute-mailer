@@ -12,6 +12,9 @@ class MXRoute_Mailer_Test extends \PHPUnit\Framework\TestCase {
         $GLOBALS['wp_transients'] = array();
         $GLOBALS['wp_db_inserts'] = array();
         $GLOBALS['wp_db_queries'] = array();
+        $GLOBALS['wp_scheduled_events'] = array();
+        $GLOBALS['wp_hooks_registered'] = array();
+        MXRoute_Mailer::reset();
     }
 
     /**
@@ -24,9 +27,9 @@ class MXRoute_Mailer_Test extends \PHPUnit\Framework\TestCase {
     }
 
     /**
-     * Tests that intercept_wp_mail returns args unchanged when no "to" is provided.
+     * Tests that intercept_wp_mail returns null when no "to" is provided.
      */
-    public function test_intercept_wp_mail_returns_args_when_no_to() {
+    public function test_intercept_wp_mail_returns_null_when_no_to() {
         $mailer = MXRoute_Mailer::instance();
         $args = array(
             'to'      => '',
@@ -34,16 +37,13 @@ class MXRoute_Mailer_Test extends \PHPUnit\Framework\TestCase {
             'message' => 'Body',
         );
         $result = $mailer->intercept_wp_mail($args);
-        $this->assertArrayHasKey('to', $result);
-        $this->assertEquals('', $result['to']);
-        $this->assertArrayHasKey('subject', $result);
-        $this->assertEquals('Test', $result['subject']);
+        $this->assertNull($result);
     }
 
     /**
-     * Tests that intercept_wp_mail returns args unchanged when subject is empty.
+     * Tests that intercept_wp_mail returns null when subject is empty.
      */
-    public function test_intercept_wp_mail_returns_args_when_no_subject() {
+    public function test_intercept_wp_mail_returns_null_when_no_subject() {
         $mailer = MXRoute_Mailer::instance();
         $args = array(
             'to'      => 'to@example.com',
@@ -51,16 +51,13 @@ class MXRoute_Mailer_Test extends \PHPUnit\Framework\TestCase {
             'message' => 'Body',
         );
         $result = $mailer->intercept_wp_mail($args);
-        $this->assertArrayHasKey('to', $result);
-        $this->assertEquals('to@example.com', $result['to']);
-        $this->assertArrayHasKey('subject', $result);
-        $this->assertEquals('', $result['subject']);
+        $this->assertNull($result);
     }
 
     /**
-     * Tests that intercept_wp_mail returns args when both "to" and subject are missing.
+     * Tests that intercept_wp_mail returns null when both "to" and subject are missing.
      */
-    public function test_intercept_wp_mail_returns_args_when_both_missing() {
+    public function test_intercept_wp_mail_returns_null_when_both_missing() {
         $mailer = MXRoute_Mailer::instance();
         $args = array(
             'to'      => '',
@@ -68,44 +65,38 @@ class MXRoute_Mailer_Test extends \PHPUnit\Framework\TestCase {
             'message' => 'Body',
         );
         $result = $mailer->intercept_wp_mail($args);
-        $this->assertArrayHasKey('to', $result);
-        $this->assertEquals('', $result['to']);
-        $this->assertArrayHasKey('subject', $result);
-        $this->assertEquals('', $result['subject']);
+        $this->assertNull($result);
     }
 
     /**
-     * Tests that intercept_wp_mail fills in default empty values for missing fields.
+     * Tests that intercept_wp_mail returns null when required fields are missing.
      */
-    public function test_intercept_wp_mail_fills_defaults() {
+    public function test_intercept_wp_mail_returns_null_when_fields_missing() {
         $mailer = MXRoute_Mailer::instance();
         $args = array('message' => 'Body');
         $result = $mailer->intercept_wp_mail($args);
-        $this->assertEquals('', $result['to']);
-        $this->assertEquals('', $result['subject']);
+        $this->assertNull($result);
     }
 
     /**
-     * Tests that intercept_wp_mail returns args early when no API credentials are configured.
+     * Tests that intercept_wp_mail returns null early when no API credentials are configured.
      */
-    public function test_intercept_wp_mail_returns_args_when_no_credentials() {
+    public function test_intercept_wp_mail_returns_null_when_no_credentials() {
         $mailer = MXRoute_Mailer::instance();
         $args = array(
             'to'      => 'to@example.com',
             'subject' => 'Test Subject',
             'message' => 'Body',
         );
-        // No credentials configured -> early return with args (no API call)
+        // No credentials configured -> let default mailer run.
         $result = $mailer->intercept_wp_mail($args);
-        $this->assertArrayHasKey('to', $result);
-        $this->assertEquals('to@example.com', $result['to']);
+        $this->assertNull($result);
     }
 
     /**
-     * Tests that intercept_wp_mail returns false after a successful API send
-     * so WordPress does not also invoke the default mailer.
+     * Tests that intercept_wp_mail returns true after queuing an email.
      */
-    public function test_intercept_wp_mail_returns_false_after_api_send() {
+    public function test_intercept_wp_mail_returns_true_after_queue() {
         $mailer = MXRoute_Mailer::instance();
         $GLOBALS['wp_options']['mxroute_mailer_server'] = 'server.example.com';
         $GLOBALS['wp_options']['mxroute_mailer_username'] = 'user@example.com';
@@ -116,43 +107,63 @@ class MXRoute_Mailer_Test extends \PHPUnit\Framework\TestCase {
             'message' => 'Body',
         );
         $result = $mailer->intercept_wp_mail($args);
-        $this->assertFalse($result);
+        $this->assertTrue($result);
     }
 
     /**
-     * Tests that wp_mail_failed action is fired with WP_Error when API call fails.
+     * Tests that intercept_wp_mail queues an entry with success = 0.
      */
-    public function test_intercept_wp_mail_fires_wp_mail_failed_on_api_failure() {
+    public function test_intercept_queues_entry_with_pending_status() {
         $mailer = MXRoute_Mailer::instance();
         $GLOBALS['wp_options']['mxroute_mailer_server'] = 'server.example.com';
         $GLOBALS['wp_options']['mxroute_mailer_username'] = 'user@example.com';
         $GLOBALS['wp_options']['mxroute_mailer_password'] = 'password123';
 
-        // Mock wp_remote_post to return a failure response
-        $GLOBALS['mxroute_mock_remote_response'] = array(
-            'response' => array('code' => 500),
-            'body'     => wp_json_encode(array('success' => false, 'message' => 'SMTP error')),
-        );
-
-        $args = array(
-            'to'      => 'to@example.com',
-            'subject' => 'Test Subject',
+        $mailer->intercept_wp_mail(array(
+            'to' => 'to@example.com',
+            'subject' => 'Test',
             'message' => 'Body',
-        );
-        $mailer->intercept_wp_mail($args);
+        ));
 
-        $do_action_calls = $GLOBALS['wp_function_calls']['do_action'] ?? array();
-        $failed_calls = array_filter($do_action_calls, function($call) {
-            return $call['hook'] === 'wp_mail_failed';
-        });
-        $this->assertNotEmpty($failed_calls, 'wp_mail_failed action should be fired on API failure');
+        $this->assertNotEmpty($GLOBALS['wp_db_inserts']);
+        $insert = $GLOBALS['wp_db_inserts'][0];
+        $this->assertEquals(0, $insert['data']['success']);
+    }
 
-        $failed_call = reset($failed_calls);
-        $this->assertInstanceOf('WP_Error', $failed_call['args'][0]);
-        $this->assertEquals('mxroute_send_failed', $failed_call['args'][0]->get_error_code());
+    /**
+     * Tests that intercept_wp_mail does not make an API call directly.
+     */
+    public function test_intercept_does_not_call_api_directly() {
+        $mailer = MXRoute_Mailer::instance();
+        $GLOBALS['wp_options']['mxroute_mailer_server'] = 'server.example.com';
+        $GLOBALS['wp_options']['mxroute_mailer_username'] = 'user@example.com';
+        $GLOBALS['wp_options']['mxroute_mailer_password'] = 'password123';
 
-        // Reset mock
-        unset($GLOBALS['mxroute_mock_remote_response']);
+        $mailer->intercept_wp_mail(array(
+            'to' => 'to@example.com',
+            'subject' => 'Test',
+            'message' => 'Body',
+        ));
+
+        // Should not have made any wp_remote_post calls (that happens in process_queue).
+        $this->assertArrayNotHasKey('wp_remote_post', $GLOBALS['wp_function_calls']);
+    }
+
+    /**
+     * Tests that schedule_queue_processor schedules the recurring queue processor.
+     */
+    public function test_intercept_schedules_processor() {
+        $mailer = MXRoute_Mailer::instance();
+        $GLOBALS['wp_options']['mxroute_mailer_server'] = 'server.example.com';
+        $GLOBALS['wp_options']['mxroute_mailer_username'] = 'user@example.com';
+        $GLOBALS['wp_options']['mxroute_mailer_password'] = 'password123';
+
+        $mailer->schedule_queue_processor();
+
+        $this->assertArrayHasKey('wp_schedule_event', $GLOBALS['wp_function_calls']);
+        $schedule = $GLOBALS['wp_function_calls']['wp_schedule_event'][0];
+        $this->assertEquals('mxroute_mailer_process_queue', $schedule['hook']);
+        $this->assertEquals('mxroute_mailer_interval', $schedule['recurrence']);
     }
 
     /**
@@ -160,15 +171,17 @@ class MXRoute_Mailer_Test extends \PHPUnit\Framework\TestCase {
      */
     public function test_extract_from_address_returns_default_when_no_headers() {
         $mailer = MXRoute_Mailer::instance();
+        $GLOBALS['wp_options']['mxroute_mailer_server']   = 'server.example.com';
         $GLOBALS['wp_options']['mxroute_mailer_username'] = 'default@example.com';
+        $GLOBALS['wp_options']['mxroute_mailer_password'] = 'password123';
         $result = $mailer->intercept_wp_mail(array(
             'to'      => 'to@example.com',
             'subject' => 'Test',
             'message' => 'Body',
             'headers' => '',
         ));
-        // No credentials -> returns args (not false)
-        $this->assertArrayHasKey('to', $result);
+        // Queued successfully, reply_to defaults to username (same as from), so reply_to is empty.
+        $this->assertTrue( $result );
     }
 
     /**
@@ -176,7 +189,9 @@ class MXRoute_Mailer_Test extends \PHPUnit\Framework\TestCase {
      */
     public function test_extract_from_address_parses_string_headers() {
         $mailer = MXRoute_Mailer::instance();
+        $GLOBALS['wp_options']['mxroute_mailer_server']   = 'server.example.com';
         $GLOBALS['wp_options']['mxroute_mailer_username'] = 'default@example.com';
+        $GLOBALS['wp_options']['mxroute_mailer_password'] = 'password123';
         $args = array(
             'to'      => 'to@example.com',
             'subject' => 'Test',
@@ -184,7 +199,9 @@ class MXRoute_Mailer_Test extends \PHPUnit\Framework\TestCase {
             'headers' => "From: Sender <sender@example.com>\nContent-Type: text/html",
         );
         $result = $mailer->intercept_wp_mail($args);
-        $this->assertArrayHasKey('to', $result);
+        $this->assertTrue( $result );
+        $insert = $GLOBALS['wp_db_inserts'][0];
+        $this->assertEquals( 'sender@example.com', $insert['data']['reply_to'] );
     }
 
     /**
@@ -192,7 +209,9 @@ class MXRoute_Mailer_Test extends \PHPUnit\Framework\TestCase {
      */
     public function test_extract_from_address_parses_angle_bracket_format() {
         $mailer = MXRoute_Mailer::instance();
+        $GLOBALS['wp_options']['mxroute_mailer_server']   = 'server.example.com';
         $GLOBALS['wp_options']['mxroute_mailer_username'] = 'default@example.com';
+        $GLOBALS['wp_options']['mxroute_mailer_password'] = 'password123';
         $args = array(
             'to'      => 'to@example.com',
             'subject' => 'Test',
@@ -200,7 +219,9 @@ class MXRoute_Mailer_Test extends \PHPUnit\Framework\TestCase {
             'headers' => "From: display name <sender@example.com>",
         );
         $result = $mailer->intercept_wp_mail($args);
-        $this->assertArrayHasKey('to', $result);
+        $this->assertTrue( $result );
+        $insert = $GLOBALS['wp_db_inserts'][0];
+        $this->assertEquals( 'sender@example.com', $insert['data']['reply_to'] );
     }
 
     /**
@@ -208,7 +229,9 @@ class MXRoute_Mailer_Test extends \PHPUnit\Framework\TestCase {
      */
     public function test_extract_from_address_parses_array_headers() {
         $mailer = MXRoute_Mailer::instance();
+        $GLOBALS['wp_options']['mxroute_mailer_server']   = 'server.example.com';
         $GLOBALS['wp_options']['mxroute_mailer_username'] = 'default@example.com';
+        $GLOBALS['wp_options']['mxroute_mailer_password'] = 'password123';
         $args = array(
             'to'      => 'to@example.com',
             'subject' => 'Test',
@@ -216,7 +239,9 @@ class MXRoute_Mailer_Test extends \PHPUnit\Framework\TestCase {
             'headers' => array("From: sender@example.com", "Content-Type: text/html"),
         );
         $result = $mailer->intercept_wp_mail($args);
-        $this->assertArrayHasKey('to', $result);
+        $this->assertTrue( $result );
+        $insert = $GLOBALS['wp_db_inserts'][0];
+        $this->assertEquals( 'sender@example.com', $insert['data']['reply_to'] );
     }
 
     /**
@@ -224,7 +249,9 @@ class MXRoute_Mailer_Test extends \PHPUnit\Framework\TestCase {
      */
     public function test_extract_from_address_falls_back_to_default_for_array_headers() {
         $mailer = MXRoute_Mailer::instance();
+        $GLOBALS['wp_options']['mxroute_mailer_server']   = 'server.example.com';
         $GLOBALS['wp_options']['mxroute_mailer_username'] = 'default@example.com';
+        $GLOBALS['wp_options']['mxroute_mailer_password'] = 'password123';
         $args = array(
             'to'      => 'to@example.com',
             'subject' => 'Test',
@@ -232,7 +259,10 @@ class MXRoute_Mailer_Test extends \PHPUnit\Framework\TestCase {
             'headers' => array("Content-Type: text/html"),
         );
         $result = $mailer->intercept_wp_mail($args);
-        $this->assertArrayHasKey('to', $result);
+        $this->assertTrue( $result );
+        $insert = $GLOBALS['wp_db_inserts'][0];
+        // No From header, so reply_to should be empty (same as username, filtered out).
+        $this->assertEquals( '', $insert['data']['reply_to'] );
     }
 
     /**
@@ -240,7 +270,9 @@ class MXRoute_Mailer_Test extends \PHPUnit\Framework\TestCase {
      */
     public function test_extract_from_address_plain_string_header() {
         $mailer = MXRoute_Mailer::instance();
+        $GLOBALS['wp_options']['mxroute_mailer_server']   = 'server.example.com';
         $GLOBALS['wp_options']['mxroute_mailer_username'] = 'default@example.com';
+        $GLOBALS['wp_options']['mxroute_mailer_password'] = 'password123';
         $args = array(
             'to'      => 'to@example.com',
             'subject' => 'Test',
@@ -248,7 +280,9 @@ class MXRoute_Mailer_Test extends \PHPUnit\Framework\TestCase {
             'headers' => "From: plain@example.com",
         );
         $result = $mailer->intercept_wp_mail($args);
-        $this->assertArrayHasKey('to', $result);
+        $this->assertTrue( $result );
+        $insert = $GLOBALS['wp_db_inserts'][0];
+        $this->assertEquals( 'plain@example.com', $insert['data']['reply_to'] );
     }
 
     /**
@@ -262,13 +296,15 @@ class MXRoute_Mailer_Test extends \PHPUnit\Framework\TestCase {
     }
 
     /**
-     * Tests that handle_test_email sets an error transient for an invalid nonce.
+     * Tests that handle_test_email returns early with an invalid nonce.
      */
     public function test_handle_test_email_returns_early_with_invalid_nonce() {
         $mailer = MXRoute_Mailer::instance();
         $_POST = array('mxroute_test_email_nonce' => 'invalid');
         $mailer->handle_test_email();
-        $this->assertArrayHasKey('mxroute_test_email_result', $GLOBALS['wp_transients']);
+        // Invalid nonce causes early return — no transient is set, no API call made.
+        $this->assertArrayNotHasKey('mxroute_test_email_result', $GLOBALS['wp_transients']);
+        $this->assertArrayNotHasKey('wp_remote_post', $GLOBALS['wp_function_calls']);
     }
 
     /**
@@ -277,7 +313,7 @@ class MXRoute_Mailer_Test extends \PHPUnit\Framework\TestCase {
     public function test_handle_test_email_sets_error_transient_when_missing_fields() {
         $mailer = MXRoute_Mailer::instance();
         $_POST = array(
-            'mxroute_test_email_nonce' => 'valid',
+            'mxroute_test_email_nonce' => wp_create_nonce('mxroute_test_email'),
             'mxroute_test_to'          => '',
             'mxroute_test_from'        => '',
         );
@@ -294,7 +330,7 @@ class MXRoute_Mailer_Test extends \PHPUnit\Framework\TestCase {
     public function test_handle_test_email_calls_send() {
         $mailer = MXRoute_Mailer::instance();
         $_POST = array(
-            'mxroute_test_email_nonce' => 'valid',
+            'mxroute_test_email_nonce' => wp_create_nonce('mxroute_test_email'),
             'mxroute_test_to'          => 'to@example.com',
             'mxroute_test_from'        => 'from@example.com',
             'mxroute_test_subject'     => 'Test',
@@ -310,7 +346,7 @@ class MXRoute_Mailer_Test extends \PHPUnit\Framework\TestCase {
     public function test_handle_test_email_sets_transient_after_send() {
         $mailer = MXRoute_Mailer::instance();
         $_POST = array(
-            'mxroute_test_email_nonce' => 'valid',
+            'mxroute_test_email_nonce' => wp_create_nonce('mxroute_test_email'),
             'mxroute_test_to'          => 'to@example.com',
         );
         $mailer->handle_test_email();
@@ -319,19 +355,46 @@ class MXRoute_Mailer_Test extends \PHPUnit\Framework\TestCase {
     }
 
     /**
-     * Tests that MXRoute_Mailer is instantiated correctly.
+     * Tests that handle_test_email sets queued flag in transient.
      */
-    public function test_init_hooks_registers_wp_mail_filter() {
+    public function test_handle_test_email_sets_queued_flag() {
+        $GLOBALS['wp_options']['mxroute_mailer_username'] = 'from@example.com';
         $mailer = MXRoute_Mailer::instance();
-        $this->assertInstanceOf('MXRoute_Mailer', $mailer);
+        $_POST = array(
+            'mxroute_test_email_nonce' => wp_create_nonce('mxroute_test_email'),
+            'mxroute_test_to'          => 'to@example.com',
+            'mxroute_test_subject'     => 'Test',
+            'mxroute_test_body'        => 'Body',
+        );
+        $mailer->handle_test_email();
+
+        $result = $GLOBALS['wp_transients']['mxroute_test_email_result'];
+        $this->assertTrue($result['queued']);
+        $this->assertTrue($result['success']);
     }
 
     /**
-     * Tests that MXRoute_Mailer is instantiated correctly via init.
+     * Tests that MXRoute_Mailer registers the pre_wp_mail filter.
      */
-    public function test_init_hooks_registers_init_action() {
+    public function test_init_hooks_registers_wp_mail_filter() {
+        $before_filters = $GLOBALS['wp_hooks_registered']['filter'] ?? array();
         $mailer = MXRoute_Mailer::instance();
         $this->assertInstanceOf('MXRoute_Mailer', $mailer);
+        $after_filters = $GLOBALS['wp_hooks_registered']['filter'] ?? array();
+        $new_filters   = array_diff( $after_filters, $before_filters );
+        $this->assertContains( 'pre_wp_mail', $new_filters, 'pre_wp_mail should be registered by instance()' );
+    }
+
+    /**
+     * Tests that MXRoute_Mailer registers the process_queue action.
+     */
+    public function test_init_hooks_registers_init_action() {
+        $before_actions = $GLOBALS['wp_hooks_registered']['action'] ?? array();
+        $mailer = MXRoute_Mailer::instance();
+        $this->assertInstanceOf('MXRoute_Mailer', $mailer);
+        $after_actions = $GLOBALS['wp_hooks_registered']['action'] ?? array();
+        $new_actions   = array_diff( $after_actions, $before_actions );
+        $this->assertContains( 'mxroute_mailer_process_queue', $new_actions, 'mxroute_mailer_process_queue should be registered by instance()' );
     }
 
     /**

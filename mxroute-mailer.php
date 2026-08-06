@@ -3,11 +3,12 @@
  * Plugin Name: MXRoute Mailer
  * Plugin URI: https://richardkentgates.com
  * Description: Sends WordPress email through MXRoute's HTTP API over port 443. Includes logging, test tools, and automatic updates.
- * Version: 1.2.12
+ * Version: 1.4.10
  * Author: Richard Kent Gates
  * Author URI: https://richardkentgates.com
  * License: GPL v2 or later
  * Text Domain: mxroute-mailer
+ * Domain Path: /languages
  * Requires PHP: 7.3
  * Requires at least: 5.0
  *
@@ -21,7 +22,19 @@ defined( 'ABSPATH' ) || exit;
  *
  * @var string
  */
-define( 'MXROUTE_MAILER_VERSION', '1.2.12' );
+define( 'MXROUTE_MAILER_VERSION', '1.4.10' );
+
+/**
+ * Enable debug logging for API calls.
+ *
+ * Set to true in wp-config.php to log MXRoute API requests and responses
+ * to the WordPress debug log. Do not leave enabled in production.
+ *
+ * @var bool
+ */
+if ( ! defined( 'MXROUTE_MAILER_DEBUG' ) ) {
+	define( 'MXROUTE_MAILER_DEBUG', false );
+}
 
 /**
  * Absolute path to the plugin directory.
@@ -46,14 +59,39 @@ function mxroute_mailer() {
 	return MXRoute_Mailer::instance();
 }
 
+/**
+ * Check if the current user can manage MXRoute Mailer settings.
+ *
+ * On multisite, checks for manage_network_options capability.
+ * On single site, checks for manage_options capability.
+ *
+ * @return bool True if the user can manage settings.
+ */
+function mxroute_mailer_can_manage() {
+	if ( is_multisite() ) {
+		return current_user_can( 'manage_network_options' );
+	}
+	return current_user_can( 'manage_options' );
+}
+
+require_once MXROUTE_MAILER_PLUGIN_DIR . 'includes/class-mxroute-crypto.php';
 require_once MXROUTE_MAILER_PLUGIN_DIR . 'includes/class-mxroute-mailer.php';
 require_once MXROUTE_MAILER_PLUGIN_DIR . 'includes/class-mxroute-updater.php';
 
 register_activation_hook(
 	__FILE__,
 	static function () {
-		require_once MXROUTE_MAILER_PLUGIN_DIR . 'includes/class-mxroute-logger.php';
 		MXRoute_Logger::create_table();
+
+		// On multisite, create tables for all existing sites.
+		if ( is_multisite() ) {
+			$sites = get_sites( array( 'fields' => 'ids' ) );
+			foreach ( $sites as $site_id ) {
+				switch_to_blog( $site_id );
+				MXRoute_Logger::create_table();
+				restore_current_blog();
+			}
+		}
 	}
 );
 
@@ -65,11 +103,49 @@ register_activation_hook(
 function mxroute_mailer_db_upgrade() {
 	if ( get_option( 'mxroute_mailer_db_version', '0' ) !== MXROUTE_MAILER_VERSION ) {
 		global $wpdb;
-		$table_name    = $wpdb->prefix . 'mxroute_mailer_logs';
-		$column_exists = $wpdb->get_var( "SHOW COLUMNS FROM `$table_name` LIKE 'reply_to'" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Schema upgrade.
-		if ( ! $column_exists ) {
-			$wpdb->query( "ALTER TABLE `$table_name` ADD COLUMN `reply_to` varchar(255) NOT NULL DEFAULT '' AFTER `from_email`" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Schema upgrade.
+		$table_name = $wpdb->prefix . 'mxroute_mailer_logs';
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Table name from $wpdb->prefix, safe. Schema upgrade.
+		$columns = $wpdb->get_col( "DESCRIBE `$table_name`", 0 );
+
+		if ( ! in_array( 'reply_to', $columns, true ) ) {
+			$wpdb->query( "ALTER TABLE `$table_name` ADD COLUMN `reply_to` varchar(255) NOT NULL DEFAULT '' AFTER `from_email`" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		}
+
+		if ( ! in_array( 'headers', $columns, true ) ) {
+			$wpdb->query( "ALTER TABLE `$table_name` ADD COLUMN `headers` longtext NOT NULL AFTER `message`" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		}
+
+		if ( ! in_array( 'attachments', $columns, true ) ) {
+			$wpdb->query( "ALTER TABLE `$table_name` ADD COLUMN `attachments` longtext NOT NULL AFTER `headers`" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		}
+
+		if ( ! in_array( 'created_at', $columns, true ) ) {
+			$wpdb->query( "ALTER TABLE `$table_name` ADD COLUMN `created_at` datetime DEFAULT NULL AFTER `success`" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		}
+
+		if ( ! in_array( 'processed_at', $columns, true ) ) {
+			$wpdb->query( "ALTER TABLE `$table_name` ADD COLUMN `processed_at` datetime DEFAULT NULL AFTER `created_at`" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		}
+
+		if ( ! in_array( 'transport', $columns, true ) ) {
+			$wpdb->query( "ALTER TABLE `$table_name` ADD COLUMN `transport` varchar(10) NOT NULL DEFAULT 'api' AFTER `success`" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		}
+
+		// Migrate old failed entries (success=0) to new failed status (success=-1)
+		// before widening the column. In the old system 0 = failed; in the new
+		// system 0 = pending (queued). At upgrade time no queue entries exist yet,
+		// so every success=0 row is an old failure.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$wpdb->query( "UPDATE `$table_name` SET `success` = -1 WHERE `success` = 0" );
+
+		// Widen success column to support -1 (failed) status.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$success_type = $wpdb->get_var( "SHOW COLUMNS FROM `$table_name` LIKE 'success'" );
+		if ( false !== strpos( $success_type, 'tinyint(1)' ) ) {
+			$wpdb->query( "ALTER TABLE `$table_name` MODIFY COLUMN `success` tinyint(2) NOT NULL DEFAULT 0" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		}
+
 		update_option( 'mxroute_mailer_db_version', MXROUTE_MAILER_VERSION );
 	}
 }
@@ -77,8 +153,64 @@ add_action( 'admin_init', 'mxroute_mailer_db_upgrade' );
 
 mxroute_mailer();
 
-new MXRoute_Updater(
-	__FILE__,
-	'richardkentgates/mxroute-mailer',
-	MXROUTE_MAILER_VERSION
-);
+MXRoute_Updater::init();
+
+/**
+ * Schedule the daily queue cleanup cron event.
+ *
+ * @return void
+ */
+function mxroute_mailer_schedule_cleanup() {
+	if ( ! wp_next_scheduled( 'mxroute_mailer_daily_cleanup' ) ) {
+		wp_schedule_event( time(), 'daily', 'mxroute_mailer_daily_cleanup' );
+	}
+}
+add_action( 'init', 'mxroute_mailer_schedule_cleanup' );
+
+/**
+ * Register custom cron intervals for queue processing.
+ *
+ * @param array $schedules Existing cron schedules.
+ * @return array Modified schedules with the MXRoute interval added.
+ */
+function mxroute_mailer_cron_schedules( $schedules ) {
+	$schedules['mxroute_mailer_interval'] = array(
+		'interval' => 60,
+		'display'  => __( 'Every Minute', 'mxroute-mailer' ),
+	);
+	return $schedules;
+}
+add_filter( 'cron_schedules', 'mxroute_mailer_cron_schedules' );
+
+/**
+ * Run daily queue cleanup to remove old processed entries.
+ *
+ * @return void
+ */
+function mxroute_mailer_daily_cleanup() {
+	$queue = new MXRoute_Queue();
+	$queue->cleanup( 30 );
+}
+add_action( 'mxroute_mailer_daily_cleanup', 'mxroute_mailer_daily_cleanup' );
+
+/**
+ * Create the logs table when a new site is added on multisite.
+ *
+ * @param WP_Site $new_site New site object.
+ * @return void
+ */
+function mxroute_mailer_new_site( $new_site ) {
+	switch_to_blog( $new_site->blog_id );
+	MXRoute_Logger::create_table();
+	restore_current_blog();
+}
+if ( is_multisite() ) {
+	add_action( 'wp_initialize_site', 'mxroute_mailer_new_site' );
+}
+
+/**
+ * Load WP-CLI commands if available.
+ */
+if ( defined( 'WP_CLI' ) && WP_CLI ) {
+	require_once MXROUTE_MAILER_PLUGIN_DIR . 'includes/class-mxroute-cli.php';
+}

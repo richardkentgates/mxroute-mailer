@@ -9,6 +9,7 @@ class MXRoute_Settings_Test extends \PHPUnit\Framework\TestCase {
     protected function setUp(): void {
         $GLOBALS['wp_options'] = array();
         $GLOBALS['wp_function_calls'] = array();
+        MXRoute_Mailer::reset();
     }
 
     /**
@@ -150,6 +151,53 @@ class MXRoute_Settings_Test extends \PHPUnit\Framework\TestCase {
     }
 
     /**
+     * Tests that sanitize_password encrypts a plaintext password.
+     */
+    public function test_sanitize_password_encrypts_plaintext() {
+        $settings = new MXRoute_Settings();
+        $plain = 'my_secret_password';
+        $encrypted = $settings->sanitize_password($plain);
+
+        $this->assertNotEquals($plain, $encrypted);
+        $this->assertEquals($plain, MXRoute_Crypto::decrypt($encrypted));
+    }
+
+    /**
+     * Tests that sanitize_password returns empty string when no value is provided.
+     */
+    public function test_sanitize_password_returns_empty_when_empty() {
+        $settings = new MXRoute_Settings();
+        $result = $settings->sanitize_password('');
+        $this->assertEquals('', $result);
+    }
+
+    /**
+     * Tests that the test email form queues the email for processing.
+     */
+    public function test_test_email_form_queues_email() {
+        $GLOBALS['wp_options']['mxroute_mailer_server'] = 'server.example.com';
+        $GLOBALS['wp_options']['mxroute_mailer_username'] = 'from@example.com';
+        $GLOBALS['wp_options']['mxroute_mailer_password'] = MXRoute_Crypto::encrypt('test_form_secret');
+        $_POST['mxroute_test_email_nonce'] = wp_create_nonce('mxroute_test_email');
+        $_POST['mxroute_test_to'] = 'to@example.com';
+        $_POST['mxroute_test_subject'] = 'Subject';
+        $_POST['mxroute_test_body'] = 'Body';
+
+        $mailer = MXRoute_Mailer::instance();
+        $mailer->handle_test_email();
+
+        $result = $GLOBALS['wp_transients']['mxroute_test_email_result'];
+        $this->assertTrue($result['success']);
+        $this->assertTrue($result['queued']);
+        $this->assertNotEmpty($GLOBALS['wp_db_inserts']);
+
+        unset($_POST['mxroute_test_email_nonce']);
+        unset($_POST['mxroute_test_to']);
+        unset($_POST['mxroute_test_subject']);
+        unset($_POST['mxroute_test_body']);
+    }
+
+    /**
      * Tests that add_menu_pages registers the email logs management page.
      */
     public function test_add_menu_pages_calls_add_management_page() {
@@ -160,5 +208,70 @@ class MXRoute_Settings_Test extends \PHPUnit\Framework\TestCase {
         $call = $GLOBALS['wp_function_calls']['add_management_page'][0];
         $this->assertEquals('MXRoute Email Logs', $call['page_title']);
         $this->assertEquals('mxroute-logs', $call['menu_slug']);
+    }
+
+    /**
+     * Tests that sanitize_batch_size clamps values below 1 to 1.
+     */
+    public function test_sanitize_batch_size_clamps_below_minimum() {
+        $settings = new MXRoute_Settings();
+        $this->assertEquals( 1, $settings->sanitize_batch_size( 0 ) );
+        $this->assertEquals( 1, $settings->sanitize_batch_size( -5 ) );
+    }
+
+    /**
+     * Tests that sanitize_batch_size clamps values above 50 to 50.
+     */
+    public function test_sanitize_batch_size_clamps_above_maximum() {
+        $settings = new MXRoute_Settings();
+        $this->assertEquals( 50, $settings->sanitize_batch_size( 51 ) );
+        $this->assertEquals( 50, $settings->sanitize_batch_size( 9999 ) );
+    }
+
+    /**
+     * Tests that sanitize_batch_size passes valid values through.
+     */
+    public function test_sanitize_batch_size_passes_valid_values() {
+        $settings = new MXRoute_Settings();
+        $this->assertEquals( 1, $settings->sanitize_batch_size( 1 ) );
+        $this->assertEquals( 25, $settings->sanitize_batch_size( 25 ) );
+        $this->assertEquals( 50, $settings->sanitize_batch_size( 50 ) );
+    }
+
+    /**
+     * Tests that sanitize_batch_size converts non-integer input.
+     */
+    public function test_sanitize_batch_size_casts_non_integer() {
+        $settings = new MXRoute_Settings();
+        $this->assertEquals( 25, $settings->sanitize_batch_size( '25abc' ) );
+        $this->assertEquals( 1, $settings->sanitize_batch_size( 'abc' ) );
+    }
+
+    /**
+     * Tests that sanitize_username_local strips the domain and uses home_url host.
+     */
+    public function test_sanitize_username_local_strips_domain() {
+        $settings = new MXRoute_Settings();
+        $result = $settings->sanitize_username_local( 'user@example.com' );
+        $this->assertEquals( 'user@example.com', $result );
+    }
+
+    /**
+     * Tests that sanitize_username_local handles local part only input.
+     */
+    public function test_sanitize_username_local_handles_local_part_only() {
+        $settings = new MXRoute_Settings();
+        $result = $settings->sanitize_username_local( 'user' );
+        $this->assertEquals( 'user@example.com', $result );
+    }
+
+    /**
+     * Tests that sanitize_username_local strips angle brackets and extra parts.
+     */
+    public function test_sanitize_username_local_strips_angle_brackets() {
+        $settings = new MXRoute_Settings();
+        $result = $settings->sanitize_username_local( 'User <user@example.com>' );
+        $this->assertStringNotContainsString( '<', $result );
+        $this->assertStringNotContainsString( '>', $result );
     }
 }

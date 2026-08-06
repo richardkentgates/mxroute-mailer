@@ -22,24 +22,23 @@ $GLOBALS['wp_db_queries'] = array();
 // Track function calls
 $GLOBALS['wp_function_calls'] = array();
 
+// Persistent hook registry — intentionally survives setUp resets because
+// MXRoute_Mailer is a singleton; init_hooks() runs only once, so the hooks
+// it registers must persist across all tests that call instance().
+$GLOBALS['wp_hooks_registered'] = array();
+
 // Mock WordPress functions
 if (!function_exists('add_filter')) {
     function add_filter($hook, $callback, $priority = 10, $accepted_args = 1) {
         $GLOBALS['wp_function_calls']['add_filter'][] = compact('hook', 'callback', 'priority');
+        $GLOBALS['wp_hooks_registered']['filter'][] = $hook;
     }
 }
 
 if (!function_exists('add_action')) {
     function add_action($hook, $callback, $priority = 10, $accepted_args = 1) {
         $GLOBALS['wp_function_calls']['add_action'][] = compact('hook', 'callback', 'priority');
-    }
-}
-
-if (!function_exists('apply_filters')) {
-    function apply_filters($hook, $value) {
-        $args = array_slice(func_get_args(), 2);
-        $GLOBALS['wp_function_calls']['apply_filters'][] = compact('hook', 'value', 'args');
-        return $value;
+        $GLOBALS['wp_hooks_registered']['action'][] = $hook;
     }
 }
 
@@ -106,7 +105,12 @@ if (!function_exists('wp_parse_args')) {
 
 if (!function_exists('sanitize_email')) {
     function sanitize_email($email) {
-        return is_string($email) ? trim(strip_tags($email)) : '';
+        if (!is_string($email)) {
+            return '';
+        }
+        $email = trim(strip_tags($email));
+        $email = preg_replace('/[^a-zA-Z0-9._%+-@]/', '', $email);
+        return $email;
     }
 }
 
@@ -206,19 +210,33 @@ if (!class_exists('WP_Error')) {
 if (!function_exists('check_ajax_referer')) {
     function check_ajax_referer($action, $nonce = false) {
         $GLOBALS['wp_function_calls']['check_ajax_referer'][] = compact('action', 'nonce');
+        if (isset($GLOBALS['wp_mock_ajax_referer'])) {
+            return $GLOBALS['wp_mock_ajax_referer'];
+        }
         return true;
     }
 }
 
 if (!function_exists('current_user_can')) {
     function current_user_can($capability) {
+        $GLOBALS['wp_function_calls']['current_user_can'][] = compact('capability');
+        if (isset($GLOBALS['wp_current_user_can_value'])) {
+            return $GLOBALS['wp_current_user_can_value'];
+        }
+        if (isset($GLOBALS['wp_mock_current_user_can'])) {
+            return $GLOBALS['wp_mock_current_user_can'];
+        }
         return true;
     }
 }
 
 if (!function_exists('wp_verify_nonce')) {
     function wp_verify_nonce($nonce, $action) {
-        return 1;
+        if (isset($GLOBALS['wp_mock_nonce_verification'])) {
+            return $GLOBALS['wp_mock_nonce_verification'];
+        }
+        $expected = 'test-nonce-' . md5($action);
+        return $nonce === $expected ? 1 : 0;
     }
 }
 
@@ -248,17 +266,28 @@ if (!function_exists('delete_transient')) {
     }
 }
 
-if (!function_exists('wp_redirect')) {
-    function wp_redirect($location, $status = 302) {
-        $GLOBALS['wp_function_calls']['wp_redirect'][] = compact('location', 'status');
+if (!function_exists('set_site_transient')) {
+    function set_site_transient($name, $value, $expiration = 0) {
+        $GLOBALS['wp_transients'][$name] = $value;
         return true;
     }
 }
 
-if (!function_exists('wp_safe_redirect')) {
-    function wp_safe_redirect($location, $status = 302) {
-        $GLOBALS['wp_function_calls']['wp_safe_redirect'][] = compact('location', 'status');
-        return true;
+if (!function_exists('get_site_transient')) {
+    function get_site_transient($name) {
+        return isset($GLOBALS['wp_transients'][$name]) ? $GLOBALS['wp_transients'][$name] : false;
+    }
+}
+
+if (!function_exists('wp_salt')) {
+    function wp_salt($scheme = 'auth') {
+        return 'mock-salt-' . $scheme . '-123456789012345678901234567890';
+    }
+}
+
+if (!function_exists('hash_equals')) {
+    function hash_equals($known_string, $user_string) {
+        return $known_string === $user_string;
     }
 }
 
@@ -340,12 +369,6 @@ if (!function_exists('checked')) {
     }
 }
 
-if (!function_exists('human_time_diff')) {
-    function human_time_diff($from, $to = 0) {
-        return '5 mins';
-    }
-}
-
 if (!function_exists('__')) {
     function __($text, $domain = 'default') {
         return $text;
@@ -397,6 +420,16 @@ if (!function_exists('number_format_i18n')) {
     }
 }
 
+if (!function_exists('wp_strip_all_tags')) {
+    function wp_strip_all_tags($string, $keep_newlines = false) {
+        $string = preg_replace('/<[^>]*>/', '', $string);
+        if (!$keep_newlines) {
+            $string = str_replace(array("\r\n", "\r", "\n"), ' ', $string);
+        }
+        return trim($string);
+    }
+}
+
 if (!function_exists('wp_trim_words')) {
     function wp_trim_words($text, $num_words = 55, $more = '...') {
         $words = explode(' ', $text);
@@ -439,9 +472,144 @@ if (!function_exists('wp_die')) {
     }
 }
 
+if (!function_exists('wp_schedule_event')) {
+    function wp_schedule_event($timestamp, $recurrence, $hook, $args = array()) {
+        $GLOBALS['wp_function_calls']['wp_schedule_event'][] = compact('timestamp', 'recurrence', 'hook', 'args');
+        $GLOBALS['wp_scheduled_events'][$hook] = true;
+        return true;
+    }
+}
+
+if (!function_exists('wp_next_scheduled')) {
+    function wp_next_scheduled($hook) {
+        if (isset($GLOBALS['wp_scheduled_events'][$hook])) {
+            return $GLOBALS['wp_scheduled_events'][$hook];
+        }
+        $calls = $GLOBALS['wp_function_calls']['wp_schedule_event'] ?? array();
+        foreach ( $calls as $call ) {
+            if ( $call['hook'] === $hook ) {
+                return true;
+            }
+        }
+        return false;
+    }
+}
+
+if (!function_exists('home_url')) {
+    function home_url($path = '') {
+        return 'http://example.com' . $path;
+    }
+}
+
+if (!function_exists('wp_parse_url')) {
+    function wp_parse_url($url, $component = -1) {
+        return parse_url($url, $component);
+    }
+}
+
+if (!function_exists('plugin_basename')) {
+    function plugin_basename($file) {
+        return ltrim(str_replace(ABSPATH, '', $file), '/');
+    }
+}
+
+if (!function_exists('load_plugin_textdomain')) {
+    function load_plugin_textdomain($domain, $deprecated = false, $plugin_rel_path = false) {
+        return true;
+    }
+}
+
+if (!function_exists('is_multisite')) {
+    function is_multisite() {
+        if (isset($GLOBALS['is_multisite_value'])) {
+            return $GLOBALS['is_multisite_value'];
+        }
+        return false;
+    }
+}
+
+if (!function_exists('get_sites')) {
+    function get_sites($args = array()) {
+        return array();
+    }
+}
+
+if (!function_exists('switch_to_blog')) {
+    function switch_to_blog($site_id) {
+        return true;
+    }
+}
+
+if (!function_exists('restore_current_blog')) {
+    function restore_current_blog() {
+        return true;
+    }
+}
+
+if (!function_exists('wp_upload_dir')) {
+    function wp_upload_dir($time = '') {
+        $upload_dir = sys_get_temp_dir() . '/mxroute_test_uploads';
+        if (!is_dir($upload_dir)) {
+            @mkdir($upload_dir, 0755, true);
+        }
+        return array(
+            'path'    => $upload_dir,
+            'url'     => 'http://example.com/uploads',
+            'subdir'  => '',
+            'basedir' => $upload_dir,
+            'error'   => false,
+        );
+    }
+}
+
+if (!function_exists('wp_basename')) {
+    function wp_basename($path, $suffix = '') {
+        return basename($path, $suffix);
+    }
+}
+
+if (!function_exists('wp_mkdir_p')) {
+    function wp_mkdir_p($path) {
+        return @mkdir($path, 0755, true);
+    }
+}
+
+if (!function_exists('trailingslashit')) {
+    function trailingslashit($string) {
+        return rtrim($string, '/') . '/';
+    }
+}
+
+if (!function_exists('absint')) {
+    function absint($value) {
+        return abs(intval($value));
+    }
+}
+
+if (!function_exists('get_attached_file')) {
+    function get_attached_file($attachment_id) {
+        if (isset($GLOBALS['wp_attached_files'][$attachment_id])) {
+            return $GLOBALS['wp_attached_files'][$attachment_id];
+        }
+        return false;
+    }
+}
+
+if (!function_exists('wp_tempnam')) {
+    function wp_tempnam($prefix = '') {
+        $path = tempnam(sys_get_temp_dir(), $prefix);
+        $GLOBALS['wp_function_calls']['wp_tempnam'][] = compact('prefix', 'path');
+        return $path;
+    }
+}
+
 // Define constants
 if (!defined('ABSPATH')) {
     define('ABSPATH', '/tmp/wordpress/');
+}
+
+if (!defined('MXROUTE_MAILER_DEBUG')) {
+    define('MXROUTE_MAILER_DEBUG', true);
 }
 if (!defined('OBJECT')) {
     define('OBJECT', 'OBJECT');
@@ -454,6 +622,12 @@ if (!defined('ARRAY_N')) {
 }
 if (!defined('WP_UNINSTALL_PLUGIN')) {
     // Not defined during normal test runs
+}
+if (!defined('DAY_IN_SECONDS')) {
+    define('DAY_IN_SECONDS', 86400);
+}
+if (!defined('MB_IN_BYTES')) {
+    define('MB_IN_BYTES', 1048576);
 }
 
 // Mock dbDelta
@@ -473,6 +647,7 @@ if (!file_exists('/tmp/wordpress/wp-admin/includes/upgrade.php')) {
 // Mock global $wpdb
 class MockWPDB {
     public $prefix = 'wp_';
+    public $insert_id = 0;
 
     public function get_charset_collate() {
         return 'utf8mb4';
@@ -494,23 +669,46 @@ class MockWPDB {
     }
 
     public function get_results($query = null, $output = OBJECT) {
+        if (isset($GLOBALS['wp_db_results'])) {
+            return $GLOBALS['wp_db_results'];
+        }
+        return array();
+    }
+
+    public function get_col($query = null, $x = 0) {
+        if (isset($GLOBALS['wp_db_col'])) {
+            return $GLOBALS['wp_db_col'];
+        }
         return array();
     }
 
     public function get_row($query = null, $output = OBJECT, $offset = 0) {
+        if (isset($GLOBALS['wp_db_row'])) {
+            return $GLOBALS['wp_db_row'];
+        }
         return null;
     }
 
     public function get_var($query = null, $x = 0, $y = 0) {
+        if (isset($GLOBALS['wp_db_var'])) {
+            return $GLOBALS['wp_db_var'];
+        }
         return 0;
     }
 
     public function insert($table, $data, $format = null) {
         $GLOBALS['wp_db_inserts'][] = compact('table', 'data');
+        $this->insert_id = count( $GLOBALS['wp_db_inserts'] );
         return true;
     }
 
     public function delete($table, $where, $format = null) {
+        $GLOBALS['wp_function_calls']['$wpdb->delete'][] = compact('table', 'where');
+        return true;
+    }
+
+    public function update($table, $data, $where, $format = null, $where_format = null) {
+        $GLOBALS['wp_function_calls']['$wpdb->update'][] = compact('table', 'data', 'where');
         return true;
     }
 
@@ -565,10 +763,106 @@ if (!function_exists('is_wp_error')) {
     }
 }
 
+// Mock PHPMailer for SMTP tests (WordPress bundles PHPMailer but it's not available in test env)
+$mock_phpmailer_dir = sys_get_temp_dir() . '/mxroute_phpmailer_mock';
+if ( ! is_dir( $mock_phpmailer_dir ) ) {
+	mkdir( $mock_phpmailer_dir, 0755, true );
+}
+$mock_phpmailer_file = $mock_phpmailer_dir . '/PHPMailer.php';
+	file_put_contents(
+		$mock_phpmailer_file,
+		'<?php' . "\n"
+		. 'namespace PHPMailer\\PHPMailer;' . "\n"
+		. 'class Exception extends \\Exception {}' . "\n"
+		. 'class PHPMailer {' . "\n"
+		. '    public $Host = "";' . "\n"
+		. '    public $SMTPAuth = false;' . "\n"
+		. '    public $Username = "";' . "\n"
+		. '    public $Password = "";' . "\n"
+		. '    public $SMTPKeepAlive = false;' . "\n"
+		. '    public $CharSet = "UTF-8";' . "\n"
+		. '    public $Encoding = "base64";' . "\n"
+		. '    public $Port = 465;' . "\n"
+		. '    public $SMTPSecure = "ssl";' . "\n"
+		. '    public $Subject = "";' . "\n"
+		. '    public $Body = "";' . "\n"
+		. '    public $AltBody = "";' . "\n"
+		. '    private $sent = false;' . "\n"
+		. '    public function __construct($exceptions = false) {}' . "\n"
+		. '    public function isSMTP() {}' . "\n"
+		. '    public function setFrom($address, $name = "") {}' . "\n"
+		. '    public function addAddress($address, $name = "") {}' . "\n"
+		. '    public function addReplyTo($address, $name = "") {}' . "\n"
+		. '    public function isHTML($isHtml = true) {}' . "\n"
+		. '    public function addAttachment($path, $name = "") {}' . "\n"
+		. '    public function clearAddresses() {}' . "\n"
+		. '    public function clearAttachments() {}' . "\n"
+		. '    public function clearReplyTos() {}' . "\n"
+		. '    public function send() {' . "\n"
+		. '        $GLOBALS["wp_function_calls"]["phpmailer_send"][] = ["host" => $this->Host, "port" => $this->Port, "secure" => $this->SMTPSecure, "username" => $this->Username, "subject" => $this->Subject, "body" => $this->Body];' . "\n"
+		. '        $succeed_port = $GLOBALS["mxroute_phpmailer_succeed_port"] ?? null;' . "\n"
+		. '        if ($succeed_port !== null && (int)$succeed_port === (int)$this->Port) { $this->sent = true; return true; }' . "\n"
+		. '        throw new Exception("SMTP connection failed");' . "\n"
+		. '    }' . "\n"
+		. '    public function wasSent() { return $this->sent; }' . "\n"
+		. '}' . "\n"
+	);
+require_once $mock_phpmailer_file;
+
 // Load the plugin files
+require_once $plugin_dir . '/includes/class-mxroute-crypto.php';
 require_once $plugin_dir . '/mxroute-mailer.php';
 require_once $plugin_dir . '/includes/class-mxroute-mailer.php';
 require_once $plugin_dir . '/includes/class-mxroute-api.php';
 require_once $plugin_dir . '/includes/class-mxroute-settings.php';
 require_once $plugin_dir . '/includes/class-mxroute-logger.php';
 require_once $plugin_dir . '/includes/class-mxroute-dashboard.php';
+require_once $plugin_dir . '/includes/class-mxroute-queue.php';
+
+// Mock wp_remote_get for updater tests
+if (!function_exists('wp_remote_get')) {
+    function wp_remote_get($url, $args = array()) {
+        $GLOBALS['wp_function_calls']['wp_remote_get'][] = compact('url', 'args');
+        if (isset($GLOBALS['mxroute_mock_remote_get_response'])) {
+            return $GLOBALS['mxroute_mock_remote_get_response'];
+        }
+        return array(
+            'response' => array('code' => 200),
+            'body'     => '{}',
+        );
+    }
+}
+
+if (!function_exists('wp_safe_remote_get')) {
+    function wp_safe_remote_get($url, $args = array()) {
+        $GLOBALS['wp_function_calls']['wp_safe_remote_get'][] = compact('url', 'args');
+        if (isset($GLOBALS['mxroute_mock_remote_get_response'])) {
+            return $GLOBALS['mxroute_mock_remote_get_response'];
+        }
+        return array(
+            'response' => array('code' => 200),
+            'body'     => '{}',
+        );
+    }
+}
+
+// Mock get_plugin_data for updater tests
+if (!function_exists('get_plugin_data')) {
+    function get_plugin_data($file, $markup = true, $translate = true) {
+        return array(
+            'Name'        => 'MXRoute Mailer',
+            'PluginURI'   => '',
+            'Description' => 'Intercepts wp_mail to send through MXRoute.',
+            'Author'      => 'Richard Kent Gates',
+            'Version'     => '1.0.0',
+            'TextDomain'  => 'mxroute-mailer',
+        );
+    }
+}
+
+// Mock get_current_screen for help tab tests
+if (!function_exists('get_current_screen')) {
+    function get_current_screen() {
+        return $GLOBALS['mxroute_mock_screen'] ?? null;
+    }
+}

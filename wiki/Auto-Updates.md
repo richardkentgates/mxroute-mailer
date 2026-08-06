@@ -44,6 +44,16 @@ If automatic updates don't work:
 3. Replace the `mxroute-mailer` folder in `/wp-content/plugins/` with the new version
 4. The update is complete - no database migration needed (it runs automatically)
 
+## Release Zip Layout
+
+Starting with `v1.2.13`, release zips contain a single top-level folder named `mxroute-mailer/`. This ensures WordPress extracts the update into the existing plugin directory.
+
+If you previously installed an update that created a folder like `mxroute-mailer-v1.2.7/`, the plugin was deactivated because WordPress could not find it in the expected location. To fix this:
+
+1. Deactivate and delete the `mxroute-mailer-v1.2.x/` folder from `/wp-content/plugins/`
+2. Install the latest release zip normally
+3. Activate MXRoute Mailer
+
 ## Version Comparison
 
 The updater uses WordPress's standard version comparison, which follows [PHP's version_compare()](https://www.php.net/manual/en/function.version-compare.php) rules:
@@ -74,6 +84,10 @@ Releases use semantic versioning with a `v` prefix:
 2. **Check GitHub access**: Your server must be able to reach `api.github.com`
 3. **Manual update**: Download and install the release zip manually
 
+### Plugin Deactivated After Update
+
+This usually means the update was extracted into a versioned folder like `mxroute-mailer-v1.2.x/` instead of `mxroute-mailer/`. See [Release Zip Layout](#release-zip-layout) above for the fix.
+
 ### "Error: Cannot fetch update" Message
 
 This usually means:
@@ -91,9 +105,26 @@ curl -I https://api.github.com/repos/richardkentgates/mxroute-mailer/releases/la
 ## Security
 
 - Releases are built by GitHub Actions CI/CD
-- Each release runs PHPCS and PHPUnit checks before publishing
+- Each push to `dev` runs PHP syntax lint, PHPUnit, zizmor workflow analysis, Semgrep PHP security scan, CodeQL analysis, and a pinned-Actions check
 - The zip file is attached to the GitHub release, not hosted externally
 - Version comparison prevents accidental downgrades
+- Starting with `v1.2.19`, each release includes a SHA-256 checksum file; the plugin verifies the downloaded zip against this checksum before WordPress installs the update
+
+## Multisite Considerations
+
+On WordPress Multisite, auto-updates apply per-site. To update MXRoute Mailer across all sites:
+
+1. Go to **Network Admin > Updates**
+2. MXRoute Mailer will appear if an update is available
+3. Select all sites and click **Update**
+
+Alternatively, use WP-CLI to update on the network:
+
+```bash
+wp plugin update mxroute-mailer --network
+```
+
+After updating, verify each subsite's settings and queue are intact. The update preserves per-site settings and database tables.
 
 ## Disabling Auto-Updates
 

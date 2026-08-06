@@ -45,14 +45,20 @@ class MXRoute_Logger {
             to_email varchar(255) NOT NULL,
             subject varchar(255) NOT NULL,
             message longtext,
+            headers longtext NOT NULL,
+            attachments longtext NOT NULL,
             api_request longtext,
             api_response longtext,
-            success tinyint(1) NOT NULL DEFAULT 0,
+            success tinyint(2) NOT NULL DEFAULT 0,
+            transport varchar(10) NOT NULL DEFAULT 'api',
+            created_at datetime DEFAULT NULL,
+            processed_at datetime DEFAULT NULL,
             PRIMARY KEY (id),
             KEY timestamp (timestamp),
             KEY success (success),
             KEY from_email (from_email),
-            KEY to_email (to_email)
+            KEY to_email (to_email),
+            KEY created_at (created_at)
         ) $charset_collate;";
 
 		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
@@ -61,31 +67,22 @@ class MXRoute_Logger {
 	}
 
 	/**
-	 * Drop the logging database table.
-	 *
-	 * @return void
-	 */
-	public static function drop_table() {
-		global $wpdb;
-		$table_name = $wpdb->prefix . 'mxroute_mailer_logs';
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table drop, cannot use prepare.
-		$wpdb->query( "DROP TABLE IF EXISTS $table_name" );
-	}
-
-	/**
 	 * Log an email sent via the MXRoute API.
 	 *
-	 * @param string       $from     Sender email address.
-	 * @param string|array $to       Recipient email address(es).
-	 * @param string       $subject  Email subject.
-	 * @param string       $body     Email message body.
-	 * @param array        $request  API request data.
-	 * @param array        $response API response data.
-	 * @param bool         $success  Whether the send was successful.
-	 * @param string       $reply_to Optional Reply-To email address.
+	 * @param string       $from        Sender email address.
+	 * @param string|array $to          Recipient email address(es).
+	 * @param string       $subject     Email subject.
+	 * @param string       $body        Email message body.
+	 * @param array        $request     API request data.
+	 * @param array        $response    API response data.
+	 * @param bool         $success     Whether the send was successful.
+	 * @param string       $reply_to    Optional Reply-To email address.
+	 * @param string       $headers     Optional email headers.
+	 * @param array        $attachments Optional array of file paths.
+	 * @param string       $transport   Transport method ('api' or 'smtp').
 	 * @return void
 	 */
-	public function log( $from, $to, $subject, $body, $request, $response, $success, $reply_to = '' ) {
+	public function log( $from, $to, $subject, $body, $request, $response, $success, $reply_to = '', $headers = '', $attachments = array(), $transport = 'api' ) {
 		if ( ! get_option( 'mxroute_mailer_logging_enabled', 1 ) ) {
 			return;
 		}
@@ -116,11 +113,14 @@ class MXRoute_Logger {
 				'to_email'     => $to_address,
 				'subject'      => sanitize_text_field( $subject ),
 				'message'      => $body,
-				'api_request'  => wp_json_encode( $request ),
-				'api_response' => wp_json_encode( $response ),
-				'success'      => $success ? 1 : 0,
+				'headers'      => is_array( $headers ) ? wp_json_encode( $headers ) ?: '[]' : (string) $headers,
+				'attachments'  => wp_json_encode( $attachments ) ?: '[]',
+				'api_request'  => wp_json_encode( $request ) ?: '{}',
+				'api_response' => wp_json_encode( $response ) ?: '{}',
+				'success'      => $success ? 1 : -1,
+				'transport'    => in_array( $transport, array( 'api', 'smtp' ), true ) ? $transport : 'api',
 			),
-			array( '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d' )
+			array( '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%s' )
 		);
 	}
 
@@ -141,8 +141,14 @@ class MXRoute_Logger {
 	public function get_logs( $per_page = 20, $page = 1, $filters = array() ) {
 		global $wpdb;
 
-		$where  = '1=1';
 		$values = array();
+
+		// Exclude pending queue entries unless explicitly filtering for them.
+		if ( ! empty( $filters['success'] ) && '0' === (string) $filters['success'] ) {
+			$where = 'success = 0';
+		} else {
+			$where = 'success != 0';
+		}
 
 		if ( ! empty( $filters['search'] ) ) {
 			$like     = '%' . $wpdb->esc_like( $filters['search'] ) . '%';
@@ -152,9 +158,9 @@ class MXRoute_Logger {
 			$values[] = $like;
 		}
 
-		if ( ! empty( $filters['success'] ) ) {
+		if ( ! empty( $filters['success'] ) && '0' !== (string) $filters['success'] ) {
 			$where   .= ' AND success = %d';
-			$values[] = ( '1' === $filters['success'] ) ? 1 : 0;
+			$values[] = intval( $filters['success'] );
 		}
 
 		if ( ! empty( $filters['from_email'] ) ) {
@@ -223,8 +229,17 @@ class MXRoute_Logger {
 	 */
 	public function clear_logs() {
 		global $wpdb;
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- TRUNCATE cannot use prepare.
-		$wpdb->query( "TRUNCATE TABLE {$this->table_name}" );
+
+		// Delete stored attachment copies before removing rows.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Fetching attachments for cleanup.
+		$rows = $wpdb->get_col( "SELECT attachments FROM {$this->table_name} WHERE success != 0" );
+		$queue = new MXRoute_Queue();
+		foreach ( (array) $rows as $json ) {
+			$queue->delete_stored_attachments( $json );
+		}
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- DELETE with no user input, TRUNCATE avoided to preserve pending queue entries.
+		$wpdb->query( "DELETE FROM {$this->table_name} WHERE success != 0" );
 	}
 
 	/**
@@ -235,6 +250,17 @@ class MXRoute_Logger {
 	 */
 	public function delete_log( $id ) {
 		global $wpdb;
+
+		// Fetch attachments before deleting to clean up stored copies.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Fetch by primary key.
+		$attachments_json = $wpdb->get_var(
+			$wpdb->prepare( "SELECT attachments FROM {$this->table_name} WHERE id = %d", absint( $id ) )
+		);
+		if ( $attachments_json ) {
+			$queue = new MXRoute_Queue();
+			$queue->delete_stored_attachments( $attachments_json );
+		}
+
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Delete by primary key, caching not applicable.
 		$wpdb->delete( $this->table_name, array( 'id' => $id ), array( '%d' ) );
 	}
@@ -246,34 +272,50 @@ class MXRoute_Logger {
 	 * @return void
 	 */
 	public function delete_logs( $ids ) {
-		global $wpdb;
 		$ids = array_filter( array_map( 'intval', (array) $ids ) );
-		if ( empty( $ids ) ) {
-			return;
+		foreach ( $ids as $id ) {
+			$this->delete_log( $id );
 		}
-		$ids    = array_values( $ids );
-		$format = array_fill( 0, count( $ids ), '%d' ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Delete by primary keys, caching not applicable.
-		$wpdb->delete( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-			$this->table_name,
-			array( 'id' => $ids ),
-			$format
-		);
 	}
 
 	/**
-	 * Get the most recent log entries.
+	 * Re-queue a log entry by resetting it to pending status.
 	 *
-	 * @param int $count Number of logs to retrieve.
-	 * @return array Array of log objects.
+	 * @param int $id Log entry ID.
+	 * @return bool True on success, false if row not found.
 	 */
-	public function get_recent_logs( $count = 10 ) {
+	public function requeue_log( $id ) {
 		global $wpdb;
+		$id = absint( $id );
+		if ( $id < 1 ) {
+			return false;
+		}
 
-		return $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Recent logs query, caching not applicable.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$wpdb->query(
 			$wpdb->prepare(
-				"SELECT * FROM {$this->table_name} ORDER BY timestamp DESC LIMIT %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-				$count
+				"UPDATE {$this->table_name} SET success = 0, api_request = '', api_response = '', processed_at = NULL WHERE id = %d",
+				$id
 			)
 		);
+
+		return true;
 	}
+
+	/**
+	 * Re-queue multiple log entries by resetting them to pending status.
+	 *
+	 * @param array $ids Array of log entry IDs.
+	 * @return int Number of entries re-queued.
+	 */
+	public function requeue_logs( $ids ) {
+		$count = 0;
+		foreach ( (array) $ids as $id ) {
+			if ( $this->requeue_log( $id ) ) {
+				++$count;
+			}
+		}
+		return $count;
+	}
+
 }

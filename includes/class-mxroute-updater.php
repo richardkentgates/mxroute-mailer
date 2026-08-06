@@ -1,9 +1,23 @@
 <?php
 /**
- * GitHub-based auto-updater for MXRoute Mailer.
+ * Apt-server-based automatic updater for MXRoute Mailer.
  *
- * Checks GitHub releases for new versions and integrates with
- * the WordPress plugin update system.
+ * Hooks into the WordPress core plugin-update pipeline so MXRoute Mailer
+ * appears in Dashboard -> Updates exactly like a wordpress.org-hosted plugin.
+ *
+ * How it works:
+ *   1. Every 12 hours (matching WP's own update check interval) this class
+ *      fetches metadata.json from the apt server.
+ *   2. If the remote version is newer than MXROUTE_MAILER_VERSION it injects a
+ *      plugin_information object into the core update transient.
+ *   3. WordPress then offers the update in the normal UI and can install it
+ *      with a single click — no manual download required.
+ *   4. After WordPress downloads the zip, a filter renames the extracted
+ *      folder to the correct slug (mxroute-mailer) so the plugin path stays
+ *      stable.
+ *
+ * A "Check for Updates" action link is added to the Plugins list page so
+ * admins can force an immediate check without waiting for the next cron cycle.
  *
  * @package MXRoute_Mailer
  */
@@ -11,234 +25,334 @@
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Handles automatic updates from GitHub releases.
+ * Class MXRoute_Updater
  */
 class MXRoute_Updater {
 
-	/**
-	 * GitHub repository slug.
-	 *
-	 * @var string
-	 */
-	private $repo;
+	/** URL of the apt server metadata.json. */
+	private const METADATA_URL = 'https://apt.richardkentgates.com/mxroute-mailer/metadata.json';
+
+	/** WordPress option / transient key used to cache the remote metadata. */
+	private const TRANSIENT = 'mxroute_remote_metadata';
+
+	/** How long to cache the remote response (seconds). Mirrors WP's 12-hour cycle. */
+	private const CACHE_TTL = 43200;
+
+	/** Basename of this plugin file, e.g. "mxroute-mailer/mxroute-mailer.php". */
+	private string $plugin_basename;
 
 	/**
-	 * Current plugin version.
-	 *
-	 * @var string
+	 * Boot the updater.
 	 */
-	private $version;
-
-	/**
-	 * Main plugin file path.
-	 *
-	 * @var string
-	 */
-	private $file;
-
-	/**
-	 * GitHub API cache.
-	 *
-	 * @var array|null
-	 */
-	private $github_data;
+	public static function init(): void {
+		$instance = new self();
+		$instance->hooks();
+	}
 
 	/**
 	 * Constructor.
-	 *
-	 * @param string $file    Main plugin file path.
-	 * @param string $repo    GitHub repository slug (owner/repo).
-	 * @param string $version Current plugin version.
 	 */
-	public function __construct( $file, $repo, $version ) {
-		$this->file    = $file;
-		$this->repo    = $repo;
-		$this->version = $version;
-
-		add_filter( 'pre_set_site_transient_update_plugins', array( $this, 'check_update' ) );
-		add_filter( 'plugins_api', array( $this, 'plugins_api' ), 10, 3 );
-		add_filter( 'upgrader_source_selection', array( $this, 'fix_zip_folder' ), 10, 4 );
+	private function __construct() {
+		$this->plugin_basename = plugin_basename( __FILE__ );
 	}
 
 	/**
-	 * Get release data from GitHub.
-	 *
-	 * @return array|null Release data or null on failure.
+	 * Register all WordPress hooks.
 	 */
-	private function get_github_data() {
-		if ( null !== $this->github_data ) {
-			return $this->github_data;
-		}
-
-		$endpoint = 'https://api.github.com/repos/' . $this->repo . '/releases/latest';
-		$response = wp_remote_get(
-			$endpoint,
-			array(
-				'timeout' => 15,
-				'headers' => array(
-					'Accept' => 'application/vnd.github.v3+json',
-				),
-			)
-		);
-
-		if ( is_wp_error( $response ) ) {
-			return null;
-		}
-
-		$code = wp_remote_retrieve_response_code( $response );
-		if ( 200 !== $code ) {
-			return null;
-		}
-
-		$this->github_data = json_decode( wp_remote_retrieve_body( $response ), true );
-		return $this->github_data;
+	private function hooks(): void {
+		add_filter( 'pre_set_site_transient_update_plugins', array( $this, 'inject_update' ) );
+		add_filter( 'plugins_api', array( $this, 'plugin_info' ), 20, 3 );
+		add_filter( 'upgrader_source_selection', array( $this, 'fix_source_dir' ), 10, 4 );
+		add_filter( 'plugin_action_links_' . $this->plugin_basename, array( $this, 'action_links' ) );
+		add_action( 'admin_init', array( $this, 'handle_manual_check' ) );
 	}
 
+	// -------------------------------------------------------------------------
+	// Apt server metadata
+	// -------------------------------------------------------------------------
+
 	/**
-	 * Check for plugin updates.
+	 * Fetch the latest metadata from the apt server, with caching.
 	 *
-	 * @param object $transient_data Site transient data.
-	 * @return object Modified transient data.
+	 * @param bool $force_refresh Bypass the transient cache when true.
+	 * @return object|null  Decoded metadata object, or null on failure.
 	 */
-	public function check_update( $transient_data ) {
-		if ( ! is_object( $transient_data ) ) {
-			return $transient_data;
-		}
-
-		$release = $this->get_github_data();
-		if ( null === $release || empty( $release['tag_name'] ) ) {
-			return $transient_data;
-		}
-
-		$remote_version = ltrim( $release['tag_name'], 'v' );
-		if ( version_compare( $remote_version, $this->version, '<=' ) ) {
-			return $transient_data;
-		}
-
-		$zip_url = null;
-		foreach ( $release['assets'] as $asset ) {
-			if ( ! empty( $asset['name'] ) && 'zip' === pathinfo( $asset['name'], PATHINFO_EXTENSION ) ) {
-				$zip_url = $asset['browser_download_url'];
-				break;
+	private function get_metadata( bool $force_refresh = false ): ?object {
+		if ( ! $force_refresh ) {
+			$cached = get_transient( self::TRANSIENT );
+			if ( false !== $cached ) {
+				return $cached ?: null;
 			}
 		}
 
-		if ( ! $zip_url ) {
-			$zip_url = 'https://github.com/' . $this->repo . '/archive/refs/tags/' . $release['tag_name'] . '.zip';
-		}
-
-		$plugin_data = get_plugin_data( $this->file, false, false );
-
-		$transient_data->response[ plugin_basename( $this->file ) ] = (object) array(
-			'slug'        => basename( dirname( $this->file ) ),
-			'new_version' => $remote_version,
-			'url'         => $release['html_url'] ?? 'https://github.com/' . $this->repo,
-			'package'     => $zip_url,
-			'name'        => $plugin_data['Name'] ?? 'MXRoute Mailer',
-			'sections'    => array(
-				'description' => $release['body'] ?? '',
-			),
-			'banners'     => array(),
+		$response = wp_remote_get(
+			self::METADATA_URL,
+			array(
+				'timeout'    => 10,
+				'user-agent' => 'WordPress/' . get_bloginfo( 'version' ) . '; MXRouteMailer/' . MXROUTE_MAILER_VERSION,
+			)
 		);
 
-		return $transient_data;
+		if ( is_wp_error( $response ) || wp_remote_retrieve_response_code( $response ) !== 200 ) {
+			set_transient( self::TRANSIENT, '', self::CACHE_TTL );
+			return null;
+		}
+
+		$metadata = json_decode( wp_remote_retrieve_body( $response ) );
+
+		if ( empty( $metadata->version ) || empty( $metadata->download_url ) ) {
+			set_transient( self::TRANSIENT, '', self::CACHE_TTL );
+			return null;
+		}
+
+		if ( empty( $metadata->requires ) || ! is_object( $metadata->requires ) ) {
+			$metadata->requires = (object) array(
+				'php'       => '7.3',
+				'wordpress' => '5.0',
+			);
+		}
+		if ( empty( $metadata->requires->php ) ) {
+			$metadata->requires->php = '7.3';
+		}
+		if ( empty( $metadata->requires->wordpress ) ) {
+			$metadata->requires->wordpress = '5.0';
+		}
+
+		set_transient( self::TRANSIENT, $metadata, self::CACHE_TTL );
+		return $metadata;
+	}
+
+	// -------------------------------------------------------------------------
+	// WordPress update pipeline hooks
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Inject MXRoute Mailer update data into the WP plugin-update transient.
+	 *
+	 * @param  \stdClass|false $transient The update_plugins site transient.
+	 * @return \stdClass|false           Modified transient, or false to let WP handle it.
+	 */
+	public function inject_update( $transient ) {
+		$metadata = $this->get_metadata();
+		if ( null === $metadata ) {
+			return false;
+		}
+
+		$remote_version = $metadata->version;
+
+		if ( version_compare( $remote_version, MXROUTE_MAILER_VERSION, '>' ) ) {
+			if ( ! is_object( $transient ) ) {
+				$transient = new \stdClass();
+			}
+			if ( ! isset( $transient->response ) || ! is_array( $transient->response ) ) {
+				$transient->response = array();
+			}
+
+			$transient->response[ $this->plugin_basename ] = (object) array(
+				'id'            => 'mxroute-mailer/apt-server',
+				'slug'          => 'mxroute-mailer',
+				'plugin'        => $this->plugin_basename,
+				'new_version'   => $remote_version,
+				'url'           => 'https://github.com/richardkentgates/mxroute-mailer',
+				'package'       => $metadata->download_url,
+				'icons'         => array(),
+				'banners'       => array(),
+				'banners_rtl'   => array(),
+				'tested'        => $metadata->requires->wordpress ?? '5.0',
+				'requires'      => $metadata->requires->wordpress ?? '5.0',
+				'requires_php'  => $metadata->requires->php ?? '7.3',
+				'compatibility' => new \stdClass(),
+			);
+
+			return $transient;
+		}
+
+		return false;
 	}
 
 	/**
-	 * Provide update information to the plugins API.
+	 * Provide plugin information for the "View version x.x.x details" thickbox.
 	 *
-	 * @param mixed  $result  Default result.
-	 * @param string $action  API action.
-	 * @param object $args    API arguments.
-	 * @return mixed Plugin data or default result.
+	 * @param false|object $result  Existing result (false if unhandled).
+	 * @param string       $action  Current API action.
+	 * @param object       $args    API request arguments.
+	 * @return false|object         Plugin info object, or false to let WP handle it.
 	 */
-	public function plugins_api( $result, $action, $args ) {
+	public function plugin_info( $result, string $action, object $args ) {
 		if ( 'plugin_information' !== $action ) {
 			return $result;
 		}
 
-		if ( empty( $args->slug ) || basename( dirname( $this->file ) ) !== $args->slug ) {
+		if ( empty( $args->slug ) || 'mxroute-mailer' !== $args->slug ) {
 			return $result;
 		}
 
-		$release = $this->get_github_data();
-		if ( null === $release ) {
+		$metadata = $this->get_metadata();
+		if ( null === $metadata ) {
 			return $result;
 		}
+
+		$remote_version = $metadata->version;
+		$requires_php   = $metadata->requires->php ?? '7.3';
+		$requires_wp    = $metadata->requires->wordpress ?? '5.0';
 
 		$plugin_data = get_plugin_data( $this->file, false, false );
 
 		return (object) array(
-			'name'           => $plugin_data['Name'] ?? 'MXRoute Mailer',
-			'slug'           => basename( dirname( $this->file ) ),
-			'version'        => ltrim( $release['tag_name'], 'v' ),
-			'author'         => $plugin_data['Author'] ?? 'MXRoute',
-			'author_profile' => 'https://github.com/' . explode( '/', $this->repo )[0],
-			'repository'     => 'https://github.com/' . $this->repo,
-			'requires'       => '5.0',
-			'tested'         => '7.0',
-			'requires_php'   => '7.3',
-			'sections'       => array(
-				'description' => $release['body'] ?? $plugin_data['Description'] ?? '',
-				'changelog'   => $release['body'] ?? '',
+			'name'              => $plugin_data['Name'] ?? 'MXRoute Mailer',
+			'slug'              => 'mxroute-mailer',
+			'version'           => $remote_version,
+			'author'            => '<a href="https://github.com/richardkentgates">Richard Kent Gates</a>',
+			'author_profile'    => 'https://github.com/richardkentgates',
+			'homepage'          => 'https://mxroute.com',
+			'requires'          => $requires_wp,
+			'requires_php'      => $requires_php,
+			'download_link'     => $metadata->download_url,
+			'trunk'             => $metadata->download_url,
+			'last_updated'      => '',
+			'sections'          => array(
+				'description' => $plugin_data['Description'] ?? 'Sends WordPress email through MXRoute HTTP API.',
+				'changelog'   => $this->build_changelog_section(),
 			),
-			'download_link'  => $this->get_zip_url( $release ),
+			'banners'           => array(),
+			'icons'             => array(),
 		);
 	}
 
 	/**
-	 * Get the download URL for the latest release zip.
+	 * Fix the plugin folder name after WordPress extracts the zip.
 	 *
-	 * @param array $release GitHub release data.
-	 * @return string Download URL.
+	 * @param  string      $source        Extracted folder path.
+	 * @param  string      $remote_source Temp folder containing the zip.
+	 * @param  WP_Upgrader $upgrader      Upgrader instance.
+	 * @param  array       $hook_extra    Extra context.
+	 * @return string                     Corrected source path.
 	 */
-	private function get_zip_url( $release ) {
-		if ( ! empty( $release['assets'] ) ) {
-			foreach ( $release['assets'] as $asset ) {
-				if ( ! empty( $asset['name'] ) && 'zip' === pathinfo( $asset['name'], PATHINFO_EXTENSION ) ) {
-					return $asset['browser_download_url'];
-				}
-			}
+	public function fix_source_dir( string $source, string $remote_source, $upgrader, array $hook_extra ): string {
+		global $wp_filesystem;
+
+		if ( empty( $hook_extra['plugin'] ) || $this->plugin_basename !== $hook_extra['plugin'] ) {
+			return $source;
 		}
 
-		return 'https://github.com/' . $this->repo . '/archive/refs/tags/' . $release['tag_name'] . '.zip';
-	}
-
-	/**
-	 * Fix the zip folder name to match the plugin directory.
-	 *
-	 * WordPress expects the extracted folder to match the plugin slug.
-	 *
-	 * @param string $source        The source directory path.
-	 * @param string $remote_source The remote source directory path.
-	 * @param object $updater       The updater instance.
-	 * @param array  $args          Updater arguments.
-	 * @return string|WP_Error Modified source path or error.
-	 */
-	public function fix_zip_folder( $source, $remote_source, $updater, $args ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter
-		$desired_folder = basename( dirname( $this->file ) );
-
-		$source_base = trailingslashit( $source );
-		$expected    = $source_base . $desired_folder;
-
-		if ( is_dir( $expected ) ) {
-			return $expected;
+		$correct = trailingslashit( $remote_source ) . 'mxroute-mailer/';
+		if ( $source === $correct ) {
+			return $source;
 		}
 
-		$files = glob( $source_base . '*' );
-		if ( ! empty( $files ) && 1 === count( $files ) && is_dir( $files[0] ) ) {
-			$actual_folder = basename( $files[0] );
-			if ( $actual_folder !== $desired_folder ) {
-				$new_source = trailingslashit( $source ) . $desired_folder;
-				if ( function_exists( 'wp_move_file' ) ) {
-					wp_move_file( $files[0], $new_source );
-					return $new_source;
-				}
-				rename( $files[0], $new_source ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions, WordPress.WP.AlternativeFunctions
-				return $new_source;
-			}
+		if ( $wp_filesystem->move( $source, $correct ) ) {
+			return $correct;
 		}
 
 		return $source;
+	}
+
+	// -------------------------------------------------------------------------
+	// Manual "Check for Updates" link
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Add a "Check for Updates" action link on the Plugins page.
+	 *
+	 * @param  array $links Existing action links.
+	 * @return array        Modified action links.
+	 */
+	public function action_links( array $links ): array {
+		$check_url = wp_nonce_url(
+			add_query_arg( array( 'mxr_check_update' => '1' ), admin_url( 'plugins.php' ) ),
+			'mxr_check_update'
+		);
+
+		$links[] = sprintf(
+			'<a href="%s">%s</a>',
+			esc_url( $check_url ),
+			esc_html__( 'Check for Updates', 'mxroute-mailer' )
+		);
+
+		return $links;
+	}
+
+	/**
+	 * Handle the manual update check request.
+	 */
+	public function handle_manual_check(): void {
+		if ( empty( $_GET['mxr_check_update'] ) ) {
+			return;
+		}
+
+		if ( ! current_user_can( 'update_plugins' ) ) {
+			wp_die( esc_html__( 'You do not have permission to update plugins.', 'mxroute-mailer' ) );
+		}
+
+		check_admin_referer( 'mxr_check_update' );
+
+		delete_transient( self::TRANSIENT );
+		delete_site_transient( 'update_plugins' );
+
+		$metadata = $this->get_metadata( true );
+
+		if ( $metadata ) {
+			$remote_version = $metadata->version;
+			if ( version_compare( $remote_version, MXROUTE_MAILER_VERSION, '>' ) ) {
+				$notice = urlencode(
+					sprintf(
+						/* translators: %s = new version number */
+						__( 'MXRoute Mailer %s is available. Check the Updates page to install.', 'mxroute-mailer' ),
+						$remote_version
+					)
+				);
+				$type = 'updated';
+			} else {
+				$notice = urlencode( __( 'MXRoute Mailer is up to date.', 'mxroute-mailer' ) );
+				$type   = 'updated';
+			}
+		} else {
+			$notice = urlencode( __( 'Could not contact the update server to check for updates.', 'mxroute-mailer' ) );
+			$type   = 'error';
+		}
+
+		wp_safe_redirect(
+			add_query_arg(
+				array(
+					'mxr_notice'      => $notice,
+					'mxr_notice_type' => $type,
+					'mxr_check_update' => false,
+					'_wpnonce'        => false,
+				),
+				admin_url( 'plugins.php' )
+			)
+		);
+		exit;
+	}
+
+	// -------------------------------------------------------------------------
+	// Helpers
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Build a minimal changelog section from the CHANGELOG.md file.
+	 *
+	 * @return string HTML changelog or empty string.
+	 */
+	private function build_changelog_section(): string {
+		$file = dirname( __FILE__, 2 ) . '/CHANGELOG.md';
+		if ( ! file_exists( $file ) ) {
+			return '';
+		}
+
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+		$raw  = file_get_contents( $file );
+		$html = '';
+
+		foreach ( explode( "\n", $raw ) as $line ) {
+			$line = trim( $line );
+			if ( str_starts_with( $line, '## ' ) ) {
+				$html .= '<h4>' . esc_html( substr( $line, 3 ) ) . '</h4>';
+			} elseif ( str_starts_with( $line, '- ' ) ) {
+				$html .= '<li>' . esc_html( substr( $line, 2 ) ) . '</li>';
+			}
+		}
+
+		return $html;
 	}
 }
