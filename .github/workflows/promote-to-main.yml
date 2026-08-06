@@ -76,13 +76,13 @@ jobs:
                  /tmp/build/mxroute-mailer/.phpunit.result.cache \
                  /tmp/build/mxroute-mailer/*.zip
           cd /tmp/build
-          zip -r "$GITHUB_WORKSPACE/mxroute-mailer-v${{ steps.version.outputs.version }}.zip" mxroute-mailer/
+          zip -r "$GITHUB_WORKSPACE/mxroute-mailer-${{ steps.version.outputs.version }}.zip" mxroute-mailer/
 
       - name: Generate checksum
         if: steps.check.outputs.exists == 'false'
         run: |
           cd "$GITHUB_WORKSPACE"
-          sha256sum "mxroute-mailer-v${{ steps.version.outputs.version }}.zip" > "mxroute-mailer-v${{ steps.version.outputs.version }}.zip.sha256"
+          sha256sum "mxroute-mailer-${{ steps.version.outputs.version }}.zip" > "mxroute-mailer-${{ steps.version.outputs.version }}.zip.sha256"
 
       - name: Create tag
         if: steps.check.outputs.exists == 'false'
@@ -97,8 +97,8 @@ jobs:
           tag_name: "v${{ steps.version.outputs.version }}"
           name: "v${{ steps.version.outputs.version }}"
           files: |
-            mxroute-mailer-v${{ steps.version.outputs.version }}.zip
-            mxroute-mailer-v${{ steps.version.outputs.version }}.zip.sha256
+            mxroute-mailer-${{ steps.version.outputs.version }}.zip
+            mxroute-mailer-${{ steps.version.outputs.version }}.zip.sha256
           generate_release_notes: true
 
       - name: Deploy to apt server
@@ -107,29 +107,22 @@ jobs:
           SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
           APT_HOST: ${{ secrets.DEPLOY_HOST }}
           APT_USER: ${{ secrets.DEPLOY_USER }}
+          VERSION: ${{ steps.version.outputs.version }}
         run: |
           mkdir -p ~/.ssh
           echo "${SSH_PRIVATE_KEY}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -H "${APT_HOST}" >> ~/.ssh/known_hosts 2>/dev/null
 
-          # Ensure directory exists
-          ssh -i ~/.ssh/deploy_key \
-            "${APT_USER}@${APT_HOST}" \
-            "sudo mkdir -p /var/www/html/mxroute-mailer && sudo chown -R ${APT_USER}:${APT_USER} /var/www/html/mxroute-mailer"
-
-          # Copy versioned zip as latest for apt server
-          cp "mxroute-mailer-v${{ steps.version.outputs.version }}.zip" mxroute-mailer-latest.zip
-
-          # Deploy zip
+          # Copy zip to apt server
           scp -i ~/.ssh/deploy_key \
-            mxroute-mailer-latest.zip \
+            "mxroute-mailer-${VERSION}.zip" \
             "${APT_USER}@${APT_HOST}:/var/www/html/mxroute-mailer/mxroute-mailer-latest.zip"
 
           # Update metadata.json
           ssh -i ~/.ssh/deploy_key "${APT_USER}@${APT_HOST}" << METADATA
             cat > /var/www/html/mxroute-mailer/metadata.json << 'EOF'
-{"version":"${{ steps.version.outputs.version }}","requires":{"php":"7.3","wordpress":"5.0"},"download_url":"https://apt.richardkentgates.com/mxroute-mailer/mxroute-mailer-latest.zip"}
+{"version":"${VERSION}","requires":{"php":"7.3","wordpress":"5.0"},"download_url":"https://apt.richardkentgates.com/mxroute-mailer/mxroute-mailer-latest.zip"}
 EOF
             echo "Production metadata.json updated"
           METADATA
