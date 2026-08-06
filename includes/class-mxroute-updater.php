@@ -60,9 +60,14 @@ class MXRoute_Updater {
 	 * Register all WordPress hooks.
 	 */
 	private function hooks(): void {
-		add_filter( 'pre_set_site_transient_update_plugins', array( $this, 'inject_update' ) );
-		add_filter( 'plugins_api', array( $this, 'plugin_info' ), 20, 3 );
-		add_filter( 'upgrader_source_selection', array( $this, 'fix_source_dir' ), 10, 4 );
+		// Skip update-check hooks under WP-CLI — they trigger wp_remote_get()
+		// which blocks the process when the apt server is slow or unreachable.
+		if ( ! ( defined( 'WP_CLI' ) && WP_CLI ) ) {
+			add_filter( 'pre_set_site_transient_update_plugins', array( $this, 'inject_update' ) );
+			add_filter( 'plugins_api', array( $this, 'plugin_info' ), 20, 3 );
+			add_filter( 'upgrader_source_selection', array( $this, 'fix_source_dir' ), 10, 4 );
+		}
+
 		add_filter( 'plugin_action_links_' . $this->plugin_basename, array( $this, 'action_links' ) );
 		add_action( 'admin_init', array( $this, 'handle_manual_check' ) );
 	}
