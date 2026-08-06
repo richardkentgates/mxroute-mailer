@@ -70,10 +70,10 @@ define( 'MXROUTE_MAILER_DEBUG', true );
 1. Work on `dev`.
 2. Every human push to `dev` triggers **Auto Bump Version**, which increments the patch version in `mxroute-mailer.php`.
 3. When ready, promote:
-   - `gh workflow run "Promote to Test" --repo richardkentgates/mxroute-mailer --ref dev`
-   - `gh workflow run "Promote to Main" --repo richardkentgates/mxroute-mailer --ref test`
-4. Promote to Test deploys the zip to the apt server test channel.
-5. Promote to Main creates the release tag, triggers the Release workflow, and deploys to the apt server production channel.
+   - `gh workflow run "Deploy MXR to Test" --repo richardkentgates/mxroute-mailer --ref dev`
+   - `gh workflow run "Deploy MXR to Production" --repo richardkentgates/mxroute-mailer --ref test`
+4. Deploy MXR to Test merges dev→test, builds zip, deploys to apt server test channel.
+5. Deploy MXR to Production merges test→main, creates tag, builds zip, creates GitHub release, deploys to apt server production channel.
 
 See `PROMOTION.md` for the authoritative steps.
 
@@ -83,9 +83,30 @@ See `PROMOTION.md` for the authoritative steps.
 |----------|------|---------|
 | Quality and Security Checks | `.github/workflows/ci.yml` | Runs on push to `dev`. PHP lint, PHPUnit on PHP 7.3-8.3, zizmor, Semgrep, CodeQL, pinned-action check, artifact build. |
 | Auto Bump Version | `.github/workflows/version-bump.yml` | Runs on push to `dev`. Bumps patch version in `mxroute-mailer.php`. |
-| Promote to Test | `.github/workflows/promote-to-test.yml` | Manual. Merges `dev` into `test`, builds zip, deploys to apt server (test channel). Must be run with `--ref dev`. |
-| Promote to Main | `.github/workflows/promote-to-main.yml` | Manual. Merges `test` into `main`, creates tag, builds zip, creates GitHub release, deploys to apt server (production channel). Must be run with `--ref test`. |
+| Deploy MXR to Test | `.github/workflows/deploy-mxr-test.yml` | Manual. Merges `dev` into `test`, builds zip, deploys to apt server (test channel). Must be run with `--ref dev`. |
+| Deploy MXR to Production | `.github/workflows/deploy-mxr-production.yml` | Manual. Merges `test` into `main`, creates tag, builds zip, creates GitHub release, deploys to apt server (production channel). Must be run with `--ref test`. |
 | Release | `.github/workflows/release.yml` | Builds release zip in `/tmp` with top-level `mxroute-mailer/` folder, creates GitHub release. |
+
+## GitHub Actions — Critical Rules
+
+**READ THIS BEFORE DOING ANYTHING WITH GITHUB ACTIONS.**
+
+1. **GitHub caches workflow trigger registrations by the `name:` field.** If a workflow name matches a previously deleted workflow, GitHub reuses the old internal ID and its original trigger configuration. The YAML content is updated but the trigger is NOT re-evaluated. This is the root cause of "workflow does not have workflow_dispatch trigger" errors.
+
+2. **If you need to change a workflow's trigger, you must use a `name:` that GitHub has never seen on this repo.** Deleting and re-creating a file with the same name does NOT fix a broken trigger. The only reliable fix is a new name.
+
+3. **GitHub takes 2-5 minutes to process workflow file changes.** Do NOT check `gh workflow list` or `gh workflow run` immediately after pushing. Wait at least 2 minutes. Checking sooner gives false negatives.
+
+4. **NEVER delete and re-create workflow files repeatedly to "fix" something.** This creates orphaned workflow IDs and makes the problem worse. If a trigger is broken, change the `name:` field.
+
+5. **NEVER manually merge branches for promotion.** Always use `gh workflow run`. Manual merges bypass the build, deploy, and tagging steps. The workflow IS the process.
+
+6. **NEVER bypass the promotion workflow because it "doesn't work."** Fix the workflow. Every bypass means the build, deploy, and release steps don't happen consistently.
+
+7. **The three-step promotion flow is the same for every repo:**
+   - Push to dev → CI + version bump (automated)
+   - `gh workflow run "Deploy X to Test" --ref dev` → merge, build, deploy to test channel
+   - `gh workflow run "Deploy X to Production" --ref test` → merge, tag, release, deploy to production channel
 
 ## Running Tests Locally
 
@@ -131,11 +152,13 @@ Commands are loaded conditionally via `WP_CLI` constant check. The CLI class is 
 
 ## Common Pitfalls
 
-- **Triggering promotions from the wrong branch.** Promote to Test must use `--ref dev`; Promote to Main must use `--ref test`. The workflows validate the branch and fail if it is wrong.
+- **Triggering promotions from the wrong branch.** Deploy MXR to Test must use `--ref dev`; Deploy MXR to Production must use `--ref test`. The workflows validate the branch and fail if it is wrong.
+- **Workflow ID caching.** If a workflow trigger is broken, changing the filename alone does not fix it. Change the `name:` field to something GitHub hasn't seen before. See "GitHub Actions — Critical Rules" above.
+- **Checking workflow state too soon.** GitHub takes 2-5 minutes to process workflow file changes. Wait before verifying.
 - **Flat release zip.** The Release workflow must copy files into `/tmp/build/mxroute-mailer/` and zip that folder. Building inside the workspace creates a recursive copy error.
-- **Tag not on latest main.** Promote to Main checks out `origin/main` before tagging so the tag points to the merge commit.
+- **Tag not on latest main.** Deploy MXR to Production checks out `origin/main` before tagging so the tag points to the merge commit.
 - **Version drift.** Do not manually bump patch versions. The Auto Bump Version workflow handles it. Only bump minor/major versions manually when needed.
-- **`GITHUB_TOKEN` cannot trigger workflows.** Promote to Main explicitly runs `gh workflow run Release --ref $tag` because tag pushes from `GITHUB_TOKEN` do not trigger workflow runs.
+- **`GITHUB_TOKEN` cannot trigger workflows.** Deploy MXR to Production explicitly runs `gh workflow run Release --ref $tag` because tag pushes from `GITHUB_TOKEN` do not trigger workflow runs.
 - **Apt server deployment requires secrets.** The promotion workflows use `DEPLOY_SSH_KEY`, `DEPLOY_HOST`, and `DEPLOY_USER` secrets for SSH access to the apt server.
 
 ## Documentation
