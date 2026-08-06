@@ -41,6 +41,9 @@ class MXRoute_Updater {
 	/** Basename of this plugin file, e.g. "mxroute-mailer/mxroute-mailer.php". */
 	private string $plugin_basename;
 
+	/** Full path to the main plugin file. */
+	private string $file;
+
 	/**
 	 * Boot the updater.
 	 */
@@ -50,9 +53,25 @@ class MXRoute_Updater {
 	}
 
 	/**
+	 * Create an instance for testing.
+	 *
+	 * @param string $file Optional plugin file path override.
+	 * @return self
+	 */
+	public static function create_for_test( string $file = '' ): self {
+		$instance = new self();
+		if ( $file ) {
+			$instance->file          = $file;
+			$instance->plugin_basename = plugin_basename( $file );
+		}
+		return $instance;
+	}
+
+	/**
 	 * Constructor.
 	 */
 	private function __construct() {
+		$this->file          = __FILE__;
 		$this->plugin_basename = plugin_basename( __FILE__ );
 	}
 

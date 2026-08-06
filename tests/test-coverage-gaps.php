@@ -551,7 +551,7 @@ class MXRoute_Settings_Help_Test extends \PHPUnit\Framework\TestCase {
 }
 
 /**
- * Tests for MXRoute_Updater::check_update() and plugins_api().
+ * Tests for MXRoute_Updater::inject_update() and plugin_info().
  */
 class MXRoute_Updater_API_Test extends \PHPUnit\Framework\TestCase {
 
@@ -560,6 +560,7 @@ class MXRoute_Updater_API_Test extends \PHPUnit\Framework\TestCase {
 		$GLOBALS['wp_transients']         = array();
 		$GLOBALS['wp_function_calls']     = array();
 		$GLOBALS['mxroute_mock_remote_get_response'] = null;
+		delete_transient( 'mxroute_remote_metadata' );
 	}
 
 	protected function tearDown(): void {
@@ -567,40 +568,34 @@ class MXRoute_Updater_API_Test extends \PHPUnit\Framework\TestCase {
 	}
 
 	/**
-	 * Tests that check_update returns unchanged transient when no newer version.
+	 * Tests that inject_update returns false when no newer version.
 	 */
-	public function test_check_update_returns_unchanged_when_up_to_date() {
+	public function test_inject_update_returns_false_when_up_to_date() {
 		$release = array(
-			'tag_name'  => 'v1.0.0',
-			'assets'    => array(),
-			'html_url'  => '',
-			'body'      => '',
+			'version'    => '1.4.12',
+			'download_url' => 'https://example.com/release.zip',
 		);
 		$GLOBALS['mxroute_mock_remote_get_response'] = array(
 			'response' => array( 'code' => 200 ),
 			'body'     => wp_json_encode( $release ),
 		);
 
-		$updater = new MXRoute_Updater( '/fake/path/mxroute-mailer.php', 'richardkentgates/mxroute-mailer', '1.0.0' );
+		$updater = MXRoute_Updater::create_for_test( '/fake/path/mxroute-mailer.php' );
 		$transient = new \stdClass();
 		$transient->response = array();
 
-		$result = $updater->check_update( $transient );
+		$result = $updater->inject_update( $transient );
 
-		$this->assertEmpty( $result->response );
+		$this->assertFalse( $result );
 	}
 
 	/**
-	 * Tests that check_update adds update when newer version exists.
+	 * Tests that inject_update adds update when newer version exists.
 	 */
-	public function test_check_update_adds_update_for_newer_version() {
+	public function test_inject_update_adds_update_for_newer_version() {
 		$release = array(
-			'tag_name'  => 'v2.0.0',
-			'assets'    => array(
-				array( 'name' => 'mxroute-mailer.zip', 'browser_download_url' => 'https://example.com/release.zip' ),
-			),
-			'html_url'  => 'https://github.com/richardkentgates/mxroute-mailer/releases/tag/v2.0.0',
-			'body'      => 'Release notes',
+			'version'    => '2.0.0',
+			'download_url' => 'https://example.com/release.zip',
 		);
 		$GLOBALS['mxroute_mock_remote_get_response'] = array(
 			'response' => array( 'code' => 200 ),
@@ -612,13 +607,14 @@ class MXRoute_Updater_API_Test extends \PHPUnit\Framework\TestCase {
 		$plugin_file = $tmp_dir . '/mxroute-mailer/mxroute-mailer.php';
 		file_put_contents( $plugin_file, '<?php' );
 
-		$updater = new MXRoute_Updater( $plugin_file, 'richardkentgates/mxroute-mailer', '1.0.0' );
+		$updater = MXRoute_Updater::create_for_test( $plugin_file );
 		$transient = new \stdClass();
 		$transient->response = array();
 
-		$result = $updater->check_update( $transient );
+		$result = $updater->inject_update( $transient );
 
 		$basename = plugin_basename( $plugin_file );
+		$this->assertIsObject( $result );
 		$this->assertArrayHasKey( $basename, $result->response );
 		$this->assertEquals( '2.0.0', $result->response[ $basename ]->new_version );
 
@@ -629,37 +625,34 @@ class MXRoute_Updater_API_Test extends \PHPUnit\Framework\TestCase {
 	}
 
 	/**
-	 * Tests that check_update returns unchanged when transient is not an object.
+	 * Tests that inject_update returns false when transient is not an object.
 	 */
-	public function test_check_update_returns_unchanged_for_non_object() {
-		$updater = new MXRoute_Updater( '/fake/path/mxroute-mailer.php', 'richardkentgates/mxroute-mailer', '1.0.0' );
+	public function test_inject_update_returns_false_for_non_object() {
+		$updater = MXRoute_Updater::create_for_test( '/fake/path/mxroute-mailer.php' );
 
-		$result = $updater->check_update( 'not an object' );
+		$result = $updater->inject_update( 'not an object' );
 
-		$this->assertEquals( 'not an object', $result );
+		$this->assertFalse( $result );
 	}
 
 	/**
-	 * Tests that plugins_api returns default result for non-matching action.
+	 * Tests that plugin_info returns default result for non-matching action.
 	 */
-	public function test_plugins_api_returns_default_for_wrong_action() {
-		$updater = new MXRoute_Updater( '/fake/path/mxroute-mailer.php', 'richardkentgates/mxroute-mailer', '1.0.0' );
+	public function test_plugin_info_returns_default_for_wrong_action() {
+		$updater = MXRoute_Updater::create_for_test( '/fake/path/mxroute-mailer.php' );
 
-		$result = $updater->plugins_api( 'default', 'other_action', new \stdClass() );
+		$result = $updater->plugin_info( 'default', 'other_action', new \stdClass() );
 
 		$this->assertEquals( 'default', $result );
 	}
 
 	/**
-	 * Tests that plugins_api returns plugin data for matching slug.
+	 * Tests that plugin_info returns plugin data for matching slug.
 	 */
-	public function test_plugins_api_returns_data_for_matching_slug() {
+	public function test_plugin_info_returns_data_for_matching_slug() {
 		$release = array(
-			'tag_name' => 'v2.0.0',
-			'body'     => 'Release notes',
-			'assets'   => array(
-				array( 'name' => 'mxroute-mailer.zip', 'browser_download_url' => 'https://example.com/release.zip' ),
-			),
+			'version'    => '2.0.0',
+			'download_url' => 'https://example.com/release.zip',
 		);
 		$GLOBALS['mxroute_mock_remote_get_response'] = array(
 			'response' => array( 'code' => 200 ),
@@ -669,14 +662,14 @@ class MXRoute_Updater_API_Test extends \PHPUnit\Framework\TestCase {
 		$tmp_dir = sys_get_temp_dir() . '/mxroute_updater_api_test_' . uniqid();
 		mkdir( $tmp_dir . '/mxroute-mailer', 0755, true );
 		$plugin_file = $tmp_dir . '/mxroute-mailer/mxroute-mailer.php';
-		file_put_contents( $plugin_file, '<?php' );
+		file_put_contents( $plugin_file, '<?php /** Plugin Name: MXRoute Mailer */' );
 
-		$updater = new MXRoute_Updater( $plugin_file, 'richardkentgates/mxroute-mailer', '1.0.0' );
+		$updater = MXRoute_Updater::create_for_test( $plugin_file );
 
 		$args = new \stdClass();
 		$args->slug = 'mxroute-mailer';
 
-		$result = $updater->plugins_api( 'default', 'plugin_information', $args );
+		$result = $updater->plugin_info( 'default', 'plugin_information', $args );
 
 		$this->assertIsObject( $result );
 		$this->assertEquals( 'MXRoute Mailer', $result->name );
@@ -689,20 +682,20 @@ class MXRoute_Updater_API_Test extends \PHPUnit\Framework\TestCase {
 	}
 
 	/**
-	 * Tests that plugins_api returns default for non-matching slug.
+	 * Tests that plugin_info returns default for non-matching slug.
 	 */
-	public function test_plugins_api_returns_default_for_wrong_slug() {
+	public function test_plugin_info_returns_default_for_wrong_slug() {
 		$tmp_dir = sys_get_temp_dir() . '/mxroute_updater_wrong_slug_' . uniqid();
 		mkdir( $tmp_dir . '/mxroute-mailer', 0755, true );
 		$plugin_file = $tmp_dir . '/mxroute-mailer/mxroute-mailer.php';
 		file_put_contents( $plugin_file, '<?php' );
 
-		$updater = new MXRoute_Updater( $plugin_file, 'richardkentgates/mxroute-mailer', '1.0.0' );
+		$updater = MXRoute_Updater::create_for_test( $plugin_file );
 
 		$args = new \stdClass();
 		$args->slug = 'other-plugin';
 
-		$result = $updater->plugins_api( 'default', 'plugin_information', $args );
+		$result = $updater->plugin_info( 'default', 'plugin_information', $args );
 
 		$this->assertEquals( 'default', $result );
 

@@ -846,6 +846,16 @@ if (!function_exists('wp_safe_remote_get')) {
     }
 }
 
+// Mock get_bloginfo for updater tests
+if (!function_exists('get_bloginfo')) {
+    function get_bloginfo($show = '') {
+        if ('version' === $show) {
+            return '6.0';
+        }
+        return '';
+    }
+}
+
 // Mock get_plugin_data for updater tests
 if (!function_exists('get_plugin_data')) {
     function get_plugin_data($file, $markup = true, $translate = true) {
