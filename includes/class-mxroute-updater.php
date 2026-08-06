@@ -39,10 +39,10 @@ class MXRoute_Updater {
 	private const CACHE_TTL = 43200;
 
 	/** Basename of this plugin file, e.g. "mxroute-mailer/mxroute-mailer.php". */
-	private string $plugin_basename;
+	private $plugin_basename;
 
 	/** Full path to the main plugin file. */
-	private string $file;
+	private $file;
 
 	/**
 	 * Boot the updater.
