@@ -76,7 +76,18 @@ main ──push──> release.yml (tag + GitHub release + deploy to apt server 
 
 ## What's Left
 
-No active feature work. Pending items:
+### HIGH — Memory-Aware Attachment Handling
+
+- Add memory management for outbound mail queue, similar to MetaManager's `MM_Memory_Manager`.
+- Account for variable attachment sizes when deciding whether to queue, chunk, or defer a message.
+- Prevent OOM on low-RAM shared hosting when large attachments are queued.
+
+### MEDIUM — Root-Domain Extraction for SMTP From Address
+
+- In plugin settings, when the domain is auto-populated for the SMTP `from` address, extract only the **root domain**.
+- Subdomains (e.g. `blog.example.com`, `shop.example.com`) should resolve to `example.com` for the from address so SPF/DKIM alignment works across subsites in multisite.
+
+### LOW — Maintenance
 
 1. Promote dev (v1.4.19) through test → main when ready.
 2. End-to-end verification on a GCM-managed server after promotion.
