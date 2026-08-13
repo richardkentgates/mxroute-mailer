@@ -115,8 +115,8 @@ jobs:
             mxroute-mailer-latest.zip \
             "${APT_USER}@${APT_HOST}:/var/www/html/mxroute-mailer/mxroute-mailer-latest.zip"
 
-          ssh -i ~/.ssh/deploy_key "${APT_USER}@${APT_HOST}" << METADATA
+          ssh -i ~/.ssh/deploy_key "${APT_USER}@${APT_HOST}" << 'METADATA'
             cat > /var/www/html/mxroute-mailer/metadata.json << 'EOF'
-{"version":"${VERSION}","requires":{"php":"7.3","wordpress":"5.0"},"download_url":"https://apt.richardkentgates.com/mxroute-mailer/mxroute-mailer-latest.zip"}
-EOF
+            {"version":"${VERSION}","requires":{"php":"7.3","wordpress":"5.0"},"download_url":"https://apt.richardkentgates.com/mxroute-mailer/mxroute-mailer-latest.zip"}
+            EOF
           METADATA
