@@ -370,9 +370,9 @@ class MXRoute_Updater {
 
 		foreach ( explode( "\n", $raw ) as $line ) {
 			$line = trim( $line );
-			if ( str_starts_with( $line, '## ' ) ) {
+			if ( 0 === strpos( $line, '## ' ) ) {
 				$html .= '<h4>' . esc_html( substr( $line, 3 ) ) . '</h4>';
-			} elseif ( str_starts_with( $line, '- ' ) ) {
+			} elseif ( 0 === strpos( $line, '- ' ) ) {
 				$html .= '<li>' . esc_html( substr( $line, 2 ) ) . '</li>';
 			}
 		}
