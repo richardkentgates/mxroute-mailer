@@ -1,4 +1,4 @@
-name: MXR Test Deployment
+name: Deploy Production
 
 on:
   workflow_dispatch:
@@ -14,8 +14,8 @@ jobs:
         env:
           HEAD: ${{ github.ref_name }}
         run: |
-          if [[ "$HEAD" != "dev" ]]; then
-            echo "::error::Must run from dev branch. Current: $HEAD"
+          if [[ "$HEAD" != "test" ]]; then
+            echo "::error::Must run from test branch. Current: $HEAD"
             exit 1
           fi
 
@@ -26,25 +26,36 @@ jobs:
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
-          ref: test
+          ref: main
           fetch-depth: 0
 
-      - name: Merge dev into test
+      - name: Merge test into main
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git merge origin/dev --no-edit
+          git fetch origin
+          git merge origin/test --no-edit -X theirs
 
-      - name: Push test
-        run: git push origin test
+      - name: Push main
+        run: git push origin main
 
-      - name: Determine version
+      - name: Get version
         id: version
         run: |
           VERSION=$(grep -oP "Version:\s*\K[0-9.]+" mxroute-mailer.php | head -1)
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
 
+      - name: Check if tag exists
+        id: check
+        run: |
+          if git rev-parse "v${{ steps.version.outputs.version }}" >/dev/null 2>&1; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Build zip
+        if: steps.check.outputs.exists == 'false'
         run: |
           mkdir -p /tmp/build/mxroute-mailer
           cp -r . /tmp/build/mxroute-mailer/
@@ -64,34 +75,45 @@ jobs:
           cd /tmp/build
           zip -r "$GITHUB_WORKSPACE/mxroute-mailer-latest.zip" mxroute-mailer/
 
+      - name: Generate checksum
+        if: steps.check.outputs.exists == 'false'
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          sha256sum "mxroute-mailer-latest.zip" > "mxroute-mailer-latest.zip.sha256"
+
+      - name: Create tag
+        if: steps.check.outputs.exists == 'false'
+        run: |
+          git tag -a "v${{ steps.version.outputs.version }}" -m "Release v${{ steps.version.outputs.version }}"
+          git push origin "v${{ steps.version.outputs.version }}"
+
+      - name: Create GitHub release
+        if: steps.check.outputs.exists == 'false'
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
+        with:
+          tag_name: "v${{ steps.version.outputs.version }}"
+          name: "v${{ steps.version.outputs.version }}"
+          files: |
+            mxroute-mailer-latest.zip
+            mxroute-mailer-latest.zip.sha256
+          generate_release_notes: true
+
       - name: Deploy to apt server
+        if: steps.check.outputs.exists == 'false'
         env:
           SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
           APT_HOST: ${{ secrets.DEPLOY_HOST }}
           APT_USER: ${{ secrets.DEPLOY_USER }}
+          VERSION: ${{ steps.version.outputs.version }}
         run: |
           mkdir -p ~/.ssh
           echo "${SSH_PRIVATE_KEY}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -H "${APT_HOST}" >> ~/.ssh/known_hosts 2>/dev/null
 
-          ssh -i ~/.ssh/deploy_key \
-            "${APT_USER}@${APT_HOST}" \
-            "sudo mkdir -p /var/www/html/mxroute-mailer-test && sudo chown -R ${APT_USER}:${APT_USER} /var/www/html/mxroute-mailer-test"
-
           scp -i ~/.ssh/deploy_key \
             mxroute-mailer-latest.zip \
-            "${APT_USER}@${APT_HOST}:/var/www/html/mxroute-mailer-test/mxroute-mailer-latest.zip"
+            "${APT_USER}@${APT_HOST}:/var/www/html/mxroute-mailer/mxroute-mailer-latest.zip"
 
-          ssh -i ~/.ssh/deploy_key "${APT_USER}@${APT_HOST}" << METADATA
-            cat > /var/www/html/mxroute-mailer-test/metadata.json << 'EOF'
-{"version":"${{ steps.version.outputs.version }}","requires":{"php":"7.3","wordpress":"5.0"},"download_url":"https://apt.richardkentgates.com/mxroute-mailer-test/mxroute-mailer-latest.zip"}
-EOF
-          METADATA
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: mxroute-mailer-test-${{ github.run_id }}
-          path: mxroute-mailer-latest.zip
-          retention-days: 30
+          ssh -i ~/.ssh/deploy_key "${APT_USER}@${APT_HOST}" \
+            "printf '%s' '{\"version\":\"${VERSION}\",\"requires\":{\"php\":\"7.3\",\"wordpress\":\"5.0\"},\"download_url\":\"https://apt.richardkentgates.com/mxroute-mailer/mxroute-mailer-latest.zip\"}' > /var/www/html/mxroute-mailer/metadata.json"

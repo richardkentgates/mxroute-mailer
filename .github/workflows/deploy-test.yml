@@ -1,4 +1,4 @@
-name: MXR Test Deployment
+name: Deploy Test
 
 on:
   workflow_dispatch:
@@ -83,11 +83,8 @@ jobs:
             mxroute-mailer-latest.zip \
             "${APT_USER}@${APT_HOST}:/var/www/html/mxroute-mailer-test/mxroute-mailer-latest.zip"
 
-          ssh -i ~/.ssh/deploy_key "${APT_USER}@${APT_HOST}" << METADATA
-            cat > /var/www/html/mxroute-mailer-test/metadata.json << 'EOF'
-{"version":"${{ steps.version.outputs.version }}","requires":{"php":"7.3","wordpress":"5.0"},"download_url":"https://apt.richardkentgates.com/mxroute-mailer-test/mxroute-mailer-latest.zip"}
-EOF
-          METADATA
+          ssh -i ~/.ssh/deploy_key "${APT_USER}@${APT_HOST}" \
+            "printf '%s' '{\"version\":\"${{ steps.version.outputs.version }}\",\"requires\":{\"php\":\"7.3\",\"wordpress\":\"5.0\"},\"download_url\":\"https://apt.richardkentgates.com/mxroute-mailer-test/mxroute-mailer-latest.zip\"}' > /var/www/html/mxroute-mailer-test/metadata.json"
 
       - name: Upload artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
