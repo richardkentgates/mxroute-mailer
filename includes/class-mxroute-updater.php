@@ -39,7 +39,10 @@ class MXRoute_Updater {
 	private const CACHE_TTL = 43200;
 
 	/** Basename of this plugin file, e.g. "mxroute-mailer/mxroute-mailer.php". */
-	private string $plugin_basename;
+	private $plugin_basename;
+
+	/** Full path to the main plugin file. */
+	private $file;
 
 	/**
 	 * Boot the updater.
@@ -50,9 +53,25 @@ class MXRoute_Updater {
 	}
 
 	/**
+	 * Create an instance for testing.
+	 *
+	 * @param string $file Optional plugin file path override.
+	 * @return self
+	 */
+	public static function create_for_test( string $file = '' ): self {
+		$instance = new self();
+		if ( $file ) {
+			$instance->file          = $file;
+			$instance->plugin_basename = plugin_basename( $file );
+		}
+		return $instance;
+	}
+
+	/**
 	 * Constructor.
 	 */
 	private function __construct() {
+		$this->file          = __FILE__;
 		$this->plugin_basename = plugin_basename( __FILE__ );
 	}
 
@@ -351,9 +370,9 @@ class MXRoute_Updater {
 
 		foreach ( explode( "\n", $raw ) as $line ) {
 			$line = trim( $line );
-			if ( str_starts_with( $line, '## ' ) ) {
+			if ( 0 === strpos( $line, '## ' ) ) {
 				$html .= '<h4>' . esc_html( substr( $line, 3 ) ) . '</h4>';
-			} elseif ( str_starts_with( $line, '- ' ) ) {
+			} elseif ( 0 === strpos( $line, '- ' ) ) {
 				$html .= '<li>' . esc_html( substr( $line, 2 ) ) . '</li>';
 			}
 		}
