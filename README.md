@@ -39,6 +39,31 @@ MXRoute Mailer is a WordPress plugin that intercepts all emails sent via `wp_mai
 3. Go to **Settings > MXRoute Mailer** and enter your MXRoute credentials
 4. Send a test email to verify the configuration
 
+## Updating
+
+### Via WordPress admin
+
+1. Go to **Plugins → Installed Plugins**
+2. If an update is available, you'll see an **Update Now** link under MXRoute Mailer
+3. Click **Update Now**
+
+### Via WP-CLI
+
+```bash
+wp plugin update mxroute-mailer
+```
+
+### Via GitHub release
+
+1. Download the latest release from [GitHub Releases](https://github.com/richardkentgates/mxroute-mailer/releases)
+2. In WordPress admin, go to **Plugins → Add New → Upload Plugin**
+3. Upload the new zip — WordPress will overwrite the existing installation
+4. Reactivate the plugin if prompted
+
+### Automatic updates
+
+MXRoute Mailer includes a built-in updater that checks the apt server for new versions. When an update is available, it appears in your WordPress dashboard like any other plugin update. See the [Auto-Updates wiki page](https://github.com/richardkentgates/mxroute-mailer/wiki/Auto-Updates) for details.
+
 ## WP-CLI
 
 MXRoute Mailer includes WP-CLI commands for command-line management:

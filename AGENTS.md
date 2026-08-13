@@ -91,19 +91,17 @@ See `PROMOTION.md` for the authoritative steps.
 
 **READ THIS BEFORE DOING ANYTHING WITH GITHUB ACTIONS.**
 
-1. **GitHub caches workflow trigger registrations by the `name:` field.** If a workflow name matches a previously deleted workflow, GitHub reuses the old internal ID and its original trigger configuration. The YAML content is updated but the trigger is NOT re-evaluated. This is the root cause of "workflow does not have workflow_dispatch trigger" errors.
+1. **Workflow files MUST exist on the branch specified by `--ref`.** When you run `gh workflow run "X" --ref dev`, GitHub reads the workflow definition from the `dev` branch. If the file doesn't exist there, you get "Workflow does not have workflow_dispatch trigger." This was the root cause of the MXRoute Mailer workflow_dispatch failures. Deploy workflow files must be committed to BOTH `dev` and `main`.
 
-2. **If you need to change a workflow's trigger, you must use a `name:` that GitHub has never seen on this repo.** Deleting and re-creating a file with the same name does NOT fix a broken trigger. The only reliable fix is a new name.
+2. **YAML must parse correctly.** A heredoc with JSON content (`{...}`) inside a `run:` block can break YAML parsing. GitHub falls back to using the filename as the workflow name instead of the YAML `name:` field. Always validate YAML with `python3 -c "import yaml; yaml.safe_load(open('file.yml'))"` before pushing.
 
 3. **GitHub takes 2-5 minutes to process workflow file changes.** Do NOT check `gh workflow list` or `gh workflow run` immediately after pushing. Wait at least 2 minutes. Checking sooner gives false negatives.
 
-4. **NEVER delete and re-create workflow files repeatedly to "fix" something.** This creates orphaned workflow IDs and makes the problem worse. If a trigger is broken, change the `name:` field.
+4. **NEVER manually merge branches for promotion.** Always use `gh workflow run`. Manual merges bypass the build, deploy, and tagging steps. The workflow IS the process.
 
-5. **NEVER manually merge branches for promotion.** Always use `gh workflow run`. Manual merges bypass the build, deploy, and tagging steps. The workflow IS the process.
+5. **NEVER bypass the promotion workflow because it "doesn't work."** Fix the workflow. Every bypass means the build, deploy, and release steps don't happen consistently.
 
-6. **NEVER bypass the promotion workflow because it "doesn't work."** Fix the workflow. Every bypass means the build, deploy, and release steps don't happen consistently.
-
-7. **The three-step promotion flow is the same for every repo:**
+6. **The three-step promotion flow is the same for every repo:**
    - Push to dev → CI + version bump (automated)
    - `gh workflow run "Deploy X to Test" --ref dev` → merge, build, deploy to test channel
    - `gh workflow run "Deploy X to Production" --ref test` → merge, tag, release, deploy to production channel
@@ -153,7 +151,7 @@ Commands are loaded conditionally via `WP_CLI` constant check. The CLI class is 
 ## Common Pitfalls
 
 - **Triggering promotions from the wrong branch.** Deploy MXR to Test must use `--ref dev`; Deploy MXR to Production must use `--ref test`. The workflows validate the branch and fail if it is wrong.
-- **Workflow ID caching.** If a workflow trigger is broken, changing the filename alone does not fix it. Change the `name:` field to something GitHub hasn't seen before. See "GitHub Actions — Critical Rules" above.
+- **Workflow files missing from the ref branch.** If `gh workflow run "X" --ref dev` gives "does not have workflow_dispatch trigger", check that the workflow file exists on the `dev` branch. Deploy workflows must be on both `dev` and `main`.
 - **Checking workflow state too soon.** GitHub takes 2-5 minutes to process workflow file changes. Wait before verifying.
 - **Flat release zip.** The Release workflow must copy files into `/tmp/build/mxroute-mailer/` and zip that folder. Building inside the workspace creates a recursive copy error.
 - **Tag not on latest main.** Deploy MXR to Production checks out `origin/main` before tagging so the tag points to the merge commit.
