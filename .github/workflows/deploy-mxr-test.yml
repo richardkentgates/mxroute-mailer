@@ -1,4 +1,4 @@
-name: MXR Test Deployment
+name: Deploy MXR to Test
 
 on:
   workflow_dispatch:
