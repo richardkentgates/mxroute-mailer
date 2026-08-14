@@ -32,11 +32,26 @@ jobs:
           IFS='.' read -r major minor patch <<< "$current"
           new_patch=$((patch + 1))
           new_version="$major.$minor.$new_patch"
+          date=$(date +%Y-%m-%d)
 
           sed -i "s/Version: $current/Version: $new_version/" mxroute-mailer.php
           sed -i "s/define( 'MXROUTE_MAILER_VERSION', '$current' )/define( 'MXROUTE_MAILER_VERSION', '$new_version' )/" mxroute-mailer.php
           sed -i "s/Stable tag: $current/Stable tag: $new_version/" readme.txt
 
-          git add mxroute-mailer.php readme.txt
+          python3 -c "
+          import os
+          current = '$current'
+          new_version = '$new_version'
+          date = '$date'
+          entry = f'\n## [{new_version}] - {date}\n\n### Changed\n- Auto-incremented version from {current} to {new_version}\n'
+          with open('CHANGELOG.md', 'r') as f:
+              lines = f.readlines()
+          idx = next((i for i, l in enumerate(lines) if l.startswith('## ')), len(lines))
+          lines.insert(idx, entry)
+          with open('CHANGELOG.md', 'w') as f:
+              f.writelines(lines)
+          "
+
+          git add mxroute-mailer.php readme.txt CHANGELOG.md
           git commit -m "chore: bump version to $new_version [version] [skip ci]"
           git push origin dev
