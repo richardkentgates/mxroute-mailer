@@ -36,6 +36,9 @@ jobs:
     strategy:
       matrix:
         php: ['7.3', '7.4', '8.0', '8.1', '8.2', '8.3']
+        include:
+          - php: '8.3'
+            coverage: true
 
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
@@ -44,7 +47,7 @@ jobs:
         uses: shivammathur/setup-php@b604ade2a87db23f8871b7182e69ec5e75effb45 # v2
         with:
           php-version: ${{ matrix.php }}
-          coverage: none
+          coverage: ${{ matrix.coverage && 'pcov' || 'none' }}
 
       - name: Download PHPUnit PHAR
         run: |
@@ -53,7 +56,20 @@ jobs:
           php phpunit.phar --version
 
       - name: Run PHPUnit
-        run: php phpunit.phar --configuration phpunit.xml
+        run: |
+          if [ "${{ matrix.coverage }}" = "true" ]; then
+            php phpunit.phar --configuration phpunit.xml --coverage-clover=coverage.xml
+          else
+            php phpunit.phar --configuration phpunit.xml
+          fi
+
+      - name: Upload coverage report
+        if: matrix.coverage
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: coverage-report
+          path: coverage.xml
+          retention-days: 30
 
   security-scan:
     name: Security - CodeQL & PHP Vulnerability Scan
