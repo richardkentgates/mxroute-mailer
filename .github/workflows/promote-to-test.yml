@@ -1,4 +1,4 @@
-name: Deploy Test
+name: Promote to Test
 
 on:
   workflow_dispatch:
@@ -8,6 +8,7 @@ permissions:
 
 jobs:
   validate:
+    name: Validate Source Branch
     runs-on: ubuntu-latest
     steps:
       - name: Check source branch
@@ -15,11 +16,13 @@ jobs:
           HEAD: ${{ github.ref_name }}
         run: |
           if [[ "$HEAD" != "dev" ]]; then
-            echo "::error::Must run from dev branch. Current: $HEAD"
+            echo "::error::This workflow can only be run from the dev branch. Current branch: $HEAD"
             exit 1
           fi
+          echo "Promotion path valid: dev -> test"
 
   promote:
+    name: Merge, Build & Deploy to Apt
     runs-on: ubuntu-latest
     needs: validate
     timeout-minutes: 15
@@ -33,6 +36,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin dev
           git merge origin/dev --no-edit
 
       - name: Push test
@@ -92,3 +96,14 @@ jobs:
           name: mxroute-mailer-test-${{ github.run_id }}
           path: mxroute-mailer-latest.zip
           retention-days: 30
+
+      - name: Summary
+        run: |
+          echo ""
+          echo "═══════════════════════════════════════════════════════════════"
+          echo "  Test promotion v${{ steps.version.outputs.version }} complete"
+          echo "═══════════════════════════════════════════════════════════════"
+          echo ""
+          echo "  ✓ Merged dev → test"
+          echo "  ✓ Plugin zip deployed to apt server (test channel)"
+          echo ""
