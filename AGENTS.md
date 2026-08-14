@@ -68,7 +68,7 @@ define( 'MXROUTE_MAILER_DEBUG', true );
 ## Branch and Release Workflow
 
 1. Work on `dev`.
-2. Every human push to `dev` triggers **Auto Bump Version**, which increments the patch version in `mxroute-mailer.php`.
+2. Every human push to `dev` triggers **CI**, which runs lint, tests, security scans, builds an artifact, then auto-bumps the patch version.
 3. When ready, promote:
    - `gh workflow run "Promote to Test" --repo richardkentgates/mxroute-mailer --ref dev`
    - `gh workflow run "Promote to Main" --repo richardkentgates/mxroute-mailer --ref test`
@@ -81,8 +81,7 @@ See `PROMOTION.md` for the authoritative steps.
 
 | Workflow | File | Purpose |
 |----------|------|---------|
-| Quality and Security Checks | `.github/workflows/ci.yml` | Runs on push to `dev`. PHP lint, PHPUnit on PHP 7.3-8.3, zizmor, Semgrep, CodeQL, pinned-action check, artifact build. |
-| Auto Bump Version | `.github/workflows/version-bump.yml` | Runs on push to `dev`. Bumps patch version in `mxroute-mailer.php`. |
+| Quality and Security Checks | `.github/workflows/ci.yml` | Runs on push to `dev`. PHP lint, PHPUnit on PHP 7.3-8.3, zizmor, Semgrep, CodeQL, pinned-action check, artifact build, version bump. |
 | Promote to Test | `.github/workflows/promote-to-test.yml` | Manual. Merges `dev` into `test`, builds zip, deploys to apt server (test channel). Must be run with `--ref dev`. |
 | Promote to Main | `.github/workflows/promote-to-main.yml` | Manual. Merges `test` into `main`, creates tag, builds zip, creates GitHub release, deploys to apt server (production channel). Must be run with `--ref test`. |
 
