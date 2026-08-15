@@ -153,7 +153,7 @@ Commands are loaded conditionally via `WP_CLI` constant check. The CLI class is 
 - **Checking workflow state too soon.** GitHub takes 2-5 minutes to process workflow file changes. Wait before verifying.
 - **Flat release zip.** The Promote to Main workflow must copy files into `/tmp/build/mxroute-mailer/` and zip that folder. Building inside the workspace creates a recursive copy error.
 - **Tag not on latest main.** Promote to Main checks out `origin/main` before tagging so the tag points to the merge commit.
-- **Version drift.** Do not manually bump patch versions. The Auto Bump Version workflow handles it. Only bump minor/major versions manually when needed.
+- **Version drift.** Do not manually bump patch versions. CI handles it automatically on every dev push. Only bump minor/major versions manually when needed.
 - **Apt server deployment requires secrets.** The promotion workflows use `DEPLOY_SSH_KEY`, `DEPLOY_HOST`, and `DEPLOY_USER` secrets for SSH access to the apt server.
 
 ## Documentation
