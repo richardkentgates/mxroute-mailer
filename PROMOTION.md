@@ -18,8 +18,8 @@ This document records the exact promotion workflow. Do not modify or expand thes
    - If any check fails, stop. Fix on `dev` and restart from step 1.
 
 3. **Auto version bump.**
-   - Every human push to `dev` triggers the Auto Bump Version workflow.
-   - This increments the patch version in `mxroute-mailer.php` and pushes a `[version] [skip ci]` commit back to `dev`.
+   - Every human push to `dev` triggers CI, which first bumps the patch version, then runs lint, tests, security scans, and builds an artifact.
+   - The actor check prevents the version bump commit from triggering another version bump.
 
 4. **Promote `dev` to `test`.**
    - Run the **Promote to Test** workflow from the `dev` branch:
