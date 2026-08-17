@@ -71,8 +71,8 @@ class MXRoute_Updater {
 	 * Constructor.
 	 */
 	private function __construct() {
-		$this->file          = __FILE__;
-		$this->plugin_basename = plugin_basename( __FILE__ );
+		$this->file          = MXROUTE_MAILER_FILE;
+		$this->plugin_basename = plugin_basename( MXROUTE_MAILER_FILE );
 	}
 
 	/**

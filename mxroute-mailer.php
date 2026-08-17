@@ -25,6 +25,17 @@ defined( 'ABSPATH' ) || exit;
 define( 'MXROUTE_MAILER_VERSION', '1.4.40' );
 
 /**
+ * Absolute path to the main plugin file.
+ *
+ * Used by MXRoute_Updater to derive the correct plugin_basename for the
+ * WordPress update transient. Must be defined here, not in a sub-file,
+ * so that plugin_basename() resolves to "mxroute-mailer/mxroute-mailer.php".
+ *
+ * @var string
+ */
+define( 'MXROUTE_MAILER_FILE', __FILE__ );
+
+/**
  * Enable debug logging for API calls.
  *
  * Set to true in wp-config.php to log MXRoute API requests and responses
