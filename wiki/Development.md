@@ -55,7 +55,8 @@ mxroute-mailer/
 │   ├── class-mxroute-logger.php    # Email logging to database
 │   ├── class-mxroute-queue.php     # Queue CRUD operations
 │   ├── class-mxroute-dashboard.php # AJAX handlers for log management
-│   └── class-mxroute-updater.php   # GitHub-based auto-updater
+│   ├── class-mxroute-updater.php   # GitHub-based auto-updater
+│   └── class-mxroute-cli.php       # WP-CLI commands: option, logs, queue, send, test
 ├── admin/
 │   ├── views/
 │   │   ├── settings.php            # Settings page template
@@ -64,6 +65,10 @@ mxroute-mailer/
 │   │   └── queue.php               # Queue status page template
 │   ├── css/admin.css               # Admin styles
 │   └── js/admin.js                 # Admin scripts
+├── languages/
+│   └── index.php                   # i18n directory (translations go here)
+├── assets/
+│   └── test-attachment.txt         # Persistent test attachment file
 ├── tests/
 │   ├── bootstrap.php               # Test bootstrap with mocks
 │   ├── test-mxroute-mailer.php     # Core mailer tests
@@ -86,6 +91,8 @@ mxroute-mailer/
 │   └── CONTRIBUTING.md             # Contribution guidelines
 ├── wiki/                           # GitHub wiki pages (local copies)
 ├── readme.txt                      # WordPress plugin readme
+├── phpcs.xml.dist                  # PHP CodeSniffer configuration
+├── .gitignore                      # Git ignore rules
 ├── LICENSE                         # GPLv2 license
 ├── phpunit.xml                     # PHPUnit configuration
 └── PROMOTION.md                    # Exact promotion workflow directive
@@ -201,6 +208,26 @@ There is no manual version-editing step for patch releases. The pipeline handles
 
 If you need a minor or major version bump, update the version manually in `mxroute-mailer.php` before pushing to `dev`.
 
+## WP-CLI Commands
+
+The plugin registers `wp mxroute` with these subcommands:
+
+| Command | Description |
+|---------|-------------|
+| `wp mxroute option get [key]` | Get all settings or a specific setting |
+| `wp mxroute option set <key> <value>` | Update a setting |
+| `wp mxroute logs list` | List email logs with pagination |
+| `wp mxroute logs view <id>` | View a specific log entry |
+| `wp mxroute logs delete <id>` | Delete a log entry |
+| `wp mxroute logs clear` | Clear all processed logs |
+| `wp mxroute queue list` | List pending queue items |
+| `wp mxroute queue count` | Count pending items |
+| `wp mxroute queue clear` | Clear all pending items |
+| `wp mxroute send <to> [subject] [message]` | Send email directly via MXRoute API |
+| `wp mxroute test <to>` | Send a test email through the queue |
+
+Commands are loaded conditionally via `WP_CLI` constant check. The CLI class is in `includes/class-mxroute-cli.php`.
+
 ## Coding Standards
 
 ### WordPress Coding Standards
@@ -292,7 +319,32 @@ The test bootstrap mocks WordPress functions to allow testing without a full Wor
 - PHPMailer mock with configurable success port for SMTP smart switch testing
 - `wp_remote_post`, `wp_remote_get` mocks with configurable responses
 - `current_user_can` mock with configurable return value via `$GLOBALS['wp_mock_current_user_can']`
+- `check_ajax_referer` mock with configurable return value via `$GLOBALS['wp_mock_ajax_referer']`
+- `wp_safe_remote_get` mock (delegates to same response as `wp_remote_post`)
 - Constants: `MB_IN_BYTES`, `DAY_IN_SECONDS`, `ABSPATH`, `OBJECT`, `ARRAY_A`, `ARRAY_N`
+- `MXROUTE_MAILER_DEBUG` constant defined in bootstrap for testing debug-gated code paths
+- `MXRoute_Mailer::reset()` resets the singleton so `init_hooks()` re-runs in each test
+- `is_multisite()` mock returns `false` by default
+- `get_sites()` mock returns empty array
+- `switch_to_blog()` and `restore_current_blog()` mocks (no-ops)
+- `plugin_basename` mock returns the plugin's base path
+- `load_plugin_textdomain` mock (no-op)
+
+### MXRouteJSONException
+
+`wp_send_json_success()` and `wp_send_json_error()` throw `MXRouteJSONException` instead of calling `wp_die()`. This allows tests to assert on the JSON response:
+
+```php
+$dashboard = new MXRoute_Dashboard();
+$threw = false;
+try {
+    $dashboard->ajax_delete_log();
+} catch (\MXRouteJSONException $e) {
+    $threw = true;
+    $this->assertTrue($e->response['success']);
+}
+$this->assertTrue($threw, 'Expected MXRouteJSONException to be thrown');
+```
 
 ## Database Migrations
 
@@ -308,3 +360,4 @@ When adding new database columns:
 ## Contributing
 
 See [CONTRIBUTING.md](../.github/CONTRIBUTING.md) for detailed contribution guidelines.
+
