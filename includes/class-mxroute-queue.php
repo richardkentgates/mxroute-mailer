@@ -243,6 +243,35 @@ class MXRoute_Queue {
 	}
 
 	/**
+	 * Reset processed_at on claimed items that were not sent.
+	 *
+	 * When the queue processor stops early (e.g. low memory), unprocessed
+	 * items need their processed_at cleared so they remain pending for the
+	 * next cron cycle.
+	 *
+	 * @param string $claim_time  The processed_at value set by claim_pending().
+	 * @param array  $processed_ids IDs of items that were actually sent/failed.
+	 * @return int Number of rows updated.
+	 */
+	public function unclaim_pending( $claim_time, $processed_ids = array() ) {
+		global $wpdb;
+
+		if ( empty( $processed_ids ) ) {
+			return 0;
+		}
+
+		$placeholders = implode( ',', array_fill( 0, count( $processed_ids ), '%d' ) );
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is safe, dynamic IN clause.
+		return (int) $wpdb->query(
+			$wpdb->prepare(
+				"UPDATE {$this->table_name} SET processed_at = NULL WHERE processed_at = %s AND id NOT IN ({$placeholders})",
+				array_merge( array( $claim_time ), $processed_ids )
+			)
+		);
+	}
+
+	/**
 	 * Delete queue items older than a given number of days.
 	 *
 	 * @param int $days Number of days to retain.
