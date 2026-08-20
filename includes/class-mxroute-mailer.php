@@ -184,7 +184,9 @@ class MXRoute_Mailer {
 	 * Process pending emails in the queue.
 	 *
 	 * Reads a batch of pending items from the queue, sends each via the
-	 * MXRoute API, and updates the row with the result.
+	 * MXRoute API, and updates the row with the result. Checks available
+	 * memory before each item and stops early if memory is insufficient
+	 * for the next email's attachments, leaving remaining items pending.
 	 *
 	 * @return void
 	 */
@@ -198,9 +200,17 @@ class MXRoute_Mailer {
 			return;
 		}
 
+		$processed_ids = array();
+
 		foreach ( $pending as $item ) {
-			$attachments     = $queue->resolve_attachments( $item->attachments );
-			$item_transport  = $api->get_transport( $attachments );
+			$attachments    = $queue->resolve_attachments( $item->attachments );
+			$item_transport = $api->get_transport( $attachments );
+
+			// Check whether we have enough memory for this email's attachments.
+			$attachment_bytes = $this->estimate_attachment_bytes( $attachments, $item_transport );
+			if ( $attachment_bytes > 0 && $attachment_bytes > $this->get_available_memory_bytes() ) {
+				break;
+			}
 
 			try {
 				$result = $api->send(
@@ -225,7 +235,79 @@ class MXRoute_Mailer {
 			} else {
 				$queue->mark_failed( $item->id, $result['request'], $result['response'], $item_transport );
 			}
+
+			$processed_ids[] = (int) $item->id;
+			gc_collect_cycles();
 		}
+
+		// Unclaim items we did not process so they stay pending for the next cycle.
+		if ( count( $processed_ids ) < count( $pending ) ) {
+			$claim_time = $pending[0]->processed_at ?? current_time( 'mysql' );
+			$queue->unclaim_pending( $claim_time, $processed_ids );
+		}
+	}
+
+	/**
+	 * Get available memory in bytes.
+	 *
+	 * Parses PHP's memory_limit (handling K/M/G suffixes) and subtracts
+	 * current usage. Returns 0 when memory_limit is -1 (unlimited) to
+	 * avoid incorrectly blocking sends.
+	 *
+	 * @return int Available bytes, or 0 when unlimited.
+	 */
+	private function get_available_memory_bytes() {
+		$limit = ini_get( 'memory_limit' );
+		if ( -1 === $limit || '-1' === $limit ) {
+			return 0;
+		}
+
+		$bytes = (int) $limit;
+		$suffix = strtolower( substr( (string) $limit, -1 ) );
+		switch ( $suffix ) {
+			case 'g':
+				$bytes *= 1073741824;
+				break;
+			case 'm':
+				$bytes *= 1048576;
+				break;
+			case 'k':
+				$bytes *= 1024;
+				break;
+		}
+
+		return max( 0, $bytes - memory_get_usage( false ) );
+	}
+
+	/**
+	 * Estimate the memory footprint of a set of attachments.
+	 *
+	 * SMTP transport reads each file once through PHPMailer (filesize bytes).
+	 * API transport reads the file then base64-encodes it (filesize * 1.37).
+	 *
+	 * @param array  $attachments Array of file paths.
+	 * @param string $transport   'smtp' or 'api'.
+	 * @return int Estimated bytes, or 0 when no attachments.
+	 */
+	private function estimate_attachment_bytes( $attachments, $transport = 'smtp' ) {
+		if ( empty( $attachments ) ) {
+			return 0;
+		}
+
+		$total = 0;
+		foreach ( $attachments as $file_path ) {
+			$size = @filesize( $file_path ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_filesize
+			if ( false !== $size ) {
+				$total += $size;
+			}
+		}
+
+		// API transport base64-encodes each file (33% expansion).
+		if ( 'api' === $transport ) {
+			$total = (int) ( $total * 1.37 );
+		}
+
+		return $total;
 	}
 
 	/**
