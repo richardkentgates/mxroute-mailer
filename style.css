@@ -25,6 +25,7 @@
 }
 html {
   scroll-behavior: smooth;
+
 }
 html, body {
   margin: 0;
@@ -77,6 +78,8 @@ header nav a:hover {
 /* ── Hero ──────────────────────────────────────────────────────────────── */
 .hero {
   background-color: var(--dark);
+  border: none;
+  border-radius: 0;
   padding: 0 40px 32px;
 }
 .hero-badge {
@@ -589,9 +592,8 @@ footer a:hover {
     position: static;
   }
   .hero {
-  background-color: var(--dark);
-  padding: 0 40px 32px;
-}
+    padding: 60px 32px !important;
+  }
   .layer-grid {
     grid-template-columns: 1fr;
   }
@@ -623,9 +625,8 @@ footer a:hover {
     font-size: 11px;
   }
   .hero {
-  background-color: var(--dark);
-  padding: 0 40px 32px;
-}
+    padding: 40px 20px !important;
+  }
   .feature-grid {
     grid-template-columns: 1fr;
   }
