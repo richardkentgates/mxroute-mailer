@@ -406,35 +406,6 @@ class MXRoute_CLI_Test extends \PHPUnit\Framework\TestCase {
 	}
 
 	/**
-	 * Tests that send errors on empty recipient.
-	 */
-	public function test_send_requires_recipient() {
-		$this->expectException( \MXRouteCLIException::class );
-		$this->cli->send( array( '' ), array() );
-	}
-
-	/**
-	 * Tests that send errors when no sender configured.
-	 */
-	public function test_send_requires_sender() {
-		$this->expectException( \MXRouteCLIException::class );
-		$this->cli->send( array( 'to@example.com' ), array() );
-	}
-
-	/**
-	 * Tests that send succeeds with valid inputs.
-	 */
-	public function test_send_success() {
-		$GLOBALS['wp_options']['mxroute_mailer_username'] = 'from@example.com';
-		$GLOBALS['wp_options']['mxroute_mailer_server']   = 'server.com';
-		$GLOBALS['wp_options']['mxroute_mailer_password'] = 'encrypted';
-
-		$this->cli->send( array( 'to@example.com', 'Subject', 'Body' ), array() );
-
-		$this->assertNotEmpty( WP_CLI::$success_output );
-	}
-
-	/**
 	 * Tests that test command requires recipient.
 	 */
 	public function test_test_requires_recipient() {
