@@ -378,13 +378,13 @@ class MXRoute_Settings {
 				'title'   => __( 'WP-CLI', 'mxroute-mailer' ),
 				'content' => '<p>' . esc_html__( 'MXRoute Mailer includes WP-CLI commands for command-line management. All commands use the wp mxroute prefix.', 'mxroute-mailer' ) . '</p>'
 					. '<h4>' . esc_html__( 'Settings', 'mxroute-mailer' ) . '</h4>'
-					. '<pre>wp mxroute option get server\nwp mxroute option get username\nwp mxroute option set password \'new-password\'</pre>'
+					. '<pre>wp mxroute settings get server\nwp mxroute settings get username\nwp mxroute settings set password \'new-password\'</pre>'
 					. '<h4>' . esc_html__( 'Logs', 'mxroute-mailer' ) . '</h4>'
 					. '<pre>wp mxroute logs list\nwp mxroute logs view 42\nwp mxroute logs delete 42\nwp mxroute logs clear</pre>'
 					. '<h4>' . esc_html__( 'Queue', 'mxroute-mailer' ) . '</h4>'
 					. '<pre>wp mxroute queue list\nwp mxroute queue count\nwp mxroute queue clear</pre>'
-					. '<h4>' . esc_html__( 'Send', 'mxroute-mailer' ) . '</h4>'
-					. '<pre>wp mxroute send user@example.com "Subject" "Body"\nwp mxroute test user@example.com</pre>'
+					. '<h4>' . esc_html__( 'Test', 'mxroute-mailer' ) . '</h4>'
+					. '<pre>wp mxroute test user@example.com</pre>'
 					. '<p>' . esc_html__( 'On multisite, add --url=https://subsite.example.com to target a specific site.', 'mxroute-mailer' ) . '</p>',
 			)
 		);

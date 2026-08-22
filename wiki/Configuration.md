@@ -48,20 +48,20 @@ You can also manage settings via WP-CLI:
 
 ```bash
 # View all settings
-wp mxroute option get
+wp mxroute settings get
 
 # View a specific setting
-wp mxroute option get server
-wp mxroute option get username
-wp mxroute option get batch_size
+wp mxroute settings get server
+wp mxroute settings get username
+wp mxroute settings get batch_size
 
 # Update a setting
-wp mxroute option set server chocobo.mxrouting.net
-wp mxroute option set batch_size 10
+wp mxroute settings set server chocobo.mxrouting.net
+wp mxroute settings set batch_size 10
 
 # Enable/disable logging
-wp mxroute option set logging_enabled 1
-wp mxroute option set logging_enabled 0
+wp mxroute settings set logging_enabled 1
+wp mxroute settings set logging_enabled 0
 ```
 
 **Note:** Passwords are stored encrypted. When you set a password via WP-CLI, it is automatically encrypted before storage.
@@ -195,15 +195,9 @@ A recurring WP-Cron event (every 60 seconds) then:
 
 ## Sending Emails via WP-CLI
 
-You can send emails directly from the command line:
+You can queue test emails from the command line:
 
 ```bash
-# Send an email directly via MXRoute API (bypasses queue)
-wp mxroute send user@example.com "Subject" "Body"
-
-# Send with custom From address
-wp mxroute send user@example.com "Subject" "Body" --from=noreply@example.com
-
 # Queue a test email (processed by cron)
 wp mxroute test user@example.com
 wp mxroute test user@example.com --subject="Custom Subject" --message="Custom body"
