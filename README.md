@@ -70,13 +70,13 @@ MXRoute Mailer includes WP-CLI commands for command-line management:
 
 ```bash
 # View all settings
-wp mxroute option get
+wp mxroute settings get
 
 # Get a specific setting
-wp mxroute option get server
+wp mxroute settings get server
 
 # Update a setting
-wp mxroute option set batch_size 10
+wp mxroute settings set batch_size 10
 
 # List recent logs
 wp mxroute logs list
@@ -86,9 +86,6 @@ wp mxroute logs view 123
 
 # Check queue status
 wp mxroute queue count
-
-# Send an email directly
-wp mxroute send user@example.com "Subject" "Body"
 
 # Send a test email through the queue
 wp mxroute test user@example.com

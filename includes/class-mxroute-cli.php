@@ -15,7 +15,6 @@ defined( 'ABSPATH' ) || exit;
 	 *     wp mxroute settings get server
 	 *     wp mxroute logs list
 	 *     wp mxroute queue count
-	 *     wp mxroute send user@example.com "Test" "Body"
 	 *     wp mxroute test user@example.com
 	 *
 	 * @since 1.4.0
@@ -386,70 +385,6 @@ class MXRoute_CLI_Commands extends WP_CLI_Command {
 		}
 
 		WP_CLI::error( 'Invalid action. Use "list", "count", or "clear".' );
-	}
-
-	/**
-	 * Send an email directly through MXRoute (bypasses queue).
-	 *
-	 * ## OPTIONS
-	 *
-	 * <to>
-	 * : Recipient email address.
-	 *
-	 * [<subject>]
-	 * : Email subject.
-	 *
-	 * [<message>]
-	 * : Email body.
-	 *
-	 * [--from=<from>]
-	 * : Sender email address. Defaults to configured username.
-	 *
-	 * [--reply-to=<reply-to>]
-	 * : Reply-To email address.
-	 *
-	 * ## EXAMPLES
-	 *
-	 *     wp mxroute send user@example.com "Test Subject" "Test body"
-	 *     wp mxroute send user@example.com --from=noreply@example.com
-	 *
-	 * @param array $args       Positional arguments.
-	 * @param array $assoc_args Associative arguments.
-	 * @return void
-	 */
-	public function send( $args, $assoc_args ) {
-		$to       = sanitize_email( $args[0] );
-		$subject  = sanitize_text_field( $args[1] ?? '' );
-		$message  = sanitize_textarea_field( $args[2] ?? '' );
-		$from     = sanitize_email( $assoc_args['from'] ?? get_option( 'mxroute_mailer_username', '' ) );
-		$reply_to = sanitize_email( $assoc_args['reply-to'] ?? '' );
-
-		if ( empty( $to ) ) {
-			WP_CLI::error( 'Recipient email address is required.' );
-		}
-
-		if ( empty( $subject ) ) {
-			$subject = __( 'MXRoute Mailer CLI Send', 'mxroute-mailer' );
-		}
-
-		if ( empty( $message ) ) {
-			$message = __( 'Email sent via MXRoute Mailer CLI.', 'mxroute-mailer' );
-		}
-
-		if ( empty( $from ) ) {
-			WP_CLI::error( 'No sender address configured. Set username first: wp mxroute settings set username <email>' );
-		}
-
-		$api = new MXRoute_API();
-		WP_CLI::log( 'Sending email...' );
-
-		$result = $api->send( $from, $to, $subject, $message, $reply_to );
-
-		if ( $result['success'] ) {
-			WP_CLI::success( 'Email sent successfully.' );
-		} else {
-			WP_CLI::error( sprintf( 'Failed to send: %s', $result['message'] ) );
-		}
 	}
 
 	/**
