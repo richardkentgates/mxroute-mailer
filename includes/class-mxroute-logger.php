@@ -67,22 +67,6 @@ class MXRoute_Logger {
 	}
 
 	/**
-	 * Log an email sent via the MXRoute API.
-	 *
-	 * @param string       $from        Sender email address.
-	 * @param string|array $to          Recipient email address(es).
-	 * @param string       $subject     Email subject.
-	 * @param string       $body        Email message body.
-	 * @param array        $request     API request data.
-	 * @param array        $response    API response data.
-	 * @param bool         $success     Whether the send was successful.
-	 * @param string       $reply_to    Optional Reply-To email address.
-	 * @param string       $headers     Optional email headers.
-	 * @param array        $attachments Optional array of file paths.
-	 * @param string       $transport   Transport method ('api' or 'smtp').
-	 * @return void
-	 */
-	/**
 	 * Get paginated logs with optional filters.
 	 *
 	 * @param int   $per_page Results per page.
