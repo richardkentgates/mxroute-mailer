@@ -107,7 +107,6 @@ curl -I https://apt.richardkentgates.com/mxroute-mailer/metadata.json
 
 - Releases are built by GitHub Actions CI/CD
 - Each push to `dev` runs PHP syntax lint, PHPUnit, zizmor workflow analysis, Semgrep PHP security scan, CodeQL analysis, and a pinned-Actions check
-- The zip file is attached to the GitHub release, not hosted externally
 - Version comparison prevents accidental downgrades
 - Release zips are built by the promotion pipeline and deployed to the apt server over SSH; version comparison prevents accidental downgrades
 

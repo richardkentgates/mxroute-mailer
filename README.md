@@ -107,7 +107,7 @@ MXRoute Mailer supports WordPress Multisite:
 
 - [Installation](https://github.com/richardkentgates/mxroute-mailer/wiki/Installation)
 - [Configuration](https://github.com/richardkentgates/mxroute-mailer/wiki/Configuration)
-- [CLI Commands](https://github.com/richardkentgates/mxroute-mailer/wiki/CLI-Commands)
+- [Development](https://github.com/richardkentgates/mxroute-mailer/wiki/Development)
 - [Troubleshooting](https://github.com/richardkentgates/mxroute-mailer/wiki/Troubleshooting)
 - [Auto-Updates](https://github.com/richardkentgates/mxroute-mailer/wiki/Auto-Updates)
 - [Development](https://github.com/richardkentgates/mxroute-mailer/wiki/Development)

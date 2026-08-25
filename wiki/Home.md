@@ -45,7 +45,7 @@ If your hosting provider blocks SMTP ports, standard WordPress email and SMTP pl
 
 - [Installation](https://github.com/richardkentgates/mxroute-mailer/wiki/Installation) - Step-by-step setup guide
 - [Configuration](https://github.com/richardkentgates/mxroute-mailer/wiki/Configuration) - Server settings, credentials, logging
-- [CLI Commands](https://github.com/richardkentgates/mxroute-mailer/wiki/CLI-Commands) - WP-CLI command reference
+- [Development](https://github.com/richardkentgates/mxroute-mailer/wiki/Development) - WP-CLI command reference and CI/CD internals
 - [Troubleshooting](https://github.com/richardkentgates/mxroute-mailer/wiki/Troubleshooting) - Common issues and fixes
 - [Auto-Updates](https://github.com/richardkentgates/mxroute-mailer/wiki/Auto-Updates) - How apt-server-based updates work
 - [Development](https://github.com/richardkentgates/mxroute-mailer/wiki/Development) - Contributing, testing, CI/CD

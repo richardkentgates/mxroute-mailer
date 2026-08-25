@@ -20,7 +20,7 @@ mxroute-mailer/
 │   ├── class-mxroute-queue.php     # Queue CRUD, attachment storage, and cleanup
 │   ├── class-mxroute-dashboard.php # AJAX log management handlers
 │   ├── class-mxroute-updater.php   # Apt server auto-updater with metadata.json
-│   └── class-mxroute-cli.php       # WP-CLI commands: option, logs, queue, send, test
+│   └── class-mxroute-cli.php       # WP-CLI commands: settings, logs, queue, test
 ├── admin/
 │   ├── views/                      # PHP templates for settings/logs/queue/log detail
 │   ├── css/admin.css
@@ -140,7 +140,7 @@ Commands are loaded conditionally via `WP_CLI` constant check. The CLI class is 
 ## Multisite Support
 
 - Per-site settings, logs, and cron
-- Network activate/deactivate via `wpmu_activate_site` and `wpmu_deactivate_plugins`
+- Network activation loops all sites via `register_activation_hook`; new sites get tables via the `wp_initialize_site` hook
 - Automatic table creation on new sites via `wp_initialize_site` hook
 - Per-site `keep_data` on uninstall
 - Capability check helper: `mxroute_mailer_can_manage()` checks `manage_network_options` on multisite, `manage_options` on single site

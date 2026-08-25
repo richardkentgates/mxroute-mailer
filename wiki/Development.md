@@ -56,7 +56,7 @@ mxroute-mailer/
 │   ├── class-mxroute-queue.php     # Queue CRUD operations
 │   ├── class-mxroute-dashboard.php # AJAX handlers for log management
 │   ├── class-mxroute-updater.php   # GitHub-based auto-updater
-│   └── class-mxroute-cli.php       # WP-CLI commands: option, logs, queue, send, test
+│   └── class-mxroute-cli.php       # WP-CLI commands: settings, logs, queue, test
 ├── admin/
 │   ├── views/
 │   │   ├── settings.php            # Settings page template
@@ -164,7 +164,7 @@ Every human push to `dev` automatically increments the patch version in `mxroute
 - **Security - CodeQL & PHP Vulnerability Scan** - Runs CodeQL analysis and a Semgrep PHP security scan
 - **Build Artifact** - Builds a test zip with a top-level `mxroute-mailer/` folder
 
-### Auto Bump Version (`version-bump.yml`)
+### Auto Bump Version (the `version-bump` job in `ci.yml`)
 
 **Trigger:** Push to `dev`.
 
@@ -189,7 +189,7 @@ Bumps the patch version in `mxroute-mailer.php` and pushes the change back to `d
 - Checks out `origin/main` and creates the release tag
 - Triggers the Release workflow for the new tag
 
-### Release (`release.yml`)
+### Release (`promote-to-main.yml`)
 
 **Trigger:** Push of a `v*` tag, or manual dispatch.
 
