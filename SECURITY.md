@@ -40,8 +40,8 @@ MXRoute Mailer routes WordPress email through MXRoute's HTTPS API instead of SMT
 - **Account password, not API key**: The plugin authenticates with your MXRoute account username and password — the same credentials used for SMTP. There is no separate API key.
 - **No SMTP ports required**: The plugin uses HTTPS exclusively for plain emails. Emails with attachments fall back to outbound SMTP (port 465/587/2525) because the API cannot carry attachments.
 - **HTTPS only**: All API communication uses TLS 1.2+
-- **No email content logging**: Email content is not logged or stored beyond what WordPress core does
-- **Rate limiting**: Respects MXRoute API rate limits
+- **Log retention**: Sent emails are stored in a dedicated logs table (subject, body, headers, attachments metadata) for review/re-queue; the logging toggle discards delivered-email records when disabled. Failures are always retained. Uninstall removes all data.
+- **Batch throttling**: Queue processing sends in configurable small batches per cron cycle; no additional API rate limiting is implemented
 
 ## Best Practices
 

@@ -29,7 +29,7 @@ mxroute-mailer/
 │   └── index.php                   # i18n directory (translations go here)
 ├── assets/
 │   └── test-attachment.txt         # Persistent test attachment file
-├── tests/                          # PHPUnit tests (237 tests, 476 assertions)
+├── tests/                          # PHPUnit tests (263 tests)
 ├── .github/workflows/              # CI/CD and promotion workflows
 ├── wiki/                           # Local copies of GitHub wiki pages
 ├── phpunit.xml                     # PHPUnit configuration
