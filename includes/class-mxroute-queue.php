@@ -606,4 +606,32 @@ class MXRoute_Queue {
 
 		return $info;
 	}
+
+	/**
+	 * Clear all pending queue items and their stored attachments.
+	 *
+	 * Deletes pending rows (success = 0, processed_at IS NULL) and
+	 * cleans up any stored attachment copies to prevent orphaned files.
+	 *
+	 * @return int Number of pending items cleared.
+	 */
+	public function clear_pending() {
+		global $wpdb;
+
+		// Fetch attachment metadata before deleting rows.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is safe.
+		$rows = $wpdb->get_col(
+			"SELECT attachments FROM {$this->table_name} WHERE success = 0 AND processed_at IS NULL"
+		);
+
+		// Delete stored attachments for pending items.
+		foreach ( (array) $rows as $json ) {
+			$this->delete_stored_attachments( $json );
+		}
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is safe.
+		return (int) $wpdb->query(
+			"DELETE FROM {$this->table_name} WHERE success = 0 AND processed_at IS NULL"
+		);
+	}
 }

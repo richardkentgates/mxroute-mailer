@@ -76,6 +76,21 @@ main ──push──> release.yml (tag + GitHub release + deploy to apt server 
 
 ## What's Left
 
-### LOW — Maintenance
+### Audit #4 — 2026-08-24 (Cross-Repo Audit)
 
+#### HIGH
+- [ ] **Remove dead `MXRoute_Logger::log()` method** — `class-mxroute-logger.php:85-125` is never called. Queue system replaced it.
+- [ ] **Fix CLI `queue clear` bypassing attachment cleanup** — `class-mxroute-cli.php:348-354` uses raw SQL DELETE instead of `MXRoute_Queue::cleanup()`, orphaning files in `mxroute-mailer-attachments/`.
+
+#### MEDIUM
+- [ ] **Extract recipient normalization to helper** — Duplicated in `send_via_api()` and `send_via_smtp()`.
+- [ ] **Update ROADMAP.md version/status** — Production is v1.4.45, not v1.4.11.
+- [ ] **Update readme.txt changelog** — Stops at v1.4.0, missing 45 releases.
+- [ ] **Fix SECURITY.md** — Says "API key" but MXRoute uses account passwords; says "WordPress encryption" but actual implementation is AES-256-GCM.
+
+#### LOW
+- [ ] **Remove vestigial `$attachments` parameter** from `send_via_api()`.
+- [ ] **Add `error_log()` to `process_queue()`** failures when debug mode enabled.
+
+### Maintenance
 1. Keep GitHub Pages docs in sync with any future changes.
