@@ -58,11 +58,11 @@ dev ──push──> ci.yml (PHP lint + auto version bump)
     │
     │  workflow_dispatch: promote-to-test.yml
     ▼
-test ──push──> test-deploy.yml (build zip + deploy to apt server test channel)
+test ──push──> promote-to-test.yml (build zip + deploy to apt server test channel)
     │
     │  workflow_dispatch: promote-to-main.yml
     ▼
-main ──push──> release.yml (tag + GitHub release + deploy to apt server production channel)
+main ──push──> promote-to-main.yml (tag + GitHub release + deploy to apt server production channel)
 ```
 
 ---
@@ -82,19 +82,19 @@ main ──push──> release.yml (tag + GitHub release + deploy to apt server 
 ### Audit #4 — 2026-08-24 (Cross-Repo Audit) — RESOLVED
 
 #### HIGH — All fixed
-- ✅ **Remove dead `MXRoute_Logger::log()` method** — Still present, pending removal (see remaining items).
+- ✅ **Remove dead `MXRoute_Logger::log()` method** — Removed in v1.4.49.
 - ✅ **Fix CLI `queue clear` bypassing attachment cleanup** — Fixed: now uses `MXRoute_Queue::clear_pending()`.
 
 #### MEDIUM — Partially resolved
 - ✅ **Extract recipient normalization to helper** — Fixed: `MXRoute_API::sanitize_email_address()` replaces 4 copies.
 - ✅ **Update ROADMAP.md version/status** — Fixed: v1.4.48.
-- [ ] **Update readme.txt changelog** — Stops at v1.4.0, missing many releases.
-- [ ] **Fix SECURITY.md** — Says "API key" but MXRoute uses account passwords; says "WordPress encryption" but actual implementation is AES-256-GCM.
+- [x] **Update readme.txt changelog** — Done.
+- [x] **Fix SECURITY.md** — Done: account password + AES-256-GCM documented accurately.
 
 #### LOW
 - [ ] **Remove vestigial `$attachments` parameter** from `send_via_api()`.
 - [ ] **Add `error_log()` to `process_queue()`** failures when debug mode enabled.
-- [ ] **Remove dead `MXRoute_Logger::log()` method** — Lines 85–125, never called.
+- [x] **Remove dead `MXRoute_Logger::log()` method** — Removed in v1.4.49.
 
 ### Maintenance
 1. Keep GitHub Pages docs in sync with any future changes.

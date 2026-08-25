@@ -36,7 +36,7 @@ Number of emails to process per 60-second cron cycle.
 
 ### Logging
 
-When enabled, all sent emails are logged with full request and response data. View logs under **Tools > MXRoute Logs**.
+When enabled, all sent emails are logged. When disabled, delivered emails are discarded from the log after sending (attachments included); failures are always retained with full request and response data. View logs under **Tools > MXRoute Logs**.
 
 ### Keep Data
 
@@ -131,7 +131,7 @@ wp mxroute logs clear
 ### Filtering Logs
 
 You can filter logs by:
-- **Search** - Subject, from, to, or reply-to address
+- **Search** - Subject, from, to,
 - **Status** - Sent or failed
 - **From email** - Filter by sender address
 - **Date range** - Filter by date

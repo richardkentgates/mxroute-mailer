@@ -4,7 +4,7 @@ Tags: email, smtp, mxroute, mail
 Requires at least: 5.0
 Tested up to: 7.0
 Requires PHP: 7.3
-Stable tag: 1.4.54
+Stable tag: 1.4.55
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -94,6 +94,16 @@ Failed emails are logged with status -1 and visible on the Logs page. You can re
 3. Individual log detail view with API request and response data
 
 == Changelog ==
+
+= 1.4.53 =
+* Maintenance release
+
+= 1.4.52 =
+* Docs: updater mechanism and security claims corrected
+
+= 1.4.51 =
+* Fix: Queue no longer wedges permanently when the memory guard fires on the first item — claimed items are released for the next cycle
+* Feature: The logging toggle now works — when disabled, delivered emails are discarded after send (failures always retained)
 
 = 1.4.50 =
 * Cleanup: Removed obsolete tests for the deleted legacy log method
