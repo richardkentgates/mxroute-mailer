@@ -38,6 +38,27 @@ class MXRoute_API {
 	);
 
 	/**
+	 * Extract and sanitize a single email address from a potentially complex value.
+	 *
+	 * Handles "Name <email>" angle-bracket format, trims whitespace, and applies
+	 * WordPress sanitize_email(). Used by Queue::add(), send_via_api(), and
+	 * send_via_smtp() to avoid duplicating this logic.
+	 *
+	 * @param mixed $email Raw email value (string, array, or "Name <email>" format).
+	 * @return string Sanitized email address, or empty string on failure.
+	 */
+	public static function sanitize_email_address( $email ) {
+		if ( is_array( $email ) ) {
+			$email = reset( $email );
+		}
+		$email = trim( (string) $email );
+		if ( preg_match( '/<(.+?)>/', $email, $matches ) ) {
+			$email = $matches[1];
+		}
+		return sanitize_email( $email );
+	}
+
+	/**
 	 * Send an email via the MXRoute API using saved settings.
 	 *
 	 * Automatically routes to SMTP when attachments are present, since the
@@ -102,17 +123,7 @@ class MXRoute_API {
 			);
 		}
 
-		$to_single = is_array( $to ) ? reset( $to ) : $to;
-		if ( empty( $to_single ) ) {
-			$to_single = '';
-		}
-
-		if ( preg_match( '/<(.+?)>/', $to_single, $matches ) ) {
-			$to_single = sanitize_email( $matches[1] );
-		} else {
-			$to_single = sanitize_email( $to_single );
-		}
-
+		$to_single = self::sanitize_email_address( $to );
 		$from     = sanitize_email( $from );
 		$reply_to = sanitize_email( $reply_to );
 
@@ -301,12 +312,7 @@ class MXRoute_API {
 			);
 		}
 
-		$to_single = is_array( $to ) ? reset( $to ) : $to;
-		if ( preg_match( '/<(.+?)>/', $to_single, $matches ) ) {
-			$to_single = sanitize_email( $matches[1] );
-		} else {
-			$to_single = sanitize_email( $to_single );
-		}
+		$to_single = self::sanitize_email_address( $to );
 		$from     = sanitize_email( $from );
 		$reply_to = sanitize_email( $reply_to );
 
