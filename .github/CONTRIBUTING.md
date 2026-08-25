@@ -64,7 +64,7 @@ We use a three-branch workflow:
 3. Push to your fork
 4. Open a pull request targeting `dev`
 5. After merge, the repository owner promotes `dev` to `test`, then `test` to `main`
-6. The Release workflow automatically builds the zip and creates a GitHub release
+6. The Promote to Main workflow builds the zip, tags, and creates the GitHub release
 
 ## Code Standards
 

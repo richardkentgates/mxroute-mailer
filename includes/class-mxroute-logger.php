@@ -165,7 +165,7 @@ class MXRoute_Logger {
 	}
 
 	/**
-	 * Clear all log entries.
+	 * Clear all processed log entries; pending queue items are preserved.
 	 *
 	 * @return void
 	 */
