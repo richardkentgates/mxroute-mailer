@@ -82,48 +82,6 @@ class MXRoute_Logger {
 	 * @param string       $transport   Transport method ('api' or 'smtp').
 	 * @return void
 	 */
-	public function log( $from, $to, $subject, $body, $request, $response, $success, $reply_to = '', $headers = '', $attachments = array(), $transport = 'api' ) {
-		if ( ! get_option( 'mxroute_mailer_logging_enabled', 1 ) ) {
-			return;
-		}
-
-		global $wpdb;
-
-		$to_address = '';
-		if ( is_array( $to ) ) {
-			$first      = reset( $to );
-			$to_address = false !== $first ? $first : '';
-		} else {
-			$to_address = $to;
-		}
-
-		if ( preg_match( '/<(.+?)>/', $to_address, $matches ) ) {
-			$to_address = $matches[1];
-		}
-		$to_address = sanitize_email( $to_address );
-
-		$reply_to_address = sanitize_email( $reply_to );
-
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Logging write, caching not applicable.
-		$wpdb->insert(
-			$this->table_name,
-			array(
-				'from_email'   => sanitize_email( $from ),
-				'reply_to'     => $reply_to_address,
-				'to_email'     => $to_address,
-				'subject'      => sanitize_text_field( $subject ),
-				'message'      => $body,
-				'headers'      => is_array( $headers ) ? wp_json_encode( $headers ) ?: '[]' : (string) $headers,
-				'attachments'  => wp_json_encode( $attachments ) ?: '[]',
-				'api_request'  => wp_json_encode( $request ) ?: '{}',
-				'api_response' => wp_json_encode( $response ) ?: '{}',
-				'success'      => $success ? 1 : -1,
-				'transport'    => in_array( $transport, array( 'api', 'smtp' ), true ) ? $transport : 'api',
-			),
-			array( '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%s' )
-		);
-	}
-
 	/**
 	 * Get paginated logs with optional filters.
 	 *
