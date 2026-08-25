@@ -32,6 +32,9 @@ class MXRoute_Updater {
 	/** URL of the apt server metadata.json. */
 	private const METADATA_URL = 'https://apt.richardkentgates.com/mxroute-mailer/metadata.json';
 
+	/** URL of the apt server test channel metadata.json. */
+	private const METADATA_URL_TEST = 'https://apt.richardkentgates.com/mxroute-mailer-test/metadata.json';
+
 	/** WordPress option / transient key used to cache the remote metadata. */
 	private const TRANSIENT = 'mxroute_remote_metadata';
 
@@ -109,8 +112,12 @@ class MXRoute_Updater {
 			}
 		}
 
+		// Use test channel if MXROUTE_MAILER_UPDATE_CHANNEL is set to 'test'.
+		$channel = defined( 'MXROUTE_MAILER_UPDATE_CHANNEL' ) ? MXROUTE_MAILER_UPDATE_CHANNEL : 'production';
+		$url     = ( 'test' === $channel ) ? self::METADATA_URL_TEST : self::METADATA_URL;
+
 		$response = wp_remote_get(
-			self::METADATA_URL,
+			$url,
 			array(
 				'timeout'    => 10,
 				'user-agent' => 'WordPress/' . get_bloginfo( 'version' ) . '; MXRouteMailer/' . MXROUTE_MAILER_VERSION,
