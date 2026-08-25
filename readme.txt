@@ -4,7 +4,7 @@ Tags: email, smtp, mxroute, mail
 Requires at least: 5.0
 Tested up to: 7.0
 Requires PHP: 7.3
-Stable tag: 1.4.50
+Stable tag: 1.4.51
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -94,6 +94,31 @@ Failed emails are logged with status -1 and visible on the Logs page. You can re
 3. Individual log detail view with API request and response data
 
 == Changelog ==
+
+= 1.4.50 =
+* Cleanup: Removed obsolete tests for the deleted legacy log method
+
+= 1.4.49 =
+* Cleanup: Removed dead MXRoute_Logger::log() method — superseded by the queue system
+
+= 1.4.48 =
+* Refactor: Extracted recipient normalization into MXRoute_API::sanitize_email_address()
+
+= 1.4.47 =
+* Fix: CLI `queue clear` now uses MXRoute_Queue::clear_pending() so attachment files are cleaned up instead of orphaned
+
+= 1.4.46 =
+* Feature: Test channel support in the updater — staging sites can track apt server test-channel releases
+
+= 1.4.43 =
+* Fix: Removed direct-send bypass so all email flows through the queue
+* Docs: Corrected WP-CLI command names in documentation
+
+= 1.4.12 – 1.4.45 =
+* CI/CD: Workflow registration fixes, YAML parsing hardening, production deployment workflow, documentation updates
+
+= 1.4.11 =
+* Fix: Skip updater HTTP hooks under WP-CLI — prevents activation hang during scripted installs
 
 = 1.4.0 =
 * Feature: Multisite support — per-site settings, logs, and cron; network activate/deactivate; per-site keep_data on uninstall
@@ -340,6 +365,9 @@ Failed emails are logged with status -1 and visible on the Logs page. You can re
 * Initial release
 
 == Upgrade Notice ==
+
+= 1.4.47 =
+CLI `queue clear` now cleans up attachment files. No action needed for normal operation.
 
 = 1.3.29 =
 WordPress Plugin Check compliance — resolves all ERROR-level findings. Recommended for all users.
