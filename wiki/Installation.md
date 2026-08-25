@@ -83,4 +83,3 @@ When you delete the plugin on a multisite network:
 ## Troubleshooting
 
 If you encounter issues during installation, see the [Troubleshooting](https://github.com/richardkentgates/mxroute-mailer/wiki/Troubleshooting) page.
-

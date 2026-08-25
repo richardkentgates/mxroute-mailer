@@ -36,7 +36,7 @@ Number of emails to process per 60-second cron cycle.
 
 ### Logging
 
-When enabled, all sent emails are logged with full request and response data. View logs under **Tools > MXRoute Logs**.
+When enabled, all sent emails are logged. When disabled, delivered emails are discarded from the log after sending (attachments included); failures are always retained with full request and response data. View logs under **Tools > MXRoute Logs**.
 
 ### Keep Data
 
@@ -48,20 +48,20 @@ You can also manage settings via WP-CLI:
 
 ```bash
 # View all settings
-wp mxroute option get
+wp mxroute settings get
 
 # View a specific setting
-wp mxroute option get server
-wp mxroute option get username
-wp mxroute option get batch_size
+wp mxroute settings get server
+wp mxroute settings get username
+wp mxroute settings get batch_size
 
 # Update a setting
-wp mxroute option set server chocobo.mxrouting.net
-wp mxroute option set batch_size 10
+wp mxroute settings set server chocobo.mxrouting.net
+wp mxroute settings set batch_size 10
 
 # Enable/disable logging
-wp mxroute option set logging_enabled 1
-wp mxroute option set logging_enabled 0
+wp mxroute settings set logging_enabled 1
+wp mxroute settings set logging_enabled 0
 ```
 
 **Note:** Passwords are stored encrypted. When you set a password via WP-CLI, it is automatically encrypted before storage.
@@ -131,7 +131,7 @@ wp mxroute logs clear
 ### Filtering Logs
 
 You can filter logs by:
-- **Search** - Subject, from, to, or reply-to address
+- **Search** - Subject, from, to,
 - **Status** - Sent or failed
 - **From email** - Filter by sender address
 - **Date range** - Filter by date
@@ -195,15 +195,9 @@ A recurring WP-Cron event (every 60 seconds) then:
 
 ## Sending Emails via WP-CLI
 
-You can send emails directly from the command line:
+You can queue test emails from the command line:
 
 ```bash
-# Send an email directly via MXRoute API (bypasses queue)
-wp mxroute send user@example.com "Subject" "Body"
-
-# Send with custom From address
-wp mxroute send user@example.com "Subject" "Body" --from=noreply@example.com
-
 # Queue a test email (processed by cron)
 wp mxroute test user@example.com
 wp mxroute test user@example.com --subject="Custom Subject" --message="Custom body"
@@ -242,4 +236,3 @@ The plugin creates a database table `{prefix}_mxroute_mailer_logs` to store emai
 | transport | varchar(10) | Transport method: 'api' or 'smtp' |
 | created_at | datetime | When the queue entry was created |
 | processed_at | datetime | When the email was sent or failed |
-

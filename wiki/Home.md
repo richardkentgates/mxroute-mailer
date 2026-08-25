@@ -26,8 +26,8 @@ If your hosting provider blocks SMTP ports, standard WordPress email and SMTP pl
 - **Multisite support** - Per-site settings and logs, network activate/deactivate, automatic table creation
 - **Reply-To support** - Preserves form sender addresses as Reply-To headers
 - **Test email** - Verify your configuration with a single click
-- **Automatic updates** - Get new versions directly from GitHub with SHA-256 checksum verification
-- **Developer-friendly** - Full CI/CD pipeline, coding standards, comprehensive tests (237 tests, 476 assertions)
+- **Automatic updates** - New versions arrive from the apt server and appear in your WordPress dashboard
+- **Developer-friendly** - Full CI/CD pipeline, coding standards, comprehensive tests (263 tests)
 
 ## Requirements
 
@@ -45,9 +45,9 @@ If your hosting provider blocks SMTP ports, standard WordPress email and SMTP pl
 
 - [Installation](https://github.com/richardkentgates/mxroute-mailer/wiki/Installation) - Step-by-step setup guide
 - [Configuration](https://github.com/richardkentgates/mxroute-mailer/wiki/Configuration) - Server settings, credentials, logging
-- [CLI Commands](https://github.com/richardkentgates/mxroute-mailer/wiki/CLI-Commands) - WP-CLI command reference
+- [Development](https://github.com/richardkentgates/mxroute-mailer/wiki/Development) - WP-CLI command reference and CI/CD internals
 - [Troubleshooting](https://github.com/richardkentgates/mxroute-mailer/wiki/Troubleshooting) - Common issues and fixes
-- [Auto-Updates](https://github.com/richardkentgates/mxroute-mailer/wiki/Auto-Updates) - How GitHub-based updates work
+- [Auto-Updates](https://github.com/richardkentgates/mxroute-mailer/wiki/Auto-Updates) - How apt-server-based updates work
 - [Development](https://github.com/richardkentgates/mxroute-mailer/wiki/Development) - Contributing, testing, CI/CD
 
 Repository reference files:
@@ -64,4 +64,3 @@ Repository reference files:
 ## License
 
 GPL v2 or later - see [LICENSE](https://github.com/richardkentgates/mxroute-mailer/blob/main/LICENSE) for details.
-

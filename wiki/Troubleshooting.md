@@ -169,7 +169,7 @@ This issue is fixed in `v1.2.13` and later releases.
 2. This triggers the `wpmu_activate_site` handler, which creates the logs and queue tables for all existing sites
 3. Alternatively, use WP-CLI on the affected site:
    ```bash
-   wp mxroute option get server --url=https://affected-subsite.example.com
+   wp mxroute settings get server --url=https://affected-subsite.example.com
    ```
    If this returns an error, the tables are missing. Re-activating the plugin fixes it.
 
@@ -197,9 +197,9 @@ This issue is fixed in `v1.2.13` and later releases.
 2. Configure credentials for each subsite that needs to send email
 3. Or use WP-CLI to set credentials per-site:
    ```bash
-   wp mxroute option set server chocobo.mxrouting.net --url=https://subsite.example.com
-   wp mxroute option set username you@example.com --url=https://subsite.example.com
-   wp mxroute option set password 'your-password' --url=https://subsite.example.com
+   wp mxroute settings set server chocobo.mxrouting.net --url=https://subsite.example.com
+   wp mxroute settings set username you@example.com --url=https://subsite.example.com
+   wp mxroute settings set password 'your-password' --url=https://subsite.example.com
    ```
 
 ### WP-CLI: "Cannot open" Error
@@ -216,14 +216,14 @@ This issue is fixed in `v1.2.13` and later releases.
 
 ### WP-CLI: Password Visible in Output
 
-**Symptoms**: `wp mxroute option get password` shows encrypted string or plaintext.
+**Symptoms**: `wp mxroute settings get password` shows encrypted string or plaintext.
 
 **Behavior**: The CLI masks the password output as `***` for security. If you see the raw encrypted value, you are running an older version of the plugin (update to v1.4.0+).
 
 To set the password via CLI:
 
 ```bash
-wp mxroute option set password 'your-new-password'
+wp mxroute settings set password 'your-new-password'
 ```
 
 ## Getting Help
@@ -312,4 +312,3 @@ DESCRIBE {prefix}_mxroute_mailer_logs;
 -- Check recent logs
 SELECT * FROM {prefix}_mxroute_mailer_logs ORDER BY id DESC LIMIT 10;
 ```
-

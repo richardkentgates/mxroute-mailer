@@ -56,7 +56,7 @@ mxroute-mailer/
 │   ├── class-mxroute-queue.php     # Queue CRUD operations
 │   ├── class-mxroute-dashboard.php # AJAX handlers for log management
 │   ├── class-mxroute-updater.php   # GitHub-based auto-updater
-│   └── class-mxroute-cli.php       # WP-CLI commands: option, logs, queue, send, test
+│   └── class-mxroute-cli.php       # WP-CLI commands: settings, logs, queue, test
 ├── admin/
 │   ├── views/
 │   │   ├── settings.php            # Settings page template
@@ -164,7 +164,7 @@ Every human push to `dev` automatically increments the patch version in `mxroute
 - **Security - CodeQL & PHP Vulnerability Scan** - Runs CodeQL analysis and a Semgrep PHP security scan
 - **Build Artifact** - Builds a test zip with a top-level `mxroute-mailer/` folder
 
-### Auto Bump Version (`version-bump.yml`)
+### Auto Bump Version (the `version-bump` job in `ci.yml`)
 
 **Trigger:** Push to `dev`.
 
@@ -189,7 +189,7 @@ Bumps the patch version in `mxroute-mailer.php` and pushes the change back to `d
 - Checks out `origin/main` and creates the release tag
 - Triggers the Release workflow for the new tag
 
-### Release (`release.yml`)
+### Release (`promote-to-main.yml`)
 
 **Trigger:** Push of a `v*` tag, or manual dispatch.
 
@@ -214,8 +214,8 @@ The plugin registers `wp mxroute` with these subcommands:
 
 | Command | Description |
 |---------|-------------|
-| `wp mxroute option get [key]` | Get all settings or a specific setting |
-| `wp mxroute option set <key> <value>` | Update a setting |
+| `wp mxroute settings get [key]` | Get all settings or a specific setting |
+| `wp mxroute settings set <key> <value>` | Update a setting |
 | `wp mxroute logs list` | List email logs with pagination |
 | `wp mxroute logs view <id>` | View a specific log entry |
 | `wp mxroute logs delete <id>` | Delete a log entry |
@@ -223,7 +223,6 @@ The plugin registers `wp mxroute` with these subcommands:
 | `wp mxroute queue list` | List pending queue items |
 | `wp mxroute queue count` | Count pending items |
 | `wp mxroute queue clear` | Clear all pending items |
-| `wp mxroute send <to> [subject] [message]` | Send email directly via MXRoute API |
 | `wp mxroute test <to>` | Send a test email through the queue |
 
 Commands are loaded conditionally via `WP_CLI` constant check. The CLI class is in `includes/class-mxroute-cli.php`.
@@ -360,4 +359,3 @@ When adding new database columns:
 ## Contributing
 
 See [CONTRIBUTING.md](../.github/CONTRIBUTING.md) for detailed contribution guidelines.
-
