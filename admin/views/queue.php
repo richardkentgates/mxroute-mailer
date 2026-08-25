@@ -50,9 +50,8 @@ $total_pages = $items_per_page > 0 ? (int) ceil( $total / $items_per_page ) : 0;
 			</thead>
 			<tbody>
 				<?php
-				$queue_helper = new MXRoute_Queue();
 				foreach ( $pending_items as $item ) :
-					$att_info  = $queue_helper->get_attachment_info( $item->attachments ?? '[]' );
+					$att_info  = $queue->get_attachment_info( $item->attachments ?? '[]' );
 					$att_count = count( $att_info );
 					$att_ok    = 0;
 					foreach ( $att_info as $att ) {

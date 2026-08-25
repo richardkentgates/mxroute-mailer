@@ -159,7 +159,9 @@ class MXRoute_Dashboard {
 		}
 
 		$ids = isset( $_POST['log_ids'] ) ? array_map( 'intval', (array) $_POST['log_ids'] ) : array();
-		$ids = array_filter( $ids );
+		$ids = array_filter( $ids, function ( $id ) {
+			return $id > 0;
+		} );
 
 		if ( empty( $ids ) ) {
 			wp_send_json_error( array( 'message' => __( 'No logs selected.', 'mxroute-mailer' ) ) );
