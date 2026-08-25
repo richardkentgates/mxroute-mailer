@@ -46,11 +46,7 @@ class MXRoute_Queue {
 	public function add( $from, $to, $subject, $message, $headers = '', $attachments = array(), $reply_to = '' ) {
 		global $wpdb;
 
-		$to_single = is_string( $to ) ? $to : ( is_array( $to ) ? reset( $to ) : '' );
-		if ( preg_match( '/<(.+?)>/', $to_single, $matches ) ) {
-			$to_single = $matches[1];
-		}
-		$to_single = sanitize_email( $to_single );
+		$to_single = MXRoute_API::sanitize_email_address( $to );
 
 		// Insert the queue row first to get the log ID for attachment storage.
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Queue write.

@@ -414,7 +414,7 @@ class MXRoute_CLI_Commands extends WP_CLI_Command {
 	 * @return void
 	 */
 	public function test( $args, $assoc_args ) {
-		$to      = sanitize_email( $args[0] );
+		$to      = MXRoute_API::sanitize_email_address( $args[0] );
 		$from    = get_option( 'mxroute_mailer_username', '' );
 		$subject = sanitize_text_field( $assoc_args['subject'] ?? '' );
 		$message = sanitize_textarea_field( $assoc_args['message'] ?? '' );
