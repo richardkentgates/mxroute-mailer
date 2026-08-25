@@ -156,6 +156,12 @@ class MXRoute_Queue {
 	public function mark_sent( $id, $request = array(), $response = array(), $transport = 'api' ) {
 		global $wpdb;
 
+		// Honor the logging toggle: when disabled, delivered emails are
+		// discarded (attachments included). Failures are always retained.
+		if ( ! get_option( 'mxroute_mailer_logging_enabled', 1 ) ) {
+			return $this->delete_sent( $id );
+		}
+
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Queue update by primary key.
 		return (bool) $wpdb->update(
 			$this->table_name,
@@ -168,6 +174,40 @@ class MXRoute_Queue {
 			),
 			array( 'id' => absint( $id ) ),
 			array( '%d', '%s', '%s', '%s', '%s', '%s' ),
+			array( '%d' )
+		);
+	}
+
+	/**
+	 * Delete a sent queue item and its stored attachments.
+	 *
+	 * Used when the logging toggle is disabled — the email is already
+	 * delivered, so only the record is discarded.
+	 *
+	 * @param int $id Queue item ID.
+	 * @return bool True on success, false on failure.
+	 */
+	private function delete_sent( $id ) {
+		global $wpdb;
+
+		$id = absint( $id );
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Queue read by primary key.
+		$attachments_json = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT attachments FROM {$this->table_name} WHERE id = %d",
+				$id
+			)
+		);
+
+		if ( null !== $attachments_json ) {
+			$this->delete_stored_attachments( $attachments_json );
+		}
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Queue delete by primary key.
+		return (bool) $wpdb->delete(
+			$this->table_name,
+			array( 'id' => $id ),
 			array( '%d' )
 		);
 	}
@@ -253,7 +293,14 @@ class MXRoute_Queue {
 		global $wpdb;
 
 		if ( empty( $processed_ids ) ) {
-			return 0;
+			// Nothing was processed — release every item claimed at this time.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Queue write, caching not applicable.
+			return (int) $wpdb->query(
+				$wpdb->prepare(
+					"UPDATE {$this->table_name} SET processed_at = NULL WHERE processed_at = %s",
+					$claim_time
+				)
+			);
 		}
 
 		$placeholders = implode( ',', array_fill( 0, count( $processed_ids ), '%d' ) );
