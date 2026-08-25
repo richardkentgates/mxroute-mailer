@@ -23,7 +23,7 @@ MXRoute Mailer is a WordPress plugin that intercepts all emails sent via `wp_mai
 - **WP-CLI commands** — Manage settings, logs, queue, and send emails from the command line
 - **Multisite support** — Per-site settings and logs, network activate/deactivate
 - **Built-in test email tool** — Verify configuration with a single click
-- **Automatic updates** — GitHub-based updater with SHA-256 checksum verification
+- **Automatic updates** — Apt-server-based updater; new versions appear in the WordPress dashboard like any other plugin update
 - **Works with any plugin or theme** that uses `wp_mail()`
 
 ## Requirements

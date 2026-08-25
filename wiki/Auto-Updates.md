@@ -1,15 +1,17 @@
 # Auto-Updates
 
-MXRoute Mailer includes a GitHub-based auto-updater that checks for new releases and allows you to update directly from your WordPress dashboard.
+MXRoute Mailer includes an apt-server-based auto-updater that checks for new releases and lets you update directly from your WordPress dashboard.
 
 ## How It Works
 
 The plugin uses WordPress's built-in plugin update system with a custom updater that:
 
-1. Checks the GitHub API for new releases periodically
-2. Compares the latest release version with your installed version
+1. Fetches `https://apt.richardkentgates.com/mxroute-mailer/metadata.json` periodically (cached for 12 hours)
+2. Compares the latest published version with your installed version
 3. Shows an update notification in your WordPress dashboard when a new version is available
 4. Downloads and installs the update when you click "Update Now"
+
+Sites running the test channel (via the `MXROUTE_MAILER_UPDATE_CHANNEL` constant) track `mxroute-mailer-test/metadata.json` instead.
 
 ## Checking for Updates
 
@@ -75,13 +77,13 @@ Releases use semantic versioning with a `v` prefix:
 ### Update Not Showing
 
 1. **Clear transients**: Go to Dashboard > Updates and click "Check again"
-2. **Check GitHub API**: The updater caches results for 12 hours
+2. **Check metadata cache**: The updater caches apt-server results for 12 hours
 3. **Verify version**: Make sure your installed version is older than the latest release
 
 ### Update Fails
 
 1. **Check file permissions**: The plugin directory must be writable by WordPress
-2. **Check GitHub access**: Your server must be able to reach `api.github.com`
+2. **Check server access**: Your server must be able to reach `apt.richardkentgates.com`
 3. **Manual update**: Download and install the release zip manually
 
 ### Plugin Deactivated After Update
@@ -92,14 +94,13 @@ This usually means the update was extracted into a versioned folder like `mxrout
 
 This usually means:
 
-- Your server can't reach GitHub (firewall, DNS issue)
-- The GitHub API is rate-limited (rare)
-- The repository is private (it should be public)
+- Your server can't reach the apt server (firewall, DNS issue)
+- The metadata cache is stale (clears after 12 hours)
 
-Check if your server can reach GitHub:
+Check if your server can reach the apt server:
 
 ```bash
-curl -I https://api.github.com/repos/richardkentgates/mxroute-mailer/releases/latest
+curl -I https://apt.richardkentgates.com/mxroute-mailer/metadata.json
 ```
 
 ## Security
@@ -108,7 +109,7 @@ curl -I https://api.github.com/repos/richardkentgates/mxroute-mailer/releases/la
 - Each push to `dev` runs PHP syntax lint, PHPUnit, zizmor workflow analysis, Semgrep PHP security scan, CodeQL analysis, and a pinned-Actions check
 - The zip file is attached to the GitHub release, not hosted externally
 - Version comparison prevents accidental downgrades
-- Starting with `v1.2.19`, each release includes a SHA-256 checksum file; the plugin verifies the downloaded zip against this checksum before WordPress installs the update
+- Release zips are built by the promotion pipeline and deployed to the apt server over SSH; version comparison prevents accidental downgrades
 
 ## Multisite Considerations
 
