@@ -22,7 +22,7 @@ MXRoute Mailer is a WordPress plugin that routes outbound email through MXRoute'
 
 | Item | Value |
 |------|-------|
-| Production version | v1.4.52+ |
+| Production version | v1.4.54 |
 | Dev version | tracks dev branch (CI auto-bump) |
 | Distribution | Apt server `metadata.json` + GitHub releases |
 | Apt server | 34.136.87.92 (`apt.richardkentgates.com`) |
