@@ -20,6 +20,7 @@ mxroute-mailer/
 │   ├── class-mxroute-queue.php     # Queue CRUD, attachment storage, and cleanup
 │   ├── class-mxroute-dashboard.php # AJAX log management handlers
 │   ├── class-mxroute-updater.php   # Apt server auto-updater with metadata.json
+│   ├── class-mxroute-rest-api.php  # REST API endpoint for status JSON (Application Passwords)
 │   └── class-mxroute-cli.php       # WP-CLI commands: settings, logs, queue, test
 ├── admin/
 │   ├── views/                      # PHP templates for settings/logs/queue/log detail

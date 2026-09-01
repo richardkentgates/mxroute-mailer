@@ -80,7 +80,8 @@ class MXRoute_REST_API {
 	 * @return WP_REST_Response|WP_Error Response data or error.
 	 */
 	public static function get_status( WP_REST_Request $request ) {
-		$status_file = '/var/run/mxroute-status.json';
+		$content_dir = defined( 'WP_CONTENT_DIR' ) ? WP_CONTENT_DIR : '/tmp';
+		$status_file = $content_dir . '/mxroute-status.json';
 
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading status file.
 		$json = @file_get_contents( $status_file );
