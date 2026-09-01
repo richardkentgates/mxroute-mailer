@@ -135,10 +135,11 @@ class MXRoute_API {
 			'to'       => mb_substr( $to_single, 0, self::$max_field_length ),
 			'subject'  => mb_substr( $subject, 0, self::$max_field_length ),
 			'body'     => mb_substr( $body, 0, self::$max_field_length * 10 ),
+			'headers'  => 'Content-Type: text/html; charset=UTF-8',
 		);
 
 		if ( ! empty( $reply_to ) ) {
-			$payload['headers'] = 'Reply-To: ' . substr( $reply_to, 0, self::$max_field_length );
+			$payload['headers'] .= "\r\nReply-To: " . substr( $reply_to, 0, self::$max_field_length );
 		}
 
 		if ( ! empty( $attachments ) ) {
