@@ -80,21 +80,25 @@ class MXRoute_Mailer {
 		add_filter( 'pre_wp_mail', array( $this, 'intercept_wp_mail' ), 999, 2 );
 		add_action( 'load-settings_page_mxroute-mailer', array( $this, 'handle_test_email' ) );
 		add_action( 'mxroute_mailer_process_queue', array( $this, 'process_queue' ) );
-		add_action( 'init', array( $this, 'schedule_queue_processor' ) );
+		add_action( 'mxroute_write_status_json', array( $this, 'write_status_json' ) );
+		add_action( 'init', array( $this, 'schedule_cron_events' ) );
 		add_action( 'rest_api_init', array( 'MXRoute_REST_API', 'register_routes' ) );
 	}
 
 	/**
-	 * Schedule the recurring queue processor event.
+	 * Schedule the recurring cron events.
 	 *
-	 * Ensures the recurring cron event is always active. The interval
+	 * Ensures the recurring cron events are always active. The interval
 	 * is 60 seconds (the minimum WP-Cron supports).
 	 *
 	 * @return void
 	 */
-	public function schedule_queue_processor() {
+	public function schedule_cron_events() {
 		if ( ! wp_next_scheduled( 'mxroute_mailer_process_queue' ) ) {
 			wp_schedule_event( time(), 'mxroute_mailer_interval', 'mxroute_mailer_process_queue' );
+		}
+		if ( ! wp_next_scheduled( 'mxroute_write_status_json' ) ) {
+			wp_schedule_event( time(), 'mxroute_mailer_interval', 'mxroute_write_status_json' );
 		}
 	}
 
@@ -248,6 +252,20 @@ class MXRoute_Mailer {
 			$queue->unclaim_pending( $claim_time, $processed_ids );
 		}
 
+		$queue->write_status_json();
+	}
+
+	/**
+	 * Write status JSON to disk.
+	 *
+	 * Called by the mxroute_write_status_json cron event every 60 seconds.
+	 * Decoupled from process_queue so status is always current even when
+	 * no emails are being processed.
+	 *
+	 * @return void
+	 */
+	public function write_status_json() {
+		$queue = new MXRoute_Queue();
 		$queue->write_status_json();
 	}
 
