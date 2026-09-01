@@ -347,6 +347,68 @@ class MXRoute_Queue {
 	}
 
 	/**
+	 * Write status JSON to /var/run/mxroute-status.json.
+	 *
+	 * Called after each queue batch to keep the status file current.
+	 * The file is read by the GCM MU plugin dashboard widget and
+	 * served by the REST API endpoint.
+	 *
+	 * @return void
+	 */
+	public function write_status_json() {
+		global $wpdb;
+
+		$status_file = '/var/run/mxroute-status.json';
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is safe.
+		$pending = (int) $wpdb->get_var(
+			"SELECT COUNT(*) FROM {$this->table_name} WHERE success = 0 AND processed_at IS NULL"
+		);
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is safe.
+		$sent = (int) $wpdb->get_var(
+			"SELECT COUNT(*) FROM {$this->table_name} WHERE success = 1"
+		);
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is safe.
+		$failed = (int) $wpdb->get_var(
+			"SELECT COUNT(*) FROM {$this->table_name} WHERE success = -1"
+		);
+
+		// Cron health: last run and next scheduled.
+		$last_run       = wp_next_scheduled( 'mxroute_mailer_process_queue' );
+		$next_scheduled = wp_next_scheduled( 'mxroute_mailer_process_queue' );
+
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading cron timestamp.
+		$last_run_str = $last_run ? gmdate( 'Y-m-d H:i:s', $last_run ) : null;
+		$next_str     = $next_scheduled ? gmdate( 'Y-m-d H:i:s', $next_scheduled ) : null;
+
+		$data = array(
+			'pending'    => $pending,
+			'sent'       => $sent,
+			'failed'     => $failed,
+			'cron'       => array(
+				'last_run'       => $last_run_str,
+				'next_scheduled' => $next_str,
+				'interval'       => 60,
+			),
+			'version'    => MXROUTE_MAILER_VERSION,
+			'updated_at' => gmdate( 'Y-m-d H:i:s' ),
+		);
+
+		$json = wp_json_encode( $data );
+		if ( false === $json ) {
+			return;
+		}
+
+		$tmp = $status_file . '.tmp';
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Atomic write.
+		@file_put_contents( $tmp, $json );
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.rename_function -- Atomic rename.
+		@rename( $tmp, $status_file );
+	}
+
+	/**
 	 * Get the base directory for persistent attachment storage.
 	 *
 	 * @return string Full directory path.

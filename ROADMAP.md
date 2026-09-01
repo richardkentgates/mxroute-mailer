@@ -1,6 +1,6 @@
 # MXRoute Mailer Roadmap
 
-Last updated 2026-08-25.
+Last updated 2026-08-31.
 
 ---
 
@@ -22,7 +22,7 @@ MXRoute Mailer is a WordPress plugin that routes outbound email through MXRoute'
 
 | Item | Value |
 |------|-------|
-| Production version | v1.4.54 |
+| Production version | v1.4.55 |
 | Dev version | tracks dev branch (CI auto-bump) |
 | Distribution | Apt server `metadata.json` + GitHub releases |
 | Apt server | 34.136.87.92 (`apt.richardkentgates.com`) |
@@ -31,6 +31,20 @@ MXRoute Mailer is a WordPress plugin that routes outbound email through MXRoute'
 ---
 
 ## What's Done
+
+### v1.4.55 — Dashboard, Security, Adopt Fixes
+
+- **wp-cron files missing from deb builds fixed**
+- **Split-brain upgrade system removed** — `unattended-upgrades` removed
+- **Dashboard widget refactor**: MU plugin queues widget reads MM daemon status JSONs instead of DB queries
+- **ModEvasive thresholds raised**: DOSPageCount 15→30, DOSSiteCount 50→100
+- **ModSecurity detection fixed**: symlink check instead of `apache2ctl -M`
+- **Safe package upgrade added to adopt Phase 4**: patch-level updates only
+- **DISABLE_WP_CRON injection**: adopt Phase 1b injects into wp-config.php
+- **Status JSON PHP version fixed**: uses `gcm_apache_php_version()` instead of bare `php`
+- **Removed `apt-get -s upgrade` from `do_status()`** — was holding apt lock
+- **Removed `updates_available` and `reboot_required` from status JSON**
+- **Fixed MySQL restart timing in adopt**: deferred to end
 
 ### v1.4.11 — Production
 
@@ -79,22 +93,45 @@ main ──push──> promote-to-main.yml (tag + GitHub release + deploy to apt
 
 ## What's Left
 
-### Audit #4 — 2026-08-24 (Cross-Repo Audit) — RESOLVED
+### HIGH — Status JSON + REST API with Application Passwords
 
-#### HIGH — All fixed
-- ✅ **Remove dead `MXRoute_Logger::log()` method** — Removed in v1.4.49.
-- ✅ **Fix CLI `queue clear` bypassing attachment cleanup** — Fixed: now uses `MXRoute_Queue::clear_pending()`.
+**Goal:** MXRoute Mailer writes a status JSON file during queue processing. A new REST API endpoint serves this data to external consumers, protected by WordPress Application Passwords (Basic Auth). The GCM MU plugin reads the JSON file directly for the dashboard widget.
 
-#### MEDIUM — Partially resolved
-- ✅ **Extract recipient normalization to helper** — Fixed: `MXRoute_API::sanitize_email_address()` replaces 4 copies.
-- ✅ **Update ROADMAP.md version/status** — Fixed: v1.4.48.
-- [x] **Update readme.txt changelog** — Done.
-- [x] **Fix SECURITY.md** — Done: account password + AES-256-GCM documented accurately.
+**Status JSON** (`/var/run/mxroute-status.json`):
+```json
+{
+  "pending": 0,
+  "sent": 142,
+  "failed": 3,
+  "cron": {
+    "last_run": "2026-08-31 14:22:00",
+    "next_scheduled": "2026-08-31 14:23:00",
+    "interval": 60
+  },
+  "version": "1.4.55",
+  "updated_at": "2026-08-31 14:22:05"
+}
+```
 
-#### LOW
+**REST API endpoint:** `GET /mxroute/v1/status`
+- Protected by WordPress Application Passwords (Basic Auth)
+- Returns the same JSON as the status file
+- External consumers authenticate with `username:app-password`
+
+**Files to create/modify:**
+- New: `includes/class-mxroute-rest-api.php` — REST route registration + Application Password auth
+- Modified: `includes/class-mxroute-queue.php` — write status JSON after each queue batch
+- Modified: `includes/class-mxroute-mailer.php` — register REST API hooks
+- Modified: `mxroute-mailer.php` — include new REST API class
+
+**GCM MU plugin change** (in `gcm/srv/www/gap-creek-media.php`):
+- Replace direct DB query with `file_get_contents('/var/run/mxroute-status.json')`
+- Same pattern as MetaManager daemon status JSON reading
+
+### MEDIUM — Audit #4 Cleanup
+
 - [ ] **Remove vestigial `$attachments` parameter** from `send_via_api()`.
 - [ ] **Add `error_log()` to `process_queue()`** failures when debug mode enabled.
-- [x] **Remove dead `MXRoute_Logger::log()` method** — Removed in v1.4.49.
 
 ### Maintenance
 1. Keep GitHub Pages docs in sync with any future changes.

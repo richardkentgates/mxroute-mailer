@@ -65,6 +65,7 @@ class MXRoute_Mailer {
 		require_once MXROUTE_MAILER_PLUGIN_DIR . 'includes/class-mxroute-logger.php';
 		require_once MXROUTE_MAILER_PLUGIN_DIR . 'includes/class-mxroute-dashboard.php';
 		require_once MXROUTE_MAILER_PLUGIN_DIR . 'includes/class-mxroute-queue.php';
+		require_once MXROUTE_MAILER_PLUGIN_DIR . 'includes/class-mxroute-rest-api.php';
 	}
 
 	/**
@@ -80,6 +81,7 @@ class MXRoute_Mailer {
 		add_action( 'load-settings_page_mxroute-mailer', array( $this, 'handle_test_email' ) );
 		add_action( 'mxroute_mailer_process_queue', array( $this, 'process_queue' ) );
 		add_action( 'init', array( $this, 'schedule_queue_processor' ) );
+		add_action( 'rest_api_init', array( 'MXRoute_REST_API', 'register_routes' ) );
 	}
 
 	/**
@@ -245,6 +247,8 @@ class MXRoute_Mailer {
 			$claim_time = $pending[0]->processed_at ?? current_time( 'mysql' );
 			$queue->unclaim_pending( $claim_time, $processed_ids );
 		}
+
+		$queue->write_status_json();
 	}
 
 	/**
