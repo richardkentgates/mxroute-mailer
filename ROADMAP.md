@@ -1,6 +1,6 @@
 # MXRoute Mailer Roadmap
 
-Last updated 2026-08-31.
+Last updated 2026-09-01.
 
 ---
 
@@ -22,7 +22,7 @@ MXRoute Mailer is a WordPress plugin that routes outbound email through MXRoute'
 
 | Item | Value |
 |------|-------|
-| Production version | v1.4.55 |
+| Production version | v1.4.59 |
 | Dev version | tracks dev branch (CI auto-bump) |
 | Distribution | Apt server `metadata.json` + GitHub releases |
 | Apt server | 34.136.87.92 (`apt.richardkentgates.com`) |
@@ -31,6 +31,14 @@ MXRoute Mailer is a WordPress plugin that routes outbound email through MXRoute'
 ---
 
 ## What's Done
+
+### v1.4.59 — Charset Fix, WP-CLI Updater Fix, REST API (2026-09-01)
+
+- **Charset fix**: Added `Content-Type: text/html; charset=UTF-8` to API email payload. The SMTP path set CharSet via PHPMailer but the API path sent body without charset, causing MXRoute to default to Latin-1. UTF-8 characters like bullets (•) were garbled as `â€¢`.
+- **WP-CLI updater fix**: Removed WP-CLI skip from updater. The updater previously skipped `pre_set_site_transient_update_plugins` hook under WP-CLI, making plugins uninstallable via `wp plugin update`.
+- **REST API**: `class-mxroute-rest-api.php` with `GET /mxroute/v1/status` endpoint, protected by WordPress Application Passwords.
+- **Status JSON**: Writes to `/var/run/mxroute-status.json` during `process_queue()`.
+- **GCM integration**: MU plugin reads MXRoute status JSON directly (no DB fallback).
 
 ### v1.4.55 — Dashboard, Security, Adopt Fixes
 
@@ -93,40 +101,16 @@ main ──push──> promote-to-main.yml (tag + GitHub release + deploy to apt
 
 ## What's Left
 
-### HIGH — Status JSON + REST API with Application Passwords
+### HIGH — Status JSON + REST API with Application Passwords — ✅ DONE
 
 **Goal:** MXRoute Mailer writes a status JSON file during queue processing. A new REST API endpoint serves this data to external consumers, protected by WordPress Application Passwords (Basic Auth). The GCM MU plugin reads the JSON file directly for the dashboard widget.
 
-**Status JSON** (`/var/run/mxroute-status.json`):
-```json
-{
-  "pending": 0,
-  "sent": 142,
-  "failed": 3,
-  "cron": {
-    "last_run": "2026-08-31 14:22:00",
-    "next_scheduled": "2026-08-31 14:23:00",
-    "interval": 60
-  },
-  "version": "1.4.55",
-  "updated_at": "2026-08-31 14:22:05"
-}
-```
-
-**REST API endpoint:** `GET /mxroute/v1/status`
-- Protected by WordPress Application Passwords (Basic Auth)
-- Returns the same JSON as the status file
-- External consumers authenticate with `username:app-password`
-
-**Files to create/modify:**
-- New: `includes/class-mxroute-rest-api.php` — REST route registration + Application Password auth
-- Modified: `includes/class-mxroute-queue.php` — write status JSON after each queue batch
-- Modified: `includes/class-mxroute-mailer.php` — register REST API hooks
-- Modified: `mxroute-mailer.php` — include new REST API class
-
-**GCM MU plugin change** (in `gcm/srv/www/gap-creek-media.php`):
-- Replace direct DB query with `file_get_contents('/var/run/mxroute-status.json')`
-- Same pattern as MetaManager daemon status JSON reading
+**Implemented:**
+- ✅ `class-mxroute-rest-api.php` — REST route `GET /mxroute/v1/status` with Application Password auth
+- ✅ `class-mxroute-queue.php` — writes status JSON to `/var/run/mxroute-status.json` during `process_queue()`
+- ✅ GCM MU plugin reads MXRoute status JSON directly (no DB fallback)
+- ✅ `Content-Type: text/html; charset=UTF-8` added to API email payload
+- ✅ WP-CLI updater skip removed — plugins now updateable via `wp plugin update`
 
 ### MEDIUM — Audit #4 Cleanup
 

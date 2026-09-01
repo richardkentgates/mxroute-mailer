@@ -110,7 +110,6 @@ MXRoute Mailer supports WordPress Multisite:
 - [Development](https://github.com/richardkentgates/mxroute-mailer/wiki/Development)
 - [Troubleshooting](https://github.com/richardkentgates/mxroute-mailer/wiki/Troubleshooting)
 - [Auto-Updates](https://github.com/richardkentgates/mxroute-mailer/wiki/Auto-Updates)
-- [Development](https://github.com/richardkentgates/mxroute-mailer/wiki/Development)
 
 Local copies of the wiki pages are also kept in the [`wiki/`](wiki/) directory.
 
