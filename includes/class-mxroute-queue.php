@@ -358,7 +358,7 @@ class MXRoute_Queue {
 	public function write_status_json() {
 		global $wpdb;
 
-		$status_file = '/var/run/mxroute-status.json';
+		$status_file = WP_CONTENT_DIR . '/mxroute-status.json';
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is safe.
 		$pending = (int) $wpdb->get_var(
