@@ -186,7 +186,7 @@ class MXRoute_Updater {
 	public function inject_update( $transient ) {
 		$metadata = $this->get_metadata();
 		if ( null === $metadata ) {
-			return false;
+			return $transient;
 		}
 
 		$remote_version = $metadata->version;
@@ -218,7 +218,9 @@ class MXRoute_Updater {
 			return $transient;
 		}
 
-		return false;
+		// No update for this plugin — pass through the transient unchanged
+		// so other updaters' data is preserved.
+		return $transient;
 	}
 
 	/**
