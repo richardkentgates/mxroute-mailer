@@ -3,7 +3,7 @@
  * Plugin Name: MXRoute Mailer
  * Plugin URI: https://richardkentgates.com
  * Description: Sends WordPress email through MXRoute's HTTP API over port 443. Includes logging, test tools, and automatic updates.
- * Version: 1.4.64
+ * Version: 1.4.65
  * Author: Richard Kent Gates
  * Author URI: https://richardkentgates.com
  * License: GPL v2 or later
@@ -22,7 +22,7 @@ defined( 'ABSPATH' ) || exit;
  *
  * @var string
  */
-define( 'MXROUTE_MAILER_VERSION', '1.4.64' );
+define( 'MXROUTE_MAILER_VERSION', '1.4.65' );
 
 /**
  * Absolute path to the main plugin file.
@@ -102,6 +102,14 @@ register_activation_hook(
 				MXRoute_Logger::create_table();
 				restore_current_blog();
 			}
+		}
+
+		// Schedule cron events.
+		if ( ! wp_next_scheduled( 'mxroute_mailer_process_queue' ) ) {
+			wp_schedule_event( time(), 'mxroute_mailer_interval', 'mxroute_mailer_process_queue' );
+		}
+		if ( ! wp_next_scheduled( 'mxroute_write_status_json' ) ) {
+			wp_schedule_event( time(), 'mxroute_mailer_interval', 'mxroute_write_status_json' );
 		}
 	}
 );
