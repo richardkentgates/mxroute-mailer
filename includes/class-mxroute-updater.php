@@ -85,9 +85,33 @@ class MXRoute_Updater {
 		add_filter( 'pre_set_site_transient_update_plugins', array( $this, 'inject_update' ) );
 		add_filter( 'plugins_api', array( $this, 'plugin_info' ), 20, 3 );
 		add_filter( 'upgrader_source_selection', array( $this, 'fix_source_dir' ), 10, 4 );
+		add_action( 'upgrader_process_complete', array( $this, 'on_plugin_updated' ), 10, 2 );
 
 		add_filter( 'plugin_action_links_' . $this->plugin_basename, array( $this, 'action_links' ) );
 		add_action( 'admin_init', array( $this, 'handle_manual_check' ) );
+	}
+
+	/**
+	 * Schedule cron events after plugin update.
+	 */
+	public function on_plugin_updated( $upgrader, array $options ): void {
+		if ( 'update' !== ( $options['action'] ?? '' ) ) {
+			return;
+		}
+		if ( 'plugin' !== ( $options['type'] ?? '' ) ) {
+			return;
+		}
+		$updated_plugins = $options['plugins'] ?? [];
+		if ( ! in_array( $this->plugin_basename, (array) $updated_plugins, true ) ) {
+			return;
+		}
+
+		if ( ! wp_next_scheduled( 'mxroute_mailer_process_queue' ) ) {
+			wp_schedule_event( time(), 'mxroute_mailer_interval', 'mxroute_mailer_process_queue' );
+		}
+		if ( ! wp_next_scheduled( 'mxroute_write_status_json' ) ) {
+			wp_schedule_event( time(), 'mxroute_mailer_interval', 'mxroute_write_status_json' );
+		}
 	}
 
 	// -------------------------------------------------------------------------

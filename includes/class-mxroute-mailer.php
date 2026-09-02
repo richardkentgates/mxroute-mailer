@@ -81,7 +81,6 @@ class MXRoute_Mailer {
 		add_action( 'load-settings_page_mxroute-mailer', array( $this, 'handle_test_email' ) );
 		add_action( 'mxroute_mailer_process_queue', array( $this, 'process_queue' ) );
 		add_action( 'mxroute_write_status_json', array( $this, 'write_status_json' ) );
-		add_action( 'init', array( $this, 'schedule_cron_events' ) );
 		add_action( 'rest_api_init', array( 'MXRoute_REST_API', 'register_routes' ) );
 	}
 

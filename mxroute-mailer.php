@@ -103,6 +103,14 @@ register_activation_hook(
 				restore_current_blog();
 			}
 		}
+
+		// Schedule cron events.
+		if ( ! wp_next_scheduled( 'mxroute_mailer_process_queue' ) ) {
+			wp_schedule_event( time(), 'mxroute_mailer_interval', 'mxroute_mailer_process_queue' );
+		}
+		if ( ! wp_next_scheduled( 'mxroute_write_status_json' ) ) {
+			wp_schedule_event( time(), 'mxroute_mailer_interval', 'mxroute_write_status_json' );
+		}
 	}
 );
 
