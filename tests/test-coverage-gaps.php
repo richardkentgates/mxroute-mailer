@@ -404,9 +404,9 @@ class MXRoute_Updater_API_Test extends \PHPUnit\Framework\TestCase {
 	}
 
 	/**
-	 * Tests that inject_update returns false when no newer version.
+	 * Tests that inject_update returns transient unchanged when no newer version.
 	 */
-	public function test_inject_update_returns_false_when_up_to_date() {
+	public function test_inject_update_returns_transient_when_up_to_date() {
 		$release = array(
 			'version'    => '1.4.12',
 			'download_url' => 'https://example.com/release.zip',
@@ -422,7 +422,7 @@ class MXRoute_Updater_API_Test extends \PHPUnit\Framework\TestCase {
 
 		$result = $updater->inject_update( $transient );
 
-		$this->assertFalse( $result );
+		$this->assertSame( $transient, $result );
 	}
 
 	/**
@@ -461,14 +461,14 @@ class MXRoute_Updater_API_Test extends \PHPUnit\Framework\TestCase {
 	}
 
 	/**
-	 * Tests that inject_update returns false when transient is not an object.
+	 * Tests that inject_update returns input unchanged when transient is not an object.
 	 */
-	public function test_inject_update_returns_false_for_non_object() {
+	public function test_inject_update_returns_input_for_non_object() {
 		$updater = MXRoute_Updater::create_for_test( '/fake/path/mxroute-mailer.php' );
 
 		$result = $updater->inject_update( 'not an object' );
 
-		$this->assertFalse( $result );
+		$this->assertSame( 'not an object', $result );
 	}
 
 	/**
