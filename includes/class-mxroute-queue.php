@@ -393,6 +393,7 @@ class MXRoute_Queue {
 				'next_scheduled' => $next_str,
 				'interval'       => 60,
 			),
+			'history'    => MXRoute_Cron_Tracker::get_all(),
 			'version'    => MXROUTE_MAILER_VERSION,
 			'updated_at' => gmdate( 'Y-m-d H:i:s' ),
 		);

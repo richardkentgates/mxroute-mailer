@@ -79,9 +79,8 @@ class MXRoute_Mailer {
 	private function init_hooks() {
 		add_filter( 'pre_wp_mail', array( $this, 'intercept_wp_mail' ), 999, 2 );
 		add_action( 'load-settings_page_mxroute-mailer', array( $this, 'handle_test_email' ) );
-		add_action( 'mxroute_mailer_process_queue', array( $this, 'process_queue' ) );
-		add_action( 'mxroute_write_status_json', array( $this, 'write_status_json' ) );
-		add_action( 'init', array( $this, 'schedule_cron_events' ) );
+		add_action( 'mxroute_mailer_process_queue', MXRoute_Cron_Tracker::wrap( 'mxroute_mailer_process_queue', array( $this, 'process_queue' ) ) );
+		add_action( 'mxroute_write_status_json', MXRoute_Cron_Tracker::wrap( 'mxroute_write_status_json', array( $this, 'write_status_json' ) ) );
 		add_action( 'rest_api_init', array( 'MXRoute_REST_API', 'register_routes' ) );
 	}
 

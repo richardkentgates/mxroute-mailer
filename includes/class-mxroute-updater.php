@@ -35,12 +35,6 @@ class MXRoute_Updater {
 	/** URL of the apt server test channel metadata.json. */
 	private const METADATA_URL_TEST = 'https://apt.richardkentgates.com/mxroute-mailer-test/metadata.json';
 
-	/** WordPress option / transient key used to cache the remote metadata. */
-	private const TRANSIENT = 'mxroute_remote_metadata';
-
-	/** How long to cache the remote response (seconds). Mirrors WP's 12-hour cycle. */
-	private const CACHE_TTL = 43200;
-
 	/** Basename of this plugin file, e.g. "mxroute-mailer/mxroute-mailer.php". */
 	private $plugin_basename;
 
@@ -85,9 +79,36 @@ class MXRoute_Updater {
 		add_filter( 'pre_set_site_transient_update_plugins', array( $this, 'inject_update' ) );
 		add_filter( 'plugins_api', array( $this, 'plugin_info' ), 20, 3 );
 		add_filter( 'upgrader_source_selection', array( $this, 'fix_source_dir' ), 10, 4 );
+		add_action( 'upgrader_process_complete', array( $this, 'on_plugin_updated' ), 10, 2 );
 
 		add_filter( 'plugin_action_links_' . $this->plugin_basename, array( $this, 'action_links' ) );
 		add_action( 'admin_init', array( $this, 'handle_manual_check' ) );
+	}
+
+	/**
+	 * Schedule cron events after plugin update.
+	 */
+	public function on_plugin_updated( $upgrader, array $options ): void {
+		if ( 'update' !== ( $options['action'] ?? '' ) ) {
+			return;
+		}
+		if ( 'plugin' !== ( $options['type'] ?? '' ) ) {
+			return;
+		}
+		$updated_plugins = $options['plugins'] ?? [];
+		if ( ! in_array( $this->plugin_basename, (array) $updated_plugins, true ) ) {
+			return;
+		}
+
+		if ( ! wp_next_scheduled( 'mxroute_mailer_process_queue' ) ) {
+			wp_schedule_event( time(), 'mxroute_mailer_interval', 'mxroute_mailer_process_queue' );
+		}
+		if ( ! wp_next_scheduled( 'mxroute_write_status_json' ) ) {
+			wp_schedule_event( time(), 'mxroute_mailer_interval', 'mxroute_write_status_json' );
+		}
+		if ( ! wp_next_scheduled( 'mxroute_mailer_daily_cleanup' ) ) {
+			wp_schedule_event( time(), 'daily', 'mxroute_mailer_daily_cleanup' );
+		}
 	}
 
 	// -------------------------------------------------------------------------
@@ -95,19 +116,11 @@ class MXRoute_Updater {
 	// -------------------------------------------------------------------------
 
 	/**
-	 * Fetch the latest metadata from the apt server, with caching.
+	 * Fetch the latest metadata from the apt server.
 	 *
-	 * @param bool $force_refresh Bypass the transient cache when true.
 	 * @return object|null  Decoded metadata object, or null on failure.
 	 */
-	private function get_metadata( bool $force_refresh = false ): ?object {
-		if ( ! $force_refresh ) {
-			$cached = get_transient( self::TRANSIENT );
-			if ( false !== $cached ) {
-				return $cached ?: null;
-			}
-		}
-
+	private function get_metadata(): ?object {
 		// Use test channel if MXROUTE_MAILER_UPDATE_CHANNEL is set to 'test'.
 		$channel = defined( 'MXROUTE_MAILER_UPDATE_CHANNEL' ) ? MXROUTE_MAILER_UPDATE_CHANNEL : 'production';
 		$url     = ( 'test' === $channel ) ? self::METADATA_URL_TEST : self::METADATA_URL;
@@ -121,14 +134,12 @@ class MXRoute_Updater {
 		);
 
 		if ( is_wp_error( $response ) || wp_remote_retrieve_response_code( $response ) !== 200 ) {
-			set_transient( self::TRANSIENT, '', self::CACHE_TTL );
 			return null;
 		}
 
 		$metadata = json_decode( wp_remote_retrieve_body( $response ) );
 
 		if ( empty( $metadata->version ) || empty( $metadata->download_url ) ) {
-			set_transient( self::TRANSIENT, '', self::CACHE_TTL );
 			return null;
 		}
 
@@ -145,7 +156,6 @@ class MXRoute_Updater {
 			$metadata->requires->wordpress = '5.0';
 		}
 
-		set_transient( self::TRANSIENT, $metadata, self::CACHE_TTL );
 		return $metadata;
 	}
 
@@ -162,7 +172,7 @@ class MXRoute_Updater {
 	public function inject_update( $transient ) {
 		$metadata = $this->get_metadata();
 		if ( null === $metadata ) {
-			return false;
+			return $transient;
 		}
 
 		$remote_version = $metadata->version;
@@ -194,7 +204,9 @@ class MXRoute_Updater {
 			return $transient;
 		}
 
-		return false;
+		// No update for this plugin — pass through the transient unchanged
+		// so other updaters' data is preserved.
+		return $transient;
 	}
 
 	/**
@@ -313,10 +325,7 @@ class MXRoute_Updater {
 
 		check_admin_referer( 'mxr_check_update' );
 
-		delete_transient( self::TRANSIENT );
-		delete_site_transient( 'update_plugins' );
-
-		$metadata = $this->get_metadata( true );
+		$metadata = $this->get_metadata();
 
 		if ( $metadata ) {
 			$remote_version = $metadata->version;

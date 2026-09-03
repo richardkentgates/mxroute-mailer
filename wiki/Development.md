@@ -55,7 +55,7 @@ mxroute-mailer/
 │   ├── class-mxroute-logger.php    # Email logging to database
 │   ├── class-mxroute-queue.php     # Queue CRUD operations
 │   ├── class-mxroute-dashboard.php # AJAX handlers for log management
-│   ├── class-mxroute-updater.php   # GitHub-based auto-updater
+│   ├── class-mxroute-updater.php   # Apt-server-based auto-updater
 │   └── class-mxroute-cli.php       # WP-CLI commands: settings, logs, queue, test
 ├── admin/
 │   ├── views/
@@ -77,7 +77,6 @@ mxroute-mailer/
 │   ├── test-class-dashboard.php    # Dashboard AJAX tests
 │   ├── test-class-queue.php        # Queue and API tests
 │   ├── test-class-crypto.php       # Encryption tests
-│   ├── test-class-updater.php      # Updater tests
 │   ├── test-class-mxroute-api.php  # API client tests
 │   ├── test-edge-cases.php         # Edge case and boundary tests
 │   └── test-coverage-gaps.php      # Coverage gap tests
