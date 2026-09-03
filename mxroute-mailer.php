@@ -88,6 +88,7 @@ function mxroute_mailer_can_manage() {
 require_once MXROUTE_MAILER_PLUGIN_DIR . 'includes/class-mxroute-crypto.php';
 require_once MXROUTE_MAILER_PLUGIN_DIR . 'includes/class-mxroute-mailer.php';
 require_once MXROUTE_MAILER_PLUGIN_DIR . 'includes/class-mxroute-updater.php';
+require_once MXROUTE_MAILER_PLUGIN_DIR . 'includes/class-mxroute-cron-tracker.php';
 
 register_activation_hook(
 	__FILE__,
@@ -210,7 +211,100 @@ function mxroute_mailer_daily_cleanup() {
 	$queue = new MXRoute_Queue();
 	$queue->cleanup( 30 );
 }
-add_action( 'mxroute_mailer_daily_cleanup', 'mxroute_mailer_daily_cleanup' );
+add_action( 'mxroute_mailer_daily_cleanup', MXRoute_Cron_Tracker::wrap( 'mxroute_mailer_daily_cleanup', 'mxroute_mailer_daily_cleanup' ) );
+
+// -------------------------------------------------------------------------
+// Dashboard widget
+// -------------------------------------------------------------------------
+
+add_action( 'wp_dashboard_setup', 'mxroute_mailer_register_dashboard_widget' );
+
+/**
+ * Register the MXRoute Mailer dashboard widget.
+ *
+ * @return void
+ */
+function mxroute_mailer_register_dashboard_widget() {
+	if ( ! current_user_can( 'manage_options' ) ) {
+		return;
+	}
+	wp_add_dashboard_widget(
+		'mxroute_mailer_status',
+		__( 'MXRoute Mailer Status', 'mxroute-mailer' ),
+		'mxroute_mailer_render_dashboard_widget'
+	);
+}
+
+/**
+ * Render the MXRoute Mailer dashboard widget.
+ *
+ * @return void
+ */
+function mxroute_mailer_render_dashboard_widget() {
+	$content_dir = defined( 'WP_CONTENT_DIR' ) ? WP_CONTENT_DIR : '/tmp';
+	$status_file = $content_dir . '/mxroute-status.json';
+	$data        = array();
+
+	if ( is_readable( $status_file ) ) {
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+		$json = @file_get_contents( $status_file );
+		if ( false !== $json ) {
+			$decoded = json_decode( $json, true );
+			if ( is_array( $decoded ) ) {
+				$data = $decoded;
+			}
+		}
+	}
+
+	$pending = $data['pending'] ?? 0;
+	$sent    = $data['sent'] ?? 0;
+	$failed  = $data['failed'] ?? 0;
+	$history = $data['history'] ?? array();
+	?>
+	<table class="widefat striped" style="margin-bottom:0">
+		<thead><tr><th><?php esc_html_e( 'Queue', 'mxroute-mailer' ); ?></th><th><?php esc_html_e( 'Count', 'mxroute-mailer' ); ?></th></tr></thead>
+		<tbody>
+			<tr>
+				<td><?php esc_html_e( 'Pending', 'mxroute-mailer' ); ?></td>
+				<td><?php echo $pending > 0
+					? '<span style="color:#dba617;font-weight:600;">' . esc_html( $pending ) . '</span>'
+					: '<span style="color:#00a32a;">0</span>'; ?></td>
+			</tr>
+			<tr>
+				<td><?php esc_html_e( 'Sent', 'mxroute-mailer' ); ?></td>
+				<td><?php echo esc_html( $sent ); ?></td>
+			</tr>
+			<tr>
+				<td><?php esc_html_e( 'Failed', 'mxroute-mailer' ); ?></td>
+				<td><?php echo $failed > 0
+					? '<span style="color:#d63638;font-weight:600;">' . esc_html( $failed ) . '</span>'
+					: '0'; ?></td>
+			</tr>
+		</tbody>
+	</table>
+	<?php if ( ! empty( $history ) ) : ?>
+	<br />
+	<table class="widefat striped" style="margin-bottom:0">
+		<thead><tr><th><?php esc_html_e( 'Cron Event', 'mxroute-mailer' ); ?></th><th><?php esc_html_e( 'Last Run', 'mxroute-mailer' ); ?></th><th><?php esc_html_e( 'Status', 'mxroute-mailer' ); ?></th><th><?php esc_html_e( 'Pass', 'mxroute-mailer' ); ?></th><th><?php esc_html_e( 'Fail', 'mxroute-mailer' ); ?></th></tr></thead>
+		<tbody>
+			<?php foreach ( $history as $hook => $info ) : ?>
+			<tr>
+				<td><?php echo esc_html( $hook ); ?></td>
+				<td><?php echo esc_html( ! empty( $info['last_run'] ) ? gmdate( 'Y-m-d H:i', strtotime( $info['last_run'] ) ) : '—' ); ?></td>
+				<td><?php echo 'pass' === ( $info['last_status'] ?? '' )
+					? '<span class="dashicons dashicons-yes-alt" style="color:#00a32a;font-size:18px;width:18px;height:18px;"></span>'
+					: '<span class="dashicons dashicons-dismiss" style="color:#d63638;font-size:18px;width:18px;height:18px;"></span>'; ?></td>
+				<td><?php echo esc_html( $info['pass_count'] ?? 0 ); ?></td>
+				<td><?php echo ( $info['fail_count'] ?? 0 ) > 0
+					? '<span style="color:#d63638;">' . esc_html( $info['fail_count'] ) . '</span>'
+					: esc_html( $info['fail_count'] ?? 0 ); ?></td>
+			</tr>
+			<?php endforeach; ?>
+		</tbody>
+	</table>
+	<?php endif; ?>
+	<?php
+}
 
 /**
  * Create the logs table when a new site is added on multisite.

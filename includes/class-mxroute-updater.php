@@ -112,6 +112,9 @@ class MXRoute_Updater {
 		if ( ! wp_next_scheduled( 'mxroute_write_status_json' ) ) {
 			wp_schedule_event( time(), 'mxroute_mailer_interval', 'mxroute_write_status_json' );
 		}
+		if ( ! wp_next_scheduled( 'mxroute_mailer_daily_cleanup' ) ) {
+			wp_schedule_event( time(), 'daily', 'mxroute_mailer_daily_cleanup' );
+		}
 	}
 
 	// -------------------------------------------------------------------------
