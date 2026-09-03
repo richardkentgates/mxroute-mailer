@@ -112,6 +112,9 @@ class MXRoute_Updater {
 		if ( ! wp_next_scheduled( 'mxroute_write_status_json' ) ) {
 			wp_schedule_event( time(), 'mxroute_mailer_interval', 'mxroute_write_status_json' );
 		}
+		if ( ! wp_next_scheduled( 'mxroute_mailer_daily_cleanup' ) ) {
+			wp_schedule_event( time(), 'daily', 'mxroute_mailer_daily_cleanup' );
+		}
 	}
 
 	// -------------------------------------------------------------------------
@@ -186,7 +189,7 @@ class MXRoute_Updater {
 	public function inject_update( $transient ) {
 		$metadata = $this->get_metadata();
 		if ( null === $metadata ) {
-			return false;
+			return $transient;
 		}
 
 		$remote_version = $metadata->version;
@@ -218,7 +221,9 @@ class MXRoute_Updater {
 			return $transient;
 		}
 
-		return false;
+		// No update for this plugin — pass through the transient unchanged
+		// so other updaters' data is preserved.
+		return $transient;
 	}
 
 	/**
