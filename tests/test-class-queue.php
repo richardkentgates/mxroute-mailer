@@ -364,6 +364,7 @@ class MXRoute_Mailer_Queue_Test extends \PHPUnit\Framework\TestCase {
 			'message'     => 'Body',
 			'reply_to'    => '',
 			'attachments' => '[]',
+			'headers'     => '',
 			'transport'   => '',
 		);
 		$GLOBALS['wp_db_results'] = array( $item );
@@ -393,6 +394,7 @@ class MXRoute_Mailer_Queue_Test extends \PHPUnit\Framework\TestCase {
 			'message'     => 'Body',
 			'reply_to'    => '',
 			'attachments' => '[]',
+			'headers'     => '',
 			'transport'   => '',
 		);
 		$GLOBALS['wp_db_results'] = array( $item );
