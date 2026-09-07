@@ -27,6 +27,8 @@ If you use MXRoute for email hosting, this plugin integrates it directly with Wo
 * Email logging with filtering, search, and pagination
 * Reply-To header support for contact forms
 * Test email functionality with full API response details
+* Dashboard widget with queue stats and cron event history
+* WP-Cron history tracking with pass/fail counts
 * Apt server-based automatic updates
 * Works with all WordPress plugins that use `wp_mail()`
 * Developer-friendly with full CI/CD pipeline and coding standards

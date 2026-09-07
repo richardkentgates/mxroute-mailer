@@ -105,7 +105,14 @@ class MXRoute_Cron_Tracker {
 	 * @return array
 	 */
 	public static function get_all(): array {
-		return get_option( self::OPTION_KEY, array() );
+		$history = get_option( self::OPTION_KEY, array() );
+		$filtered = array();
+		foreach ( $history as $hook => $info ) {
+			if ( 0 === strpos( $hook, 'mxroute_' ) ) {
+				$filtered[ $hook ] = $info;
+			}
+		}
+		return $filtered;
 	}
 
 	/**
