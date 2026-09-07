@@ -374,6 +374,21 @@ class MXRoute_Settings {
 
 		$screen->add_help_tab(
 			array(
+				'id'      => 'mxroute-dashboard',
+				'title'   => __( 'Dashboard Widget', 'mxroute-mailer' ),
+				'content' => '<h4>' . esc_html__( 'Dashboard Widget', 'mxroute-mailer' ) . '</h4>'
+					. '<p>' . esc_html__( 'MXRoute Mailer adds a dashboard widget showing queue statistics and cron event history. The widget displays:', 'mxroute-mailer' ) . '</p>'
+					. '<ul>'
+					. '<li>' . esc_html__( 'Pending, sent, and failed email counts', 'mxroute-mailer' ) . '</li>'
+					. '<li>' . esc_html__( 'Cron event history: last run time, status (pass/fail), and run counts for each tracked hook', 'mxroute-mailer' ) . '</li>'
+					. '<li>' . esc_html__( 'Tracked hooks: process_queue, write_status_json, daily_cleanup', 'mxroute-mailer' ) . '</li>'
+					. '</ul>'
+					. '<p>' . esc_html__( 'The widget auto-refreshes when the page loads. Cron history is stored per-hook with the last 20 runs.', 'mxroute-mailer' ) . '</p>',
+			)
+		);
+
+		$screen->add_help_tab(
+			array(
 				'id'      => 'mxroute-wp-cli',
 				'title'   => __( 'WP-CLI', 'mxroute-mailer' ),
 				'content' => '<p>' . esc_html__( 'MXRoute Mailer includes WP-CLI commands for command-line management. All commands use the wp mxroute prefix.', 'mxroute-mailer' ) . '</p>'

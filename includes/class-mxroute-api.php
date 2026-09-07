@@ -79,14 +79,14 @@ class MXRoute_API {
 	 *     @type array  $response Raw API response.
 	 * }
 	 */
-	public function send( $from, $to, $subject, $body, $reply_to = '', $attachments = array() ) {
+	public function send( $from, $to, $subject, $body, $reply_to = '', $attachments = array(), $headers = '' ) {
 		$valid_attachments = $this->filter_valid_attachments( $attachments );
 
 		if ( ! empty( $valid_attachments ) ) {
 			return $this->send_via_smtp( $from, $to, $subject, $body, $reply_to, $valid_attachments );
 		}
 
-		return $this->send_via_api( $from, $to, $subject, $body, $reply_to );
+		return $this->send_via_api( $from, $to, $subject, $body, $reply_to, array(), $headers );
 	}
 
 	/**
@@ -109,7 +109,7 @@ class MXRoute_API {
 	 * @param string       $reply_to Optional Reply-To email address.
 	 * @return array Response data.
 	 */
-	public function send_via_api( $from, $to, $subject, $body, $reply_to = '', $attachments = array() ) {
+	public function send_via_api( $from, $to, $subject, $body, $reply_to = '', $attachments = array(), $headers = '' ) {
 		$server   = get_option( 'mxroute_mailer_server', '' );
 		$username = get_option( 'mxroute_mailer_username', '' );
 		$password = MXRoute_Crypto::get_password();
@@ -127,6 +127,19 @@ class MXRoute_API {
 		$from     = sanitize_email( $from );
 		$reply_to = sanitize_email( $reply_to );
 
+		// Build Content-Type from original headers, default to text/html.
+		$content_type = 'Content-Type: text/html; charset=UTF-8';
+		if ( is_string( $headers ) && '' !== $headers ) {
+			$lines = explode( "\n", $headers );
+			foreach ( $lines as $line ) {
+				$line = trim( $line );
+				if ( 0 === stripos( $line, 'Content-Type:' ) ) {
+					$content_type = $line;
+					break;
+				}
+			}
+		}
+
 		$payload = array(
 			'server'   => $server,
 			'username' => $username,
@@ -135,7 +148,7 @@ class MXRoute_API {
 			'to'       => mb_substr( $to_single, 0, self::$max_field_length ),
 			'subject'  => mb_substr( $subject, 0, self::$max_field_length ),
 			'body'     => mb_substr( $body, 0, self::$max_field_length * 10 ),
-			'headers'  => 'Content-Type: text/html; charset=UTF-8',
+			'headers'  => $content_type,
 		);
 
 		if ( ! empty( $reply_to ) ) {

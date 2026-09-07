@@ -4,7 +4,7 @@ Tags: email, smtp, mxroute, mail
 Requires at least: 5.0
 Tested up to: 7.0
 Requires PHP: 7.3
-Stable tag: 1.4.69
+Stable tag: 1.4.72
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -27,6 +27,8 @@ If you use MXRoute for email hosting, this plugin integrates it directly with Wo
 * Email logging with filtering, search, and pagination
 * Reply-To header support for contact forms
 * Test email functionality with full API response details
+* Dashboard widget with queue stats and cron event history
+* WP-Cron history tracking with pass/fail counts
 * Apt server-based automatic updates
 * Works with all WordPress plugins that use `wp_mail()`
 * Developer-friendly with full CI/CD pipeline and coding standards

@@ -224,7 +224,8 @@ class MXRoute_Mailer {
 					$item->subject,
 					$item->message,
 					$item->reply_to,
-					$attachments
+					$attachments,
+					$item->headers
 				);
 			} catch ( \Throwable $e ) {
 				$result = array(
