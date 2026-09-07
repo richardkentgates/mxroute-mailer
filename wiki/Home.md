@@ -26,6 +26,8 @@ If your hosting provider blocks SMTP ports, standard WordPress email and SMTP pl
 - **Multisite support** - Per-site settings and logs, network activate/deactivate, automatic table creation
 - **Reply-To support** - Preserves form sender addresses as Reply-To headers
 - **Test email** - Verify your configuration with a single click
+- **Dashboard widget** - Queue stats and cron event history table with status icons and pass/fail counts
+- **WP-Cron history tracking** - Every cron event tracked with last run, pass/fail counts, and last 20 runs per hook
 - **Automatic updates** - New versions arrive from the apt server and appear in your WordPress dashboard
 - **Developer-friendly** - Full CI/CD pipeline, coding standards, comprehensive tests (263 tests)
 

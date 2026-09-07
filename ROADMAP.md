@@ -1,6 +1,6 @@
 # MXRoute Mailer Roadmap
 
-Last updated 2026-09-01.
+Last updated 2026-09-03.
 
 ---
 
@@ -22,7 +22,7 @@ MXRoute Mailer is a WordPress plugin that routes outbound email through MXRoute'
 
 | Item | Value |
 |------|-------|
-| Production version | v1.4.59 |
+| Production version | v1.4.69 |
 | Dev version | tracks dev branch (CI auto-bump) |
 | Distribution | Apt server `metadata.json` + GitHub releases |
 | Apt server | 34.136.87.92 (`apt.richardkentgates.com`) |
@@ -31,6 +31,18 @@ MXRoute Mailer is a WordPress plugin that routes outbound email through MXRoute'
 ---
 
 ## What's Done
+
+### WP-Cron History Tracking, Dashboard Widget, Updater Fixes (2026-09-02 to 2026-09-03)
+
+- **WP-Cron history tracking**: New `MXRoute_Cron_Tracker` class wraps cron callbacks to auto-track last run, next run, pass/fail counts, and last 20 runs per hook
+- **Dashboard widget**: Registered via `wp_dashboard_setup`, shows queue stats and cron history table with status icons
+- **inject_update fix**: `inject_update()` now returns `$transient` instead of `false` when no update available, preventing clobbering of other updaters' data
+- **Updater transient cache removal**: Removed `TRANSIENT` and `CACHE_TTL` constants and all `get_transient`/`set_transient` calls from `get_metadata()`. Now fetches fresh from apt server every time, matching MetaManager's working pattern. Root cause documented in AGENTS.md.
+- **`on_plugin_updated()`**: Re-registers `mxroute_mailer_process_queue`, `mxroute_write_status_json`, and `mxroute_mailer_daily_cleanup` crons after plugin update
+- **Cron tracker registered in**: `mxroute-mailer.php`, `class-mxroute-mailer.php`
+- **Status JSON**: New `history` key via `MXRoute_Cron_Tracker::get_all()`
+- **CI tests updated**: Tests updated to match corrected `inject_update` return behavior
+- **Production deployed**: v1.4.69 on all four servers
 
 ### v1.4.59 — Charset Fix, WP-CLI Updater Fix, REST API (2026-09-01)
 

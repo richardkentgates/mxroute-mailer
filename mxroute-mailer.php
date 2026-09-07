@@ -3,7 +3,7 @@
  * Plugin Name: MXRoute Mailer
  * Plugin URI: https://richardkentgates.com
  * Description: Sends WordPress email through MXRoute's HTTP API over port 443. Includes logging, test tools, and automatic updates.
- * Version: 1.4.69
+ * Version: 1.4.70
  * Author: Richard Kent Gates
  * Author URI: https://richardkentgates.com
  * License: GPL v2 or later
@@ -22,7 +22,7 @@ defined( 'ABSPATH' ) || exit;
  *
  * @var string
  */
-define( 'MXROUTE_MAILER_VERSION', '1.4.69' );
+define( 'MXROUTE_MAILER_VERSION', '1.4.70' );
 
 /**
  * Absolute path to the main plugin file.
@@ -285,19 +285,18 @@ function mxroute_mailer_render_dashboard_widget() {
 	<?php if ( ! empty( $history ) ) : ?>
 	<br />
 	<table class="widefat striped" style="margin-bottom:0">
-		<thead><tr><th><?php esc_html_e( 'Cron Event', 'mxroute-mailer' ); ?></th><th><?php esc_html_e( 'Last Run', 'mxroute-mailer' ); ?></th><th><?php esc_html_e( 'Status', 'mxroute-mailer' ); ?></th><th><?php esc_html_e( 'Pass', 'mxroute-mailer' ); ?></th><th><?php esc_html_e( 'Fail', 'mxroute-mailer' ); ?></th></tr></thead>
+		<thead><tr><th><?php esc_html_e( 'Cron Event', 'mxroute-mailer' ); ?></th><th style="text-align:right"><?php esc_html_e( 'Pass / Fail', 'mxroute-mailer' ); ?></th></tr></thead>
 		<tbody>
 			<?php foreach ( $history as $hook => $info ) : ?>
 			<tr>
 				<td><?php echo esc_html( $hook ); ?></td>
-				<td><?php echo esc_html( ! empty( $info['last_run'] ) ? gmdate( 'Y-m-d H:i', strtotime( $info['last_run'] ) ) : '—' ); ?></td>
-				<td><?php echo 'pass' === ( $info['last_status'] ?? '' )
-					? '<span class="dashicons dashicons-yes-alt" style="color:#00a32a;font-size:18px;width:18px;height:18px;"></span>'
-					: '<span class="dashicons dashicons-dismiss" style="color:#d63638;font-size:18px;width:18px;height:18px;"></span>'; ?></td>
-				<td><?php echo esc_html( $info['pass_count'] ?? 0 ); ?></td>
-				<td><?php echo ( $info['fail_count'] ?? 0 ) > 0
-					? '<span style="color:#d63638;">' . esc_html( $info['fail_count'] ) . '</span>'
-					: esc_html( $info['fail_count'] ?? 0 ); ?></td>
+				<td style="text-align:right;white-space:nowrap">
+					<?php echo esc_html( $info['pass_count'] ?? 0 ); ?>
+					/
+					<?php echo ( $info['fail_count'] ?? 0 ) > 0
+						? '<span style="color:#d63638;font-weight:600">' . esc_html( $info['fail_count'] ) . '</span>'
+						: esc_html( $info['fail_count'] ?? 0 ); ?>
+				</td>
 			</tr>
 			<?php endforeach; ?>
 		</tbody>
