@@ -149,6 +149,7 @@ class MXRoute_Logger_Test extends \PHPUnit\Framework\TestCase {
      */
     public function test_requeue_log_executes_queries() {
         $logger = new MXRoute_Logger();
+        $GLOBALS['wp_db_affected_rows'] = 1;
         $before = count( $GLOBALS['wp_db_queries'] );
         $result = $logger->requeue_log( 1 );
 
