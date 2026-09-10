@@ -648,6 +648,7 @@ if (!file_exists('/tmp/wordpress/wp-admin/includes/upgrade.php')) {
 class MockWPDB {
     public $prefix = 'wp_';
     public $insert_id = 0;
+    public $rows_affected = 0;
 
     public function get_charset_collate() {
         return 'utf8mb4';
@@ -714,6 +715,7 @@ class MockWPDB {
 
     public function query($query) {
         $GLOBALS['wp_db_queries'][] = $query;
+        $this->rows_affected = isset( $GLOBALS['wp_db_affected_rows'] ) ? $GLOBALS['wp_db_affected_rows'] : 0;
         return true;
     }
 
