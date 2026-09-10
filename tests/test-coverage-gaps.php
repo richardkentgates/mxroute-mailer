@@ -559,3 +559,124 @@ class MockScreen {
 		$this->help_sidebar = $html;
 	}
 }
+
+/**
+ * Tests for MXRoute_Queue::unclaim_pending() and requeue-during-claim race condition.
+ */
+class MXRoute_Unclaim_Requeue_Race_Test extends \PHPUnit\Framework\TestCase {
+
+	protected function setUp(): void {
+		$GLOBALS['wp_options']            = array();
+		$GLOBALS['wp_function_calls']     = array();
+		$GLOBALS['wp_db_inserts']         = array();
+		$GLOBALS['wp_db_queries']         = array();
+		$GLOBALS['wp_db_results']         = null;
+		$GLOBALS['wp_scheduled_events']   = array();
+		MXRoute_Mailer::reset();
+	}
+
+	protected function tearDown(): void {
+		unset( $GLOBALS['wp_db_results'] );
+	}
+
+	/**
+	 * Tests that unclaim_pending resets processed_at for claimed items.
+	 */
+	public function test_unclaim_pending_resets_claimed_items() {
+		$queue = new MXRoute_Queue();
+		$claim_time = '2026-09-10 12:00:00';
+
+		// Mock: simulate claimed items by setting up a query result
+		$GLOBALS['wp_db_results'] = array();
+
+		$result = $queue->unclaim_pending( $claim_time, array() );
+
+		// Verify that an UPDATE query was executed
+		$found = false;
+		foreach ( $GLOBALS['wp_db_queries'] as $query ) {
+			if ( false !== strpos( $query, 'SET processed_at = NULL' ) && false !== strpos( $query, 'WHERE processed_at =' ) ) {
+				$found = true;
+				break;
+			}
+		}
+		$this->assertTrue( $found, 'unclaim_pending should execute UPDATE to reset processed_at' );
+	}
+
+	/**
+	 * Tests that unclaim_pending excludes processed IDs when provided.
+	 */
+	public function test_unclaim_pending_excludes_processed_ids() {
+		$queue = new MXRoute_Queue();
+		$claim_time = '2026-09-10 12:00:00';
+		$processed_ids = array( 1, 2, 3 );
+
+		$GLOBALS['wp_db_results'] = array();
+
+		$result = $queue->unclaim_pending( $claim_time, $processed_ids );
+
+		// Verify that the query excludes the processed IDs
+		$found = false;
+		foreach ( $GLOBALS['wp_db_queries'] as $query ) {
+			if ( false !== strpos( $query, 'NOT IN' ) && false !== strpos( $query, '1,2,3' ) ) {
+				$found = true;
+				break;
+			}
+		}
+		$this->assertTrue( $found, 'unclaim_pending should exclude processed IDs from the reset' );
+	}
+
+	/**
+	 * Tests that requeue_log does NOT requeue a currently claimed item.
+	 * This is the race condition fix: if an item is claimed (processed_at IS NOT NULL, success = 0),
+	 * requeue_log should not touch it.
+	 */
+	public function test_requeue_log_skips_claimed_items() {
+		$logger = new MXRoute_Logger();
+
+		// Mock: simulate that the row exists but is claimed (processed_at IS NOT NULL, success = 0)
+		// The query should return 0 rows affected because the WHERE clause excludes claimed items
+		$GLOBALS['wp_db_results'] = null;
+
+		$result = $logger->requeue_log( 1 );
+
+		// Verify the SQL includes the claim-awareness check
+		$found = false;
+		foreach ( $GLOBALS['wp_db_queries'] as $query ) {
+			if ( false !== strpos( $query, 'processed_at IS NULL OR success != 0' ) ) {
+				$found = true;
+				break;
+			}
+		}
+		$this->assertTrue( $found, 'requeue_log should include claim-awareness check in WHERE clause' );
+	}
+
+	/**
+	 * Tests that requeue_log returns false when no rows were affected (item was claimed).
+	 */
+	public function test_requeue_log_returns_false_when_item_is_claimed() {
+		$logger = new MXRoute_Logger();
+
+		// Mock: simulate that no rows were affected (item was claimed)
+		$GLOBALS['wp_db_results']   = null;
+		$GLOBALS['wp_db_affected_rows'] = 0;
+
+		$result = $logger->requeue_log( 1 );
+
+		$this->assertFalse( $result, 'requeue_log should return false when item is claimed/in-flight' );
+	}
+
+	/**
+	 * Tests that requeue_log returns true when a row was affected (item was not claimed).
+	 */
+	public function test_requeue_log_returns_true_when_item_is_not_claimed() {
+		$logger = new MXRoute_Logger();
+
+		// Mock: simulate that 1 row was affected (item was not claimed)
+		$GLOBALS['wp_db_results']   = null;
+		$GLOBALS['wp_db_affected_rows'] = 1;
+
+		$result = $logger->requeue_log( 1 );
+
+		$this->assertTrue( $result, 'requeue_log should return true when item is successfully requeued' );
+	}
+}

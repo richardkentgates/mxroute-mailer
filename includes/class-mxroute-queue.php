@@ -134,15 +134,6 @@ class MXRoute_Queue {
 			)
 		);
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is safe, dynamic limit.
-		$wpdb->query(
-			$wpdb->prepare(
-				"UPDATE {$this->table_name} SET processed_at = %s WHERE success = 0 AND processed_at IS NULL ORDER BY created_at ASC LIMIT %d",
-				$claim_time,
-				$limit
-			)
-		);
-
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is safe.
 		return $wpdb->get_results(
 			$wpdb->prepare(
