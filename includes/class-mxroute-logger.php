@@ -233,15 +233,18 @@ class MXRoute_Logger {
 			return false;
 		}
 
+		// Only requeue items that are NOT currently claimed/in-flight.
+		// A claimed item has processed_at IS NOT NULL and success = 0.
+		// We only requeue items that have been processed (success != 0) or are pending (processed_at IS NULL).
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$wpdb->query(
 			$wpdb->prepare(
-				"UPDATE {$this->table_name} SET success = 0, api_request = '', api_response = '', processed_at = NULL WHERE id = %d",
+				"UPDATE {$this->table_name} SET success = 0, api_request = '', api_response = '', processed_at = NULL WHERE id = %d AND (processed_at IS NULL OR success != 0)",
 				$id
 			)
 		);
 
-		return true;
+		return $wpdb->rows_affected > 0;
 	}
 
 	/**
