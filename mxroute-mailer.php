@@ -3,7 +3,7 @@
  * Plugin Name: MXRoute Mailer
  * Plugin URI: https://richardkentgates.com
  * Description: Sends WordPress email through MXRoute's HTTP API over port 443. Includes logging, test tools, and automatic updates.
- * Version: 1.4.77
+ * Version: 1.4.78
  * Author: Richard Kent Gates
  * Author URI: https://richardkentgates.com
  * License: GPL v2 or later
@@ -22,7 +22,7 @@ defined( 'ABSPATH' ) || exit;
  *
  * @var string
  */
-define( 'MXROUTE_MAILER_VERSION', '1.4.77' );
+define( 'MXROUTE_MAILER_VERSION', '1.4.78' );
 
 /**
  * Absolute path to the main plugin file.
@@ -90,28 +90,42 @@ require_once MXROUTE_MAILER_PLUGIN_DIR . 'includes/class-mxroute-mailer.php';
 require_once MXROUTE_MAILER_PLUGIN_DIR . 'includes/class-mxroute-updater.php';
 require_once MXROUTE_MAILER_PLUGIN_DIR . 'includes/class-mxroute-cron-tracker.php';
 
+/**
+ * Single-site activation routine: create log table and schedule cron events.
+ * Called by the activation hook and also callable externally (e.g. from GCM
+ * adopt) to re-register missing crons without a full plugin reactivation.
+ */
+function mxroute_mailer_activate_single_site(): void {
+	MXRoute_Logger::create_table();
+
+	if ( ! wp_next_scheduled( 'mxroute_mailer_process_queue' ) ) {
+		wp_schedule_event( time(), 'mxroute_mailer_interval', 'mxroute_mailer_process_queue' );
+	}
+	if ( ! wp_next_scheduled( 'mxroute_write_status_json' ) ) {
+		wp_schedule_event( time(), 'mxroute_mailer_interval', 'mxroute_write_status_json' );
+	}
+}
+
+/**
+ * Activation hook. Handles both single-site and network-wide activation.
+ */
+function mxroute_mailer_activate( bool $network_wide = false ): void {
+	mxroute_mailer_activate_single_site();
+
+	if ( $network_wide && is_multisite() ) {
+		$sites = get_sites( array( 'fields' => 'ids' ) );
+		foreach ( $sites as $site_id ) {
+			switch_to_blog( $site_id );
+			mxroute_mailer_activate_single_site();
+			restore_current_blog();
+		}
+	}
+}
+
 register_activation_hook(
 	__FILE__,
 	static function () {
-		MXRoute_Logger::create_table();
-
-		// On multisite, create tables for all existing sites.
-		if ( is_multisite() ) {
-			$sites = get_sites( array( 'fields' => 'ids' ) );
-			foreach ( $sites as $site_id ) {
-				switch_to_blog( $site_id );
-				MXRoute_Logger::create_table();
-				restore_current_blog();
-			}
-		}
-
-		// Schedule cron events.
-		if ( ! wp_next_scheduled( 'mxroute_mailer_process_queue' ) ) {
-			wp_schedule_event( time(), 'mxroute_mailer_interval', 'mxroute_mailer_process_queue' );
-		}
-		if ( ! wp_next_scheduled( 'mxroute_write_status_json' ) ) {
-			wp_schedule_event( time(), 'mxroute_mailer_interval', 'mxroute_write_status_json' );
-		}
+		mxroute_mailer_activate( is_multisite() );
 	}
 );
 

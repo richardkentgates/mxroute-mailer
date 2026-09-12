@@ -1,6 +1,6 @@
 # MXRoute Mailer Roadmap
 
-Last updated 2026-09-03.
+Last updated 2026-09-09.
 
 ---
 
@@ -22,7 +22,7 @@ MXRoute Mailer is a WordPress plugin that routes outbound email through MXRoute'
 
 | Item | Value |
 |------|-------|
-| Production version | v1.4.69 |
+| Production version | v1.4.72 |
 | Dev version | tracks dev branch (CI auto-bump) |
 | Distribution | Apt server `metadata.json` + GitHub releases |
 | Apt server | 34.136.87.92 (`apt.richardkentgates.com`) |
