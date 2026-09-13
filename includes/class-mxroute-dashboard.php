@@ -22,6 +22,7 @@ class MXRoute_Dashboard {
 		add_action( 'wp_ajax_mxroute_requeue_log', array( $this, 'ajax_requeue_log' ) );
 		add_action( 'wp_ajax_mxroute_bulk_requeue_logs', array( $this, 'ajax_bulk_requeue_logs' ) );
 		add_action( 'wp_ajax_mxroute_check_queue', array( $this, 'ajax_check_queue' ) );
+		add_action( 'wp_ajax_mxroute_status_refresh', array( $this, 'ajax_status_refresh' ) );
 	}
 
 	/**
@@ -229,6 +230,38 @@ class MXRoute_Dashboard {
 				'processed' => array_values( $processed ),
 			)
 		);
+	}
+
+	/**
+	 * AJAX handler to refresh dashboard widget status.
+	 *
+	 * Reads the status JSON file and returns cron and queue data
+	 * for live widget updates.
+	 *
+	 * @return void
+	 */
+	public function ajax_status_refresh() {
+		check_ajax_referer( 'mxroute_status_refresh', 'nonce' );
+
+		if ( ! mxroute_mailer_can_manage() ) {
+			wp_send_json_error( 'Unauthorized' );
+		}
+
+		$content_dir = defined( 'WP_CONTENT_DIR' ) ? WP_CONTENT_DIR : '/tmp';
+		$status_file = $content_dir . '/mxroute-status.json';
+		$json        = is_readable( $status_file ) ? @file_get_contents( $status_file ) : false;
+		$data        = $json ? json_decode( $json, true ) : null;
+
+		if ( ! $data ) {
+			wp_send_json_error( 'No status data' );
+		}
+
+		wp_send_json_success( array(
+			'pending' => $data['pending'] ?? 0,
+			'sent'    => $data['sent'] ?? 0,
+			'failed'  => $data['failed'] ?? 0,
+			'history' => $data['history'] ?? array(),
+		) );
 	}
 
 }
