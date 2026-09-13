@@ -298,12 +298,13 @@ function mxroute_mailer_render_dashboard_widget() {
 	</table>
 	<?php if ( ! empty( $history ) ) : ?>
 	<br />
-	<table class="widefat striped" style="margin-bottom:0">
-		<thead><tr><th><?php esc_html_e( 'Cron Event', 'mxroute-mailer' ); ?></th><th style="text-align:right"><?php esc_html_e( 'Pass / Fail', 'mxroute-mailer' ); ?></th></tr></thead>
+	<table class="widefat striped" style="margin-bottom:0" id="mxroute-cron-table">
+		<thead><tr><th><?php esc_html_e( 'Cron Event', 'mxroute-mailer' ); ?></th><th><?php esc_html_e( 'Last Run', 'mxroute-mailer' ); ?></th><th style="text-align:right"><?php esc_html_e( 'Pass / Fail', 'mxroute-mailer' ); ?></th></tr></thead>
 		<tbody>
 			<?php foreach ( $history as $hook => $info ) : ?>
 			<tr>
 				<td><?php echo esc_html( $hook ); ?></td>
+				<td style="white-space:nowrap"><?php echo $info['last_run'] ? esc_html( gmdate( 'M j, g:ia', strtotime( $info['last_run'] ) ) ) : '—'; ?></td>
 				<td style="text-align:right;white-space:nowrap">
 					<?php echo esc_html( $info['pass_count'] ?? 0 ); ?>
 					/
@@ -316,6 +317,55 @@ function mxroute_mailer_render_dashboard_widget() {
 		</tbody>
 	</table>
 	<?php endif; ?>
+	<script>
+	(function(){
+		function refreshMXStatus(){
+			var fd=new FormData();
+			fd.append('action','mxroute_status_refresh');
+			fd.append('_wpnonce','<?php echo esc_js( wp_create_nonce( 'mxroute_status_refresh' ) ); ?>');
+			fetch('<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>',{method:'POST',body:fd})
+				.then(function(r){return r.json();})
+				.then(function(r){
+					if(!r.success)return;
+					var d=r.data;
+					var w=document.getElementById('mxroute_mailer_status');
+					if(!w)return;
+					var tables=w.querySelectorAll('.inside table');
+					// First table: queue stats
+					if(tables[0]){
+						var rows=tables[0].querySelectorAll('tbody tr');
+						if(rows[0]){
+							var td=rows[0].querySelectorAll('td')[1];
+							if(td) td.innerHTML=d.pending>0?'<span style="color:#dba617;font-weight:600;">'+d.pending+'</span>':'<span style="color:#00a32a;">0</span>';
+						}
+						if(rows[1]){
+							var td=rows[1].querySelectorAll('td')[1];
+							if(td) td.textContent=d.sent;
+						}
+						if(rows[2]){
+							var td=rows[2].querySelectorAll('td')[1];
+							if(td) td.innerHTML=d.failed>0?'<span style="color:#d63638;font-weight:600;">'+d.failed+'</span>':'0';
+						}
+					}
+					// Second table: cron events
+					if(tables[1]&&d.history){
+						var tbody=tables[1].querySelector('tbody');
+						var html='';
+						for(var hook in d.history){
+							var c=d.history[hook];
+							var lr=c.last_run?new Date(c.last_run).toLocaleDateString('en-US',{month:'short',day:'numeric'})+' '+new Date(c.last_run).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}):'—';
+							var icon=c.last_status==='pass'?'<span class="dashicons dashicons-yes-alt" style="color:#00a32a;font-size:14px;width:14px;height:14px;vertical-align:middle;"></span>':'<span class="dashicons dashicons-dismiss" style="color:#d63638;font-size:14px;width:14px;height:14px;vertical-align:middle;"></span>';
+							var fc=(c.fail_count||0)>0?'<span style="color:#d63638;">'+c.fail_count+'</span>':(c.fail_count||0);
+							html+='<tr><td>'+hook+'</td><td style="white-space:nowrap">'+lr+' '+icon+'</td><td style="text-align:right;white-space:nowrap">'+(c.pass_count||0)+' / '+fc+'</td></tr>';
+						}
+						if(tbody)tbody.innerHTML=html;
+					}
+				})
+				.catch(function(){});
+		}
+		setInterval(refreshMXStatus,60000);
+	})();
+	</script>
 	<?php
 }
 
