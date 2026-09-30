@@ -411,7 +411,8 @@ class MXRoute_Updater_API_Test extends \PHPUnit\Framework\TestCase {
 	public function test_inject_update_returns_transient_when_up_to_date() {
 		$release = array(
 			'version'    => '1.4.12',
-			'download_url' => 'https://example.com/release.zip',
+			'download_url' => 'https://apt.richardkentgates.com/mxroute-mailer/mxroute-mailer-latest.zip',
+			'sha256'      => str_repeat( 'a', 64 ),
 		);
 		$GLOBALS['mxroute_mock_remote_get_response'] = array(
 			'response' => array( 'code' => 200 ),
@@ -433,7 +434,8 @@ class MXRoute_Updater_API_Test extends \PHPUnit\Framework\TestCase {
 	public function test_inject_update_adds_update_for_newer_version() {
 		$release = array(
 			'version'    => '2.0.0',
-			'download_url' => 'https://example.com/release.zip',
+			'download_url' => 'https://apt.richardkentgates.com/mxroute-mailer/mxroute-mailer-latest.zip',
+			'sha256'      => str_repeat( 'a', 64 ),
 		);
 		$GLOBALS['mxroute_mock_remote_get_response'] = array(
 			'response' => array( 'code' => 200 ),
@@ -490,7 +492,8 @@ class MXRoute_Updater_API_Test extends \PHPUnit\Framework\TestCase {
 	public function test_plugin_info_returns_data_for_matching_slug() {
 		$release = array(
 			'version'    => '2.0.0',
-			'download_url' => 'https://example.com/release.zip',
+			'download_url' => 'https://apt.richardkentgates.com/mxroute-mailer/mxroute-mailer-latest.zip',
+			'sha256'      => str_repeat( 'a', 64 ),
 		);
 		$GLOBALS['mxroute_mock_remote_get_response'] = array(
 			'response' => array( 'code' => 200 ),
@@ -678,5 +681,132 @@ class MXRoute_Unclaim_Requeue_Race_Test extends \PHPUnit\Framework\TestCase {
 		$result = $logger->requeue_log( 1 );
 
 		$this->assertTrue( $result, 'requeue_log should return true when item is successfully requeued' );
+	}
+}
+
+/**
+ * Tests for updater integrity: host pinning and sha256 verification.
+ */
+class MXRoute_Updater_Security_Test extends \PHPUnit\Framework\TestCase {
+
+	/** Pinned package URL used across these tests. */
+	private const PACKAGE_URL = 'https://apt.richardkentgates.com/mxroute-mailer/mxroute-mailer-latest.zip';
+
+	protected function setUp(): void {
+		$GLOBALS['wp_function_calls'] = array();
+		unset( $GLOBALS['mxroute_mock_remote_get_response'] );
+		unset( $GLOBALS['mxroute_mock_download_error'] );
+		unset( $GLOBALS['mxroute_mock_download_content'] );
+	}
+
+	protected function tearDown(): void {
+		unset( $GLOBALS['mxroute_mock_remote_get_response'] );
+		unset( $GLOBALS['mxroute_mock_download_error'] );
+		unset( $GLOBALS['mxroute_mock_download_content'] );
+	}
+
+	/**
+	 * Mock apt-server metadata.
+	 *
+	 * @param array $overrides Fields to override.
+	 */
+	private function mock_metadata( array $overrides = array() ): void {
+		$metadata = array_merge(
+			array(
+				'version'      => '9.9.9',
+				'download_url' => self::PACKAGE_URL,
+				'sha256'       => str_repeat( 'a', 64 ),
+			),
+			$overrides
+		);
+		$GLOBALS['mxroute_mock_remote_get_response'] = array(
+			'response' => array( 'code' => 200 ),
+			'body'     => wp_json_encode( $metadata ),
+		);
+	}
+
+	/**
+	 * Metadata pointing at a foreign host is rejected — no update offered.
+	 */
+	public function test_metadata_rejects_foreign_download_url(): void {
+		$this->mock_metadata( array( 'download_url' => 'https://evil.example.com/release.zip' ) );
+
+		$updater    = MXRoute_Updater::create_for_test( '/fake/path/mxroute-mailer.php' );
+		$transient  = new \stdClass();
+		$transient->response = array();
+
+		$result = $updater->inject_update( $transient );
+
+		$this->assertSame( $transient, $result );
+		$this->assertEmpty( $result->response );
+	}
+
+	/**
+	 * verify_package leaves packages from other hosts untouched.
+	 */
+	public function test_verify_package_ignores_foreign_host(): void {
+		$updater = MXRoute_Updater::create_for_test( '/fake/path/mxroute-mailer.php' );
+
+		$result = $updater->verify_package( false, 'https://evil.example.com/release.zip', null );
+
+		$this->assertFalse( $result );
+		$this->assertArrayNotHasKey( 'download_url', $GLOBALS['wp_function_calls'] );
+	}
+
+	/**
+	 * Metadata without a sha256 checksum aborts the install.
+	 */
+	public function test_verify_package_aborts_when_checksum_missing(): void {
+		$this->mock_metadata( array( 'sha256' => '' ) );
+
+		$updater = MXRoute_Updater::create_for_test( '/fake/path/mxroute-mailer.php' );
+		$result  = $updater->verify_package( false, self::PACKAGE_URL, null );
+
+		$this->assertInstanceOf( \WP_Error::class, $result );
+		$this->assertEquals( 'mxroute_update_no_checksum', $result->code );
+		$this->assertArrayNotHasKey( 'download_url', $GLOBALS['wp_function_calls'] );
+	}
+
+	/**
+	 * Matching checksum returns the verified temp file path.
+	 */
+	public function test_verify_package_returns_file_on_checksum_match(): void {
+		$content = 'pretend zip bytes';
+		$this->mock_metadata( array( 'sha256' => hash( 'sha256', $content ) ) );
+		$GLOBALS['mxroute_mock_download_content'] = $content;
+
+		$updater = MXRoute_Updater::create_for_test( '/fake/path/mxroute-mailer.php' );
+		$result  = $updater->verify_package( false, self::PACKAGE_URL, null );
+
+		$this->assertIsString( $result );
+		$this->assertFileExists( $result );
+		$this->assertSame( $content, file_get_contents( $result ) );
+		@unlink( $result );
+	}
+
+	/**
+	 * Mismatched checksum aborts with a WP_Error.
+	 */
+	public function test_verify_package_aborts_on_checksum_mismatch(): void {
+		$this->mock_metadata( array( 'sha256' => str_repeat( 'a', 64 ) ) );
+		$GLOBALS['mxroute_mock_download_content'] = 'tampered bytes';
+
+		$updater = MXRoute_Updater::create_for_test( '/fake/path/mxroute-mailer.php' );
+		$result  = $updater->verify_package( false, self::PACKAGE_URL, null );
+
+		$this->assertInstanceOf( \WP_Error::class, $result );
+		$this->assertEquals( 'mxroute_update_checksum_mismatch', $result->code );
+	}
+
+	/**
+	 * Unavailable metadata passes through without downloading.
+	 */
+	public function test_verify_package_passes_through_without_metadata(): void {
+		$updater = MXRoute_Updater::create_for_test( '/fake/path/mxroute-mailer.php' );
+
+		$result = $updater->verify_package( false, self::PACKAGE_URL, null );
+
+		$this->assertFalse( $result );
+		$this->assertArrayNotHasKey( 'download_url', $GLOBALS['wp_function_calls'] );
 	}
 }

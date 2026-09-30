@@ -35,6 +35,9 @@ class MXRoute_Updater {
 	/** URL of the apt server test channel metadata.json. */
 	private const METADATA_URL_TEST = 'https://apt.richardkentgates.com/mxroute-mailer-test/metadata.json';
 
+	/** Only this host is trusted for update metadata and package downloads. */
+	private const ALLOWED_HOST = 'apt.richardkentgates.com';
+
 	/** Basename of this plugin file, e.g. "mxroute-mailer/mxroute-mailer.php". */
 	private $plugin_basename;
 
@@ -78,6 +81,7 @@ class MXRoute_Updater {
 	private function hooks(): void {
 		add_filter( 'pre_set_site_transient_update_plugins', array( $this, 'inject_update' ) );
 		add_filter( 'plugins_api', array( $this, 'plugin_info' ), 20, 3 );
+		add_filter( 'upgrader_pre_download', array( $this, 'verify_package' ), 10, 3 );
 		add_filter( 'upgrader_source_selection', array( $this, 'fix_source_dir' ), 10, 4 );
 		add_action( 'upgrader_process_complete', array( $this, 'on_plugin_updated' ), 10, 2 );
 
@@ -118,6 +122,11 @@ class MXRoute_Updater {
 	/**
 	 * Fetch the latest metadata from the apt server.
 	 *
+	 * Metadata is rejected unless download_url is pinned to the apt server
+	 * host over HTTPS — an attacker who rewrites metadata.json must not be
+	 * able to point the updater at an arbitrary package. Checksum
+	 * requirements are enforced at download time in verify_package().
+	 *
 	 * @return object|null  Decoded metadata object, or null on failure.
 	 */
 	private function get_metadata(): ?object {
@@ -125,7 +134,7 @@ class MXRoute_Updater {
 		$channel = defined( 'MXROUTE_MAILER_UPDATE_CHANNEL' ) ? MXROUTE_MAILER_UPDATE_CHANNEL : 'production';
 		$url     = ( 'test' === $channel ) ? self::METADATA_URL_TEST : self::METADATA_URL;
 
-		$response = wp_remote_get(
+		$response = wp_safe_remote_get(
 			$url,
 			array(
 				'timeout'    => 10,
@@ -140,6 +149,10 @@ class MXRoute_Updater {
 		$metadata = json_decode( wp_remote_retrieve_body( $response ) );
 
 		if ( empty( $metadata->version ) || empty( $metadata->download_url ) ) {
+			return null;
+		}
+
+		if ( ! is_string( $metadata->download_url ) || ! $this->is_pinned_url( $metadata->download_url ) ) {
 			return null;
 		}
 
@@ -207,6 +220,62 @@ class MXRoute_Updater {
 		// No update for this plugin — pass through the transient unchanged
 		// so other updaters' data is preserved.
 		return $transient;
+	}
+
+	/**
+	 * Download and verify our update package before WordPress installs it.
+	 *
+	 * Only packages served from the pinned apt-server host are intercepted;
+	 * everything else passes through untouched so other plugins' updates
+	 * (e.g. MetaManager's, also hosted on the apt server) are unaffected.
+	 * When the package is ours, installation aborts on a missing or
+	 * mismatched sha256 checksum.
+	 *
+	 * @param false|string|WP_Error $reply    Current filter reply.
+	 * @param string                $package  Candidate package URL.
+	 * @param object                $upgrader Upgrader instance.
+	 * @return false|string|WP_Error          Verified temp file path, or error.
+	 */
+	public function verify_package( $reply, $package, $upgrader ) {
+		if ( ! is_string( $package ) || '' === $package || ! $this->is_pinned_url( $package ) ) {
+			return $reply;
+		}
+
+		$metadata = $this->get_metadata();
+		if ( null === $metadata || $package !== $metadata->download_url ) {
+			// Another package on the apt server (or metadata unavailable) —
+			// not ours to verify.
+			return $reply;
+		}
+
+		$checksum = $metadata->sha256 ?? '';
+		if ( ! is_string( $checksum ) || ! preg_match( '/^[0-9a-f]{64}$/i', $checksum ) ) {
+			return new WP_Error(
+				'mxroute_update_no_checksum',
+				__( 'MXRoute Mailer update aborted: update metadata has no valid sha256 checksum.', 'mxroute-mailer' )
+			);
+		}
+
+		if ( ! function_exists( 'download_url' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+		}
+
+		$tmp = download_url( $package );
+		if ( is_wp_error( $tmp ) ) {
+			return $tmp;
+		}
+
+		$actual = hash_file( 'sha256', $tmp );
+		if ( false === $actual || ! hash_equals( strtolower( $checksum ), strtolower( $actual ) ) ) {
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink
+			@unlink( $tmp );
+			return new WP_Error(
+				'mxroute_update_checksum_mismatch',
+				__( 'MXRoute Mailer update aborted: package checksum verification failed.', 'mxroute-mailer' )
+			);
+		}
+
+		return $tmp;
 	}
 
 	/**
@@ -364,6 +433,20 @@ class MXRoute_Updater {
 	// -------------------------------------------------------------------------
 	// Helpers
 	// -------------------------------------------------------------------------
+
+	/**
+	 * Check that a URL points at the pinned apt-server host over HTTPS.
+	 *
+	 * @param string $url URL to check.
+	 * @return bool
+	 */
+	private function is_pinned_url( string $url ): bool {
+		$parts = wp_parse_url( $url );
+
+		return is_array( $parts )
+			&& 'https' === ( $parts['scheme'] ?? '' )
+			&& self::ALLOWED_HOST === ( $parts['host'] ?? '' );
+	}
 
 	/**
 	 * Build a minimal changelog section from the CHANGELOG.md file.

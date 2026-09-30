@@ -848,6 +848,19 @@ if (!function_exists('wp_safe_remote_get')) {
     }
 }
 
+// Mock download_url for updater package verification tests
+if (!function_exists('download_url')) {
+    function download_url($url, $timeout = 300) {
+        $GLOBALS['wp_function_calls']['download_url'][] = compact('url', 'timeout');
+        if (!empty($GLOBALS['mxroute_mock_download_error'])) {
+            return new WP_Error('http_request_failed', 'mock download failure');
+        }
+        $file = tempnam(sys_get_temp_dir(), 'mxrverify');
+        file_put_contents($file, $GLOBALS['mxroute_mock_download_content'] ?? '');
+        return $file;
+    }
+}
+
 // Mock get_bloginfo for updater tests
 if (!function_exists('get_bloginfo')) {
     function get_bloginfo($show = '') {
