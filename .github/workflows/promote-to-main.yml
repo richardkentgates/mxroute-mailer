@@ -150,12 +150,15 @@ jobs:
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -H "${APT_HOST}" >> ~/.ssh/known_hosts 2>/dev/null
 
+          SHA256=$(awk '{print $1}' mxroute-mailer-latest.zip.sha256)
+
           scp -i ~/.ssh/deploy_key \
             mxroute-mailer-latest.zip \
-            "${APT_USER}@${APT_HOST}:/var/www/html/mxroute-mailer/mxroute-mailer-latest.zip"
+            mxroute-mailer-latest.zip.sha256 \
+            "${APT_USER}@${APT_HOST}:/var/www/html/mxroute-mailer/"
 
           ssh -i ~/.ssh/deploy_key "${APT_USER}@${APT_HOST}" \
-            "printf '%s' '{\"version\":\"${VERSION}\",\"requires\":{\"php\":\"7.3\",\"wordpress\":\"5.0\"},\"download_url\":\"https://apt.richardkentgates.com/mxroute-mailer/mxroute-mailer-latest.zip\"}' > /var/www/html/mxroute-mailer/metadata.json"
+            "printf '%s' '{\"version\":\"${VERSION}\",\"requires\":{\"php\":\"7.3\",\"wordpress\":\"5.0\"},\"download_url\":\"https://apt.richardkentgates.com/mxroute-mailer/mxroute-mailer-latest.zip\",\"sha256\":\"${SHA256}\"}' > /var/www/html/mxroute-mailer/metadata.json"
 
       - name: Validate deployed metadata
         if: steps.check.outputs.exists == 'false'
@@ -176,11 +179,15 @@ jobs:
           DOWNLOAD=$(echo "$METADATA" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('download_url',''))" 2>/dev/null)
           PHP_REQ=$(echo "$METADATA" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('requires',{}).get('php',''))" 2>/dev/null)
           WP_REQ=$(echo "$METADATA" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('requires',{}).get('wordpress',''))" 2>/dev/null)
+          SHA=$(echo "$METADATA" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('sha256',''))" 2>/dev/null)
 
           [ -z "$VERSION" ] && ERRORS="${ERRORS}  - missing 'version'\n"
           [ -z "$DOWNLOAD" ] && ERRORS="${ERRORS}  - missing 'download_url'\n"
           [ -z "$PHP_REQ" ] && ERRORS="${ERRORS}  - missing 'requires.php'\n"
           [ -z "$WP_REQ" ] && ERRORS="${ERRORS}  - missing 'requires.wordpress'\n"
+          if ! echo "$SHA" | grep -qE '^[0-9a-f]{64}$'; then
+            ERRORS="${ERRORS}  - missing or invalid 'sha256'\n"
+          fi
 
           if [ -n "$ERRORS" ]; then
             echo ""
