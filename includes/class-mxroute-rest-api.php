@@ -124,15 +124,17 @@ class MXRoute_REST_API {
 			$wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE success = -1" )
 		);
 
-		$last_run = wp_next_scheduled( 'mxroute_mailer_process_queue' );
+		$tracker      = MXRoute_Cron_Tracker::get( 'mxroute_mailer_process_queue' );
+		$last_run_iso = ! empty( $tracker['last_run'] ) ? $tracker['last_run'] : null;
+		$next_ts      = wp_next_scheduled( 'mxroute_mailer_process_queue' );
 
 		return array(
 			'pending'    => $pending,
 			'sent'       => $sent,
 			'failed'     => $failed,
 			'cron'       => array(
-				'last_run'       => $last_run ? gmdate( 'Y-m-d H:i:s', $last_run ) : null,
-				'next_scheduled' => $last_run ? gmdate( 'Y-m-d H:i:s', $last_run ) : null,
+				'last_run'       => $last_run_iso ? gmdate( 'Y-m-d H:i:s', strtotime( $last_run_iso ) ) : null,
+				'next_scheduled' => $next_ts ? gmdate( 'Y-m-d H:i:s', $next_ts ) : null,
 				'interval'       => 60,
 			),
 			'version'    => MXROUTE_MAILER_VERSION,
