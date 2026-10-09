@@ -376,13 +376,13 @@ class MXRoute_Queue {
 			"SELECT COUNT(*) FROM {$this->table_name} WHERE success = -1"
 		);
 
-		// Cron health: last run and next scheduled.
-		$last_run       = wp_next_scheduled( 'mxroute_mailer_process_queue' );
-		$next_scheduled = wp_next_scheduled( 'mxroute_mailer_process_queue' );
+		// Cron health: last run from the tracker, next scheduled from wp_next_scheduled.
+		$tracker      = MXRoute_Cron_Tracker::get( 'mxroute_mailer_process_queue' );
+		$last_run_iso = ! empty( $tracker['last_run'] ) ? $tracker['last_run'] : null;
+		$next_ts      = wp_next_scheduled( 'mxroute_mailer_process_queue' );
 
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading cron timestamp.
-		$last_run_str = $last_run ? gmdate( 'Y-m-d H:i:s', $last_run ) : null;
-		$next_str     = $next_scheduled ? gmdate( 'Y-m-d H:i:s', $next_scheduled ) : null;
+		$last_run_str = $last_run_iso ? gmdate( 'Y-m-d H:i:s', strtotime( $last_run_iso ) ) : null;
+		$next_str     = $next_ts ? gmdate( 'Y-m-d H:i:s', $next_ts ) : null;
 
 		$data = array(
 			'pending'    => $pending,
