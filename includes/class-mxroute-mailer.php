@@ -240,6 +240,9 @@ class MXRoute_Mailer {
 				$queue->mark_sent( $item->id, $result['request'], $result['response'], $item_transport );
 			} else {
 				$queue->mark_failed( $item->id, $result['request'], $result['response'], $item_transport );
+				if ( defined( 'MXROUTE_MAILER_DEBUG' ) && MXROUTE_MAILER_DEBUG ) {
+					error_log( 'MXRoute Queue Failure: id=' . $item->id . ' transport=' . $item_transport . ' message=' . $result['message'] );
+				}
 			}
 
 			$processed_ids[] = (int) $item->id;
