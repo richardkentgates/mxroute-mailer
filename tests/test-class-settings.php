@@ -248,30 +248,34 @@ class MXRoute_Settings_Test extends \PHPUnit\Framework\TestCase {
     }
 
     /**
-     * Tests that sanitize_username_local strips the domain and uses home_url host.
+     * Tests that sanitize_username passes full email addresses through unchanged,
+     * including www-prefixed and subdomain domains.
      */
-    public function test_sanitize_username_local_strips_domain() {
+    public function test_sanitize_username_preserves_full_address() {
         $settings = new MXRoute_Settings();
-        $result = $settings->sanitize_username_local( 'user@example.com' );
-        $this->assertEquals( 'user@example.com', $result );
+        $this->assertEquals( 'user@sub.example.org', $settings->sanitize_username( 'user@sub.example.org' ) );
+        $this->assertEquals( 'user@www.example.com', $settings->sanitize_username( 'user@www.example.com' ) );
+        $this->assertEquals( 'user@example.com', $settings->sanitize_username( 'user@example.com' ) );
     }
 
     /**
-     * Tests that sanitize_username_local handles local part only input.
+     * Tests that sanitize_username extracts the address from "Name <addr>" form.
      */
-    public function test_sanitize_username_local_handles_local_part_only() {
+    public function test_sanitize_username_strips_display_name() {
         $settings = new MXRoute_Settings();
-        $result = $settings->sanitize_username_local( 'user' );
-        $this->assertEquals( 'user@example.com', $result );
+        $this->assertEquals( 'user@example.com', $settings->sanitize_username( 'User <user@example.com>' ) );
     }
 
     /**
-     * Tests that sanitize_username_local strips angle brackets and extra parts.
+     * Tests that sanitize_username rejects input that is not a full email address
+     * and registers a settings error.
      */
-    public function test_sanitize_username_local_strips_angle_brackets() {
+    public function test_sanitize_username_rejects_local_part_only() {
         $settings = new MXRoute_Settings();
-        $result = $settings->sanitize_username_local( 'User <user@example.com>' );
-        $this->assertStringNotContainsString( '<', $result );
-        $this->assertStringNotContainsString( '>', $result );
+        $GLOBALS['wp_settings_errors'] = array();
+        $result = $settings->sanitize_username( 'user' );
+        $this->assertEquals( '', $result );
+        $this->assertNotEmpty( $GLOBALS['wp_settings_errors'] );
+        $this->assertEquals( 'mxroute_invalid_username', $GLOBALS['wp_settings_errors'][0]['code'] );
     }
 }

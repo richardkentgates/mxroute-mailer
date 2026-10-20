@@ -9,6 +9,25 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 
 
+## [1.4.84] - 2026-10-20
+
+### Changed
+- Auto-incremented version from 1.4.83 to 1.4.84
+## [1.4.83] - 2026-10-20
+
+### Changed
+- Auto-incremented version from 1.4.82 to 1.4.83
+## [Unreleased]
+
+### Changed
+- Username field is now a plain full-address input — the domain is no longer derived from the WordPress site URL, so `www.` and subdomain mailboxes can be entered exactly as configured in MXRoute
+- `wp mxroute settings set username` now runs through `sanitize_email` and rejects values that are not full email addresses
+
+### Fixed
+- Saving the settings page no longer rewrites the username domain to the site host (previously stripped any submitted domain and re-appended `home_url()` host, silently corrupting subdomain addresses)
+
+
+
 
 
 
