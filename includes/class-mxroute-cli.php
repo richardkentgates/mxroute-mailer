@@ -119,6 +119,11 @@ class MXRoute_CLI_Commands extends WP_CLI_Command {
 					WP_CLI::error( $encrypted->get_error_message() );
 				}
 				$value = $encrypted;
+			} elseif ( 'username' === $key ) {
+				$value = sanitize_email( $value );
+				if ( '' === $value ) {
+					WP_CLI::error( 'Username must be a full email address, e.g. mail@example.com.' );
+				}
 			} elseif ( 'batch_size' === $key ) {
 				$value = intval( $value );
 				if ( $value < 1 || $value > 50 ) {

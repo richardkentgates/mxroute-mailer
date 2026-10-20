@@ -120,6 +120,17 @@ if (!function_exists('sanitize_text_field')) {
     }
 }
 
+if (!function_exists('add_settings_error')) {
+    function add_settings_error($setting, $code, $message, $type = 'error') {
+        $GLOBALS['wp_settings_errors'][] = array(
+            'setting' => $setting,
+            'code'    => $code,
+            'message' => $message,
+            'type'    => $type,
+        );
+    }
+}
+
 if (!function_exists('sanitize_textarea_field')) {
     function sanitize_textarea_field($str) {
         return is_string($str) ? trim(strip_tags($str)) : '';

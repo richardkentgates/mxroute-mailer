@@ -20,7 +20,7 @@
 
 3. **Wrong username**
    - Username is your full MXRoute email address (e.g., `you@mxroute.com`)
-   - Do not enter just the local part unless the domain matches your site URL
+   - Enter the complete address including the domain — it is not derived from your site URL
 
 4. **Password incorrect**
    - Reset your MXRoute password if unsure
