@@ -52,20 +52,10 @@ defined( 'ABSPATH' ) || exit;
 			<tr>
 				<th scope="row"><label for="mxroute_mailer_username"><?php esc_html_e( 'Username', 'mxroute-mailer' ); ?></label></th>
 				<td>
-					<?php
-					$stored_username = get_option( 'mxroute_mailer_username', '' );
-					$username_local  = '';
-					if ( '' !== $stored_username && false !== strpos( $stored_username, '@' ) ) {
-						$username_local = substr( $stored_username, 0, strpos( $stored_username, '@' ) );
-					}
-					$site_host = wp_parse_url( home_url(), PHP_URL_HOST );
-					?>
-					<span class="mxroute-username-field">
-						<input type="text" id="mxroute_mailer_username_local" name="mxroute_mailer_username"
-								value="<?php echo esc_attr( $username_local ); ?>"
-								class="regular-text" placeholder="<?php esc_attr_e( 'e.g. mail', 'mxroute-mailer' ); ?>" /><span class="mxroute-username-domain">@<?php echo esc_html( $site_host ); ?></span>
-					</span>
-					<p class="description"><?php esc_html_e( 'Your MXRoute username (from control panel > Email Clients). The domain is pulled from your WordPress site URL.', 'mxroute-mailer' ); ?></p>
+					<input type="text" id="mxroute_mailer_username" name="mxroute_mailer_username"
+							value="<?php echo esc_attr( get_option( 'mxroute_mailer_username', '' ) ); ?>"
+							class="regular-text" placeholder="<?php esc_attr_e( 'mail@example.com', 'mxroute-mailer' ); ?>" />
+					<p class="description"><?php esc_html_e( 'Your full MXRoute email address (from control panel > Email Clients).', 'mxroute-mailer' ); ?></p>
 				</td>
 			</tr>
 			<tr>

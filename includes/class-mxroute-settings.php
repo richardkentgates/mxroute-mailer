@@ -84,7 +84,7 @@ class MXRoute_Settings {
 			'mxroute_mailer_settings',
 			'mxroute_mailer_username',
 			array(
-				'sanitize_callback' => array( $this, 'sanitize_username_local' ),
+				'sanitize_callback' => array( $this, 'sanitize_username' ),
 			)
 		);
 		register_setting(
@@ -177,18 +177,33 @@ class MXRoute_Settings {
 	}
 
 	/**
-	 * Sanitize username local part and combine with domain from From Email.
+	 * Sanitize the full username email address.
 	 *
-	 * @param string $value Local part of the username submitted by the form.
-	 * @return string Full username email address.
+	 * The domain is entirely admin-entered — nothing is derived from the
+	 * site URL. Accepts a full address or a "Display Name <user@example.com>"
+	 * form; the display name is discarded.
+	 *
+	 * @param string $value Full email address submitted by the form.
+	 * @return string Sanitized email address, empty when invalid.
 	 */
-	public function sanitize_username_local( $value ) {
-		$local = sanitize_text_field( $value );
-		if ( false !== strpos( $local, '@' ) ) {
-			$local = substr( $local, 0, strpos( $local, '@' ) );
+	public function sanitize_username( $value ) {
+		$value = is_string( $value ) ? trim( $value ) : '';
+		if ( preg_match( '/<([^>]+)>/', $value, $matches ) ) {
+			$value = $matches[1];
 		}
-		$host = wp_parse_url( home_url(), PHP_URL_HOST );
-		return sanitize_email( $local . '@' . $host );
+		$email = sanitize_email( $value );
+		if ( false === strpos( $email, '@' ) ) {
+			$email = '';
+		}
+		if ( '' === $email && '' !== trim( $value ) ) {
+			add_settings_error(
+				'mxroute_mailer',
+				'mxroute_invalid_username',
+				__( 'Username must be a full email address, e.g. mail@example.com.', 'mxroute-mailer' ),
+				'error'
+			);
+		}
+		return $email;
 	}
 
 	/**
@@ -323,7 +338,7 @@ class MXRoute_Settings {
 				'id'      => 'mxroute-credentials',
 				'title'   => __( 'Credentials', 'mxroute-mailer' ),
 				'content' => '<p><strong>' . esc_html__( 'Server Hostname:', 'mxroute-mailer' ) . '</strong> ' . esc_html__( 'Found in your MXRoute control panel under Email Clients. Example: tuesday.mxrouting.net', 'mxroute-mailer' ) . '</p>'
-					. '<p><strong>' . esc_html__( 'Username:', 'mxroute-mailer' ) . '</strong> ' . esc_html__( 'Enter only the local part of your email address. The domain is taken from your WordPress site URL.', 'mxroute-mailer' ) . '</p>'
+					. '<p><strong>' . esc_html__( 'Username:', 'mxroute-mailer' ) . '</strong> ' . esc_html__( 'Your full MXRoute email address (e.g. mail@example.com), as shown in your MXRoute control panel under Email Clients.', 'mxroute-mailer' ) . '</p>'
 					. '<p><strong>' . esc_html__( 'Password:', 'mxroute-mailer' ) . '</strong> ' . esc_html__( 'Your MXRoute password. Leave blank when editing to keep the current value.', 'mxroute-mailer' ) . '</p>',
 			)
 		);

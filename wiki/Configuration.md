@@ -20,7 +20,7 @@ Your MXRoute email address. This is also used as the **From** address for all em
 
 Example: `you@mxroute.com`
 
-The username field displays your full email address (e.g., `you@example.com`) with the domain derived from your WordPress site URL. If you enter just the local part (e.g., `you`), the domain is appended automatically.
+The username field accepts your full MXRoute email address (e.g., `you@example.com` or `you@sub.example.com`). Enter the complete address exactly as shown in your MXRoute control panel — nothing is derived from the site URL, so subdomain and `www.` addresses work.
 
 ### Password
 
