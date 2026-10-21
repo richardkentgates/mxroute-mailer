@@ -3,7 +3,7 @@
  * Plugin Name: MXRoute Mailer
  * Plugin URI: https://richardkentgates.com
  * Description: Sends WordPress email through MXRoute's HTTP API over port 443. Includes logging, test tools, and automatic updates.
- * Version: 1.4.84
+ * Version: 1.4.85
  * Author: Richard Kent Gates
  * Author URI: https://richardkentgates.com
  * License: GPL v2 or later
@@ -22,7 +22,7 @@ defined( 'ABSPATH' ) || exit;
  *
  * @var string
  */
-define( 'MXROUTE_MAILER_VERSION', '1.4.84' );
+define( 'MXROUTE_MAILER_VERSION', '1.4.85' );
 
 /**
  * Absolute path to the main plugin file.
@@ -103,6 +103,9 @@ function mxroute_mailer_activate_single_site(): void {
 	}
 	if ( ! wp_next_scheduled( 'mxroute_write_status_json' ) ) {
 		wp_schedule_event( time(), 'mxroute_mailer_interval', 'mxroute_write_status_json' );
+	}
+	if ( ! wp_next_scheduled( 'mxroute_mailer_daily_cleanup' ) ) {
+		wp_schedule_event( time(), 'daily', 'mxroute_mailer_daily_cleanup' );
 	}
 }
 
@@ -188,18 +191,6 @@ add_action( 'admin_init', 'mxroute_mailer_db_upgrade' );
 mxroute_mailer();
 
 MXRoute_Updater::init();
-
-/**
- * Schedule the daily queue cleanup cron event.
- *
- * @return void
- */
-function mxroute_mailer_schedule_cleanup() {
-	if ( ! wp_next_scheduled( 'mxroute_mailer_daily_cleanup' ) ) {
-		wp_schedule_event( time(), 'daily', 'mxroute_mailer_daily_cleanup' );
-	}
-}
-add_action( 'init', 'mxroute_mailer_schedule_cleanup' );
 
 /**
  * Register custom cron intervals for queue processing.
