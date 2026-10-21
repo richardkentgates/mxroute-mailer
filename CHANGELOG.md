@@ -12,6 +12,11 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 
 
+
+## [1.4.88] - 2026-10-21
+
+### Changed
+- Auto-incremented version from 1.4.87 to 1.4.88
 ## [1.4.87] - 2026-10-21
 
 ### Changed
@@ -47,6 +52,7 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 - Requeue now records an actor in history instead of only wiping the previous attempt's data (the wipe behavior of the main request/response fields is unchanged)
 
 ### Fixed
+- Schema upgrades now run on `init` instead of `admin_init` only — the `history` column is added on the first request of any kind (cron, front-end, REST, admin) after an update, so new emails can no longer fail to queue in the window between a WP-CLI/apt update and the first wp-admin visit
 - Saving the settings page no longer rewrites the username domain to the site host (previously stripped any submitted domain and re-appended `home_url()` host, silently corrupting subdomain addresses)
 
 
