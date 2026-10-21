@@ -62,6 +62,7 @@ class MXRoute_CLI_Commands extends WP_CLI_Command {
 			'logging_enabled',
 			'keep_data',
 			'batch_size',
+			'retention_days',
 		);
 
 		if ( 'get' === $action ) {
@@ -128,6 +129,11 @@ class MXRoute_CLI_Commands extends WP_CLI_Command {
 				$value = intval( $value );
 				if ( $value < 1 || $value > 50 ) {
 					WP_CLI::error( 'Batch size must be between 1 and 50.' );
+				}
+			} elseif ( 'retention_days' === $key ) {
+				$value = intval( $value );
+				if ( $value < 0 || $value > 3650 ) {
+					WP_CLI::error( 'Retention must be 0 (unlimited) or between 1 and 3650 days.' );
 				}
 			} elseif ( in_array( $key, array( 'logging_enabled', 'keep_data' ), true ) ) {
 				$value = $value ? 1 : 0;

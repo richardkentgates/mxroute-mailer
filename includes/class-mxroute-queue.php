@@ -317,11 +317,19 @@ class MXRoute_Queue {
 	/**
 	 * Delete queue items older than a given number of days.
 	 *
-	 * @param int $days Number of days to retain.
+	 * A $days value below 1 (including 0 = unlimited retention) purges
+	 * nothing.
+	 *
+	 * @param int $days Number of days to retain. 0 = keep forever.
 	 * @return int Number of rows deleted.
 	 */
-	public function cleanup( $days = 30 ) {
+	public function cleanup( $days = 90 ) {
 		global $wpdb;
+
+		$days = (int) $days;
+		if ( $days < 1 ) {
+			return 0;
+		}
 
 		$date = gmdate( 'Y-m-d H:i:s', strtotime( '-' . absint( $days ) . ' days', current_time( 'timestamp' ) ) );
 

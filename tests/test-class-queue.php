@@ -222,6 +222,28 @@ class MXRoute_Queue_Test extends \PHPUnit\Framework\TestCase {
 		$query = end( $GLOBALS['wp_db_queries'] );
 		$this->assertStringContainsString( 'DELETE', $query );
 	}
+
+	/**
+	 * Tests that cleanup with 0 days (unlimited retention) purges nothing.
+	 */
+	public function test_cleanup_with_zero_days_purges_nothing() {
+		$queue = new MXRoute_Queue();
+		$result = $queue->cleanup( 0 );
+
+		$this->assertEquals( 0, $result );
+		$this->assertEmpty( $GLOBALS['wp_db_queries'] );
+	}
+
+	/**
+	 * Tests that cleanup with negative days purges nothing.
+	 */
+	public function test_cleanup_with_negative_days_purges_nothing() {
+		$queue = new MXRoute_Queue();
+		$result = $queue->cleanup( -10 );
+
+		$this->assertEquals( 0, $result );
+		$this->assertEmpty( $GLOBALS['wp_db_queries'] );
+	}
 }
 
 /**
