@@ -196,10 +196,94 @@ class MXRoute_Logger_Test extends \PHPUnit\Framework\TestCase {
     /**
      * Tests that requeue_logs handles an empty array gracefully.
      */
-    public function test_requeue_logs_handles_empty_array() {
+    public function test_requeue_logs_handles_empty_array_gracefully() {
         $logger = new MXRoute_Logger();
         $count = $logger->requeue_logs( array() );
 
         $this->assertEquals( 0, $count );
+    }
+
+    /**
+     * Tests that a successful requeue appends a requeue event to history.
+     */
+    public function test_requeue_log_appends_requeue_history() {
+        $logger = new MXRoute_Logger();
+        $GLOBALS['wp_db_affected_rows'] = 1;
+        $GLOBALS['wp_db_var'] = null;
+
+        $result = $logger->requeue_log( 1 );
+
+        $this->assertTrue( $result );
+
+        $history_written = null;
+        $updates = $GLOBALS['wp_function_calls']['$wpdb->update'] ?? array();
+        foreach ( $updates as $update ) {
+            if ( isset( $update['data']['history'] ) ) {
+                $history_written = $update['data']['history'];
+            }
+        }
+        $this->assertNotNull( $history_written, 'Expected history update after requeue' );
+
+        $events = json_decode( $history_written, true );
+        $this->assertEquals( 'requeue', end( $events )['event'] );
+    }
+
+    /**
+     * Tests that requeue_log records the actor in the history event.
+     */
+    public function test_requeue_log_records_actor() {
+        $logger = new MXRoute_Logger();
+        $GLOBALS['wp_db_affected_rows'] = 1;
+        $GLOBALS['wp_db_var'] = null;
+
+        $logger->requeue_log( 1, 'admin' );
+
+        $updates = $GLOBALS['wp_function_calls']['$wpdb->update'] ?? array();
+        $last    = end( $updates );
+        $events  = json_decode( $last['data']['history'], true );
+        $this->assertEquals( 'admin', end( $events )['by'] );
+    }
+
+    /**
+     * Tests that append_history preserves existing events.
+     */
+    public function test_append_history_preserves_existing_events() {
+        $GLOBALS['wp_db_var'] = '[{"event":"queued","at":"2026-01-01 00:00:00"}]';
+
+        MXRoute_Logger::append_history( 10, array( 'event' => 'requeue' ) );
+
+        $updates = $GLOBALS['wp_function_calls']['$wpdb->update'] ?? array();
+        $last    = end( $updates );
+        $events  = json_decode( $last['data']['history'], true );
+
+        $this->assertCount( 2, $events );
+        $this->assertEquals( 'queued', $events[0]['event'] );
+        $this->assertEquals( 'requeue', $events[1]['event'] );
+        $this->assertNotEmpty( $events[1]['at'] );
+    }
+
+    /**
+     * Tests that append_history starts fresh when stored history is invalid JSON.
+     */
+    public function test_append_history_resets_invalid_json() {
+        $GLOBALS['wp_db_var'] = 'not-valid-json';
+
+        MXRoute_Logger::append_history( 11, array( 'event' => 'attempt', 'success' => true ) );
+
+        $updates = $GLOBALS['wp_function_calls']['$wpdb->update'] ?? array();
+        $last    = end( $updates );
+        $events  = json_decode( $last['data']['history'], true );
+
+        $this->assertCount( 1, $events );
+        $this->assertEquals( 'attempt', $events[0]['event'] );
+    }
+
+    /**
+     * Tests that append_history ignores invalid IDs.
+     */
+    public function test_append_history_ignores_invalid_id() {
+        MXRoute_Logger::append_history( 0, array( 'event' => 'requeue' ) );
+
+        $this->assertEmpty( $GLOBALS['wp_function_calls']['$wpdb->update'] ?? array() );
     }
 }

@@ -41,6 +41,31 @@ class MXRoute_Queue_Test extends \PHPUnit\Framework\TestCase {
 	}
 
 	/**
+	 * Tests that add initializes the history column with a queued event.
+	 */
+	public function test_add_initializes_history_with_queued_event() {
+		$queue = new MXRoute_Queue();
+		$queue->add(
+			'from@example.com',
+			'to@example.com',
+			'Test Subject',
+			'Test body',
+			'',
+			array(),
+			''
+		);
+
+		$insert = $GLOBALS['wp_db_inserts'][0];
+		$this->assertArrayHasKey( 'history', $insert['data'] );
+
+		$events = json_decode( $insert['data']['history'], true );
+		$this->assertIsArray( $events );
+		$this->assertCount( 1, $events );
+		$this->assertEquals( 'queued', $events[0]['event'] );
+		$this->assertNotEmpty( $events[0]['at'] );
+	}
+
+	/**
 	 * Tests that add stores headers in the queue entry.
 	 */
 	public function test_add_stores_headers() {

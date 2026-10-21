@@ -313,6 +313,114 @@ class MXRoute_CLI_Test extends \PHPUnit\Framework\TestCase {
 	}
 
 	/**
+	 * Tests that logs view prints the history section when history exists.
+	 */
+	public function test_logs_view_shows_history() {
+		$log = new \stdClass();
+		$log->id           = 1;
+		$log->timestamp    = '2026-01-01 12:00:00';
+		$log->success      = 1;
+		$log->from_email   = 'from@example.com';
+		$log->reply_to     = '';
+		$log->to_email     = 'to@example.com';
+		$log->subject      = 'Test';
+		$log->transport    = 'api';
+		$log->created_at   = '2026-01-01 12:00:00';
+		$log->processed_at = '2026-01-01 12:00:01';
+		$log->message      = 'Hello';
+		$log->api_request  = '{}';
+		$log->api_response = '{}';
+		$log->history      = wp_json_encode( array(
+			array( 'event' => 'queued', 'at' => '2026-01-01 12:00:00' ),
+			array( 'event' => 'attempt', 'at' => '2026-01-01 12:00:01', 'success' => true, 'transport' => 'api', 'request' => array(), 'response' => array() ),
+			array( 'event' => 'requeue', 'at' => '2026-01-01 13:00:00', 'by' => 'admin' ),
+		) );
+
+		$GLOBALS['wp_db_row'] = $log;
+
+		$this->cli->logs( array( 'view', '1' ), array() );
+
+		$output = implode( "\n", WP_CLI::$log_output );
+		$this->assertContains( '--- History ---', WP_CLI::$log_output );
+		$this->assertStringContainsString( 'attempt #1 sent via api', $output );
+		$this->assertStringContainsString( 're-queued by admin', $output );
+		$this->assertStringContainsString( '[2026-01-01 12:00:00] queued', $output );
+	}
+
+	/**
+	 * Tests that logs view omits history section for legacy rows without history.
+	 */
+	public function test_logs_view_without_history_omits_section() {
+		$log = new \stdClass();
+		$log->id           = 1;
+		$log->timestamp    = '2026-01-01 12:00:00';
+		$log->success      = 1;
+		$log->from_email   = 'from@example.com';
+		$log->reply_to     = '';
+		$log->to_email     = 'to@example.com';
+		$log->subject      = 'Test';
+		$log->transport    = 'api';
+		$log->created_at   = '2026-01-01 12:00:00';
+		$log->processed_at = '2026-01-01 12:00:01';
+		$log->message      = 'Hello';
+		$log->api_request  = '{}';
+		$log->api_response = '{}';
+
+		$GLOBALS['wp_db_row'] = $log;
+
+		$this->cli->logs( array( 'view', '1' ), array() );
+
+		$this->assertNotContains( '--- History ---', WP_CLI::$log_output );
+	}
+
+	/**
+	 * Tests that logs requeue requires an ID.
+	 */
+	public function test_logs_requeue_requires_id() {
+		$this->expectException( \MXRouteCLIException::class );
+		$this->cli->logs( array( 'requeue' ), array() );
+	}
+
+	/**
+	 * Tests that logs requeue errors when log not found.
+	 */
+	public function test_logs_requeue_not_found() {
+		$this->expectException( \MXRouteCLIException::class );
+		$this->cli->logs( array( 'requeue', '999' ), array() );
+	}
+
+	/**
+	 * Tests that logs requeue succeeds for a requeueable log.
+	 */
+	public function test_logs_requeue_success() {
+		$log = new \stdClass();
+		$log->id = 1;
+
+		$GLOBALS['wp_db_row']           = $log;
+		$GLOBALS['wp_db_affected_rows'] = 1;
+		$GLOBALS['wp_db_var']           = null;
+
+		$this->cli->logs( array( 'requeue', '1' ), array() );
+
+		$this->assertNotEmpty( WP_CLI::$success_output );
+		$this->assertStringContainsString( 're-queued', WP_CLI::$success_output[0] );
+	}
+
+	/**
+	 * Tests that logs requeue errors when the item is in flight.
+	 */
+	public function test_logs_requeue_in_flight_errors() {
+		$log = new \stdClass();
+		$log->id = 1;
+
+		$GLOBALS['wp_db_row']           = $log;
+		$GLOBALS['wp_db_affected_rows'] = 0;
+
+		$this->expectException( \MXRouteCLIException::class );
+		$this->cli->logs( array( 'requeue', '1' ), array() );
+	}
+
+	/**
 	 * Tests that logs delete requires an ID.
 	 */
 	public function test_logs_delete_requires_id() {

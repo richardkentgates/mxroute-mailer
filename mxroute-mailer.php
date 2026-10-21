@@ -166,7 +166,11 @@ function mxroute_mailer_db_upgrade() {
 		}
 
 		if ( ! in_array( 'transport', $columns, true ) ) {
-			$wpdb->query( "ALTER TABLE `$table_name` ADD COLUMN `transport` varchar(10) NOT NULL DEFAULT 'api' AFTER `success`" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$wpdb->query( "ALTER TABLE `$table_name` ADD COLUMN transport varchar(10) NOT NULL DEFAULT 'api' AFTER success" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Table name from $wpdb->prefix, safe. Schema upgrade.
+		}
+
+		if ( ! in_array( 'history', $columns, true ) ) {
+			$wpdb->query( "ALTER TABLE `$table_name` ADD COLUMN history longtext NULL AFTER api_response" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Table name from $wpdb->prefix, safe. Schema upgrade.
 		}
 
 		// Migrate old failed entries (success=0) to new failed status (success=-1)

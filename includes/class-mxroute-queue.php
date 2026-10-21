@@ -47,6 +47,7 @@ class MXRoute_Queue {
 		global $wpdb;
 
 		$to_single = MXRoute_API::sanitize_email_address( $to );
+		$created_at = current_time( 'mysql' );
 
 		// Insert the queue row first to get the log ID for attachment storage.
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Queue write.
@@ -63,7 +64,8 @@ class MXRoute_Queue {
 				'attachments'  => '[]',
 				'api_request'  => '',
 				'api_response' => '',
-				'created_at'   => current_time( 'mysql' ),
+				'history'      => wp_json_encode( array( array( 'event' => 'queued', 'at' => $created_at ) ) ),
+				'created_at'   => $created_at,
 			),
 			array( '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s' )
 		);
@@ -162,12 +164,14 @@ class MXRoute_Queue {
 			return $this->delete_sent( $id );
 		}
 
+		$safe_transport = in_array( $transport, array( 'api', 'smtp' ), true ) ? $transport : 'api';
+
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Queue update by primary key.
-		return (bool) $wpdb->update(
+		$updated = (bool) $wpdb->update(
 			$this->table_name,
 			array(
 				'success'      => 1,
-				'transport'    => in_array( $transport, array( 'api', 'smtp' ), true ) ? $transport : 'api',
+				'transport'    => $safe_transport,
 				'api_request'  => wp_json_encode( $request ),
 				'api_response' => wp_json_encode( $response ),
 				'processed_at' => current_time( 'mysql' ),
@@ -176,6 +180,19 @@ class MXRoute_Queue {
 			array( '%d', '%s', '%s', '%s', '%s', '%s' ),
 			array( '%d' )
 		);
+
+		MXRoute_Logger::append_history(
+			absint( $id ),
+			array(
+				'event'     => 'attempt',
+				'success'   => true,
+				'transport' => $safe_transport,
+				'request'   => $request,
+				'response'  => $response,
+			)
+		);
+
+		return $updated;
 	}
 
 	/**
@@ -224,12 +241,14 @@ class MXRoute_Queue {
 	public function mark_failed( $id, $request = array(), $response = array(), $transport = 'api' ) {
 		global $wpdb;
 
+		$safe_transport = in_array( $transport, array( 'api', 'smtp' ), true ) ? $transport : 'api';
+
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Queue update by primary key.
-		return (bool) $wpdb->update(
+		$updated = (bool) $wpdb->update(
 			$this->table_name,
 			array(
 				'success'      => -1,
-				'transport'    => in_array( $transport, array( 'api', 'smtp' ), true ) ? $transport : 'api',
+				'transport'    => $safe_transport,
 				'api_request'  => wp_json_encode( $request ),
 				'api_response' => wp_json_encode( $response ),
 				'processed_at' => current_time( 'mysql' ),
@@ -238,6 +257,19 @@ class MXRoute_Queue {
 			array( '%d', '%s', '%s', '%s', '%s', '%s' ),
 			array( '%d' )
 		);
+
+		MXRoute_Logger::append_history(
+			absint( $id ),
+			array(
+				'event'     => 'attempt',
+				'success'   => false,
+				'transport' => $safe_transport,
+				'request'   => $request,
+				'response'  => $response,
+			)
+		);
+
+		return $updated;
 	}
 
 	/**
