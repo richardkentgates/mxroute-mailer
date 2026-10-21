@@ -912,3 +912,12 @@ if (!function_exists('get_current_screen')) {
         return $GLOBALS['mxroute_mock_screen'] ?? null;
     }
 }
+
+if (!function_exists('ini_get')) {
+    function ini_get($option) {
+        if ($option === 'memory_limit' && isset($GLOBALS['mxroute_mock_memory_limit'])) {
+            return $GLOBALS['mxroute_mock_memory_limit'];
+        }
+        return \ini_get($option);
+    }
+}

@@ -259,15 +259,15 @@ class MXRoute_Mailer {
 	 * Get available memory in bytes.
 	 *
 	 * Parses PHP's memory_limit (handling K/M/G suffixes) and subtracts
-	 * current usage. Returns 0 when memory_limit is -1 (unlimited) to
-	 * avoid incorrectly blocking sends.
+	 * current usage. Returns PHP_INT_MAX when memory_limit is -1 (unlimited)
+	 * so the memory guard never blocks sends on unlimited-memory servers.
 	 *
-	 * @return int Available bytes, or 0 when unlimited.
+	 * @return int Available bytes, or PHP_INT_MAX when unlimited.
 	 */
 	private function get_available_memory_bytes() {
 		$limit = ini_get( 'memory_limit' );
 		if ( -1 === $limit || '-1' === $limit ) {
-			return 0;
+			return PHP_INT_MAX;
 		}
 
 		$bytes = (int) $limit;
