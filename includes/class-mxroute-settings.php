@@ -356,7 +356,7 @@ class MXRoute_Settings {
 			array(
 				'id'      => 'mxroute-overview',
 				'title'   => __( 'Overview', 'mxroute-mailer' ),
-				'content' => '<p>' . esc_html__( 'MXRoute Mailer intercepts all outgoing WordPress emails and routes them through MXRoute\'s HTTP API instead of SMTP. This bypasses port blocks on cloud hosting providers like Google Cloud.', 'mxroute-mailer' ) . '</p>'
+				'content' => '<p>' . esc_html__( 'MXRoute Mailer intercepts all outgoing WordPress emails and sends them through MXRoute using a smart switch: the HTTP API (port 443) for emails without attachments, SMTP for emails with attachments. This bypasses port blocks on cloud hosting providers like Google Cloud, where the default server mailer would silently fail.', 'mxroute-mailer' ) . '</p>'
 					. '<p>' . esc_html__( 'Enter your MXRoute API credentials below, then use the test form to verify your setup.', 'mxroute-mailer' ) . '</p>',
 			)
 		);
@@ -385,8 +385,9 @@ class MXRoute_Settings {
 			array(
 				'id'      => 'mxroute-options',
 				'title'   => __( 'Options', 'mxroute-mailer' ),
-				'content' => '<p><strong>' . esc_html__( 'Enable Logging:', 'mxroute-mailer' ) . '</strong> ' . esc_html__( 'When checked, all sent emails are logged with request and response data. You can view logs under Tools > MXRoute Logs.', 'mxroute-mailer' ) . '</p>'
+				'content' => '<p><strong>' . esc_html__( 'Enable Logging:', 'mxroute-mailer' ) . '</strong> ' . esc_html__( 'When checked, sent emails are logged with request and response data and kept until the retention period expires. When unchecked, delivered emails are discarded after sending; failures are always retained. View logs under Tools > MXRoute Logs.', 'mxroute-mailer' ) . '</p>'
 					. '<p><strong>' . esc_html__( 'Batch Size:', 'mxroute-mailer' ) . '</strong> ' . esc_html__( 'Number of emails to process per 60-second cron cycle. Default is 5. Range is 1-50.', 'mxroute-mailer' ) . '</p>'
+					. '<p><strong>' . esc_html__( 'Retention:', 'mxroute-mailer' ) . '</strong> ' . esc_html__( 'How many days processed log entries (sent or failed) are kept before the daily cleanup removes them, along with their stored attachments. Default is 90. Range is 0-3650; enter 0 to keep entries forever. Pending queue items are never purged.', 'mxroute-mailer' ) . '</p>'
 					. '<p><strong>' . esc_html__( 'Uninstall:', 'mxroute-mailer' ) . '</strong> ' . esc_html__( 'When checked, your logs and settings are preserved when the plugin is deleted. Uncheck to remove all data on uninstall.', 'mxroute-mailer' ) . '</p>',
 			)
 		);
@@ -436,9 +437,9 @@ class MXRoute_Settings {
 				'title'   => __( 'WP-CLI', 'mxroute-mailer' ),
 				'content' => '<p>' . esc_html__( 'MXRoute Mailer includes WP-CLI commands for command-line management. All commands use the wp mxroute prefix.', 'mxroute-mailer' ) . '</p>'
 					. '<h4>' . esc_html__( 'Settings', 'mxroute-mailer' ) . '</h4>'
-					. '<pre>wp mxroute settings get server\nwp mxroute settings get username\nwp mxroute settings set password \'new-password\'</pre>'
+					. 				'<pre>wp mxroute settings get server\nwp mxroute settings get username\nwp mxroute settings set batch_size 10\nwp mxroute settings set retention_days 90\nwp mxroute settings set password \'new-password\'</pre>'
 					. '<h4>' . esc_html__( 'Logs', 'mxroute-mailer' ) . '</h4>'
-					. '<pre>wp mxroute logs list\nwp mxroute logs view 42\nwp mxroute logs delete 42\nwp mxroute logs clear</pre>'
+					. '<pre>wp mxroute logs list\nwp mxroute logs view 42\nwp mxroute logs requeue 42\nwp mxroute logs delete 42\nwp mxroute logs clear</pre>'
 					. '<h4>' . esc_html__( 'Queue', 'mxroute-mailer' ) . '</h4>'
 					. '<pre>wp mxroute queue list\nwp mxroute queue count\nwp mxroute queue clear</pre>'
 					. '<h4>' . esc_html__( 'Test', 'mxroute-mailer' ) . '</h4>'
@@ -492,7 +493,7 @@ class MXRoute_Settings {
 			array(
 				'id'      => 'mxroute-logs-actions',
 				'title'   => __( 'Actions', 'mxroute-mailer' ),
-				'content' => '<p><strong>' . esc_html__( 'Re-queue:', 'mxroute-mailer' ) . '</strong> ' . esc_html__( 'Click the "Re-queue" button on any row to send that email again. Use bulk actions to re-queue multiple entries at once.', 'mxroute-mailer' ) . '</p>'
+				'content' => '<p><strong>' . esc_html__( 'Re-queue:', 'mxroute-mailer' ) . '</strong> ' . esc_html__( 'Click the "Re-queue" button on any row to send that email again. Use bulk actions to re-queue multiple entries at once. Each re-queue is recorded in the entry\'s history with your username, and the new attempt appears in the timeline on the detail page.', 'mxroute-mailer' ) . '</p>'
 					. '<p><strong>' . esc_html__( 'Clear All Logs:', 'mxroute-mailer' ) . '</strong> ' . esc_html__( 'Removes all log entries. This action cannot be undone.', 'mxroute-mailer' ) . '</p>'
 					. '<p><strong>' . esc_html__( 'Bulk Delete:', 'mxroute-mailer' ) . '</strong> ' . esc_html__( 'Select multiple entries using the checkboxes, choose "Delete" from the Bulk Actions dropdown, and click "Apply".', 'mxroute-mailer' ) . '</p>'
 					. '<p><strong>' . esc_html__( 'Delete Single Entry:', 'mxroute-mailer' ) . '</strong> ' . esc_html__( 'Click the "Delete" button on any row to remove that specific log entry.', 'mxroute-mailer' ) . '</p>',

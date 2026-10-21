@@ -18,6 +18,8 @@ MXRoute Mailer is a WordPress plugin that intercepts all emails sent via `wp_mai
 - **Email queue** — Background processing via recurring WP-Cron (every 60 seconds) with configurable batch size
 - **File attachment support** — Media library IDs, persistent paths, and temp files with intelligent storage
 - **Re-queue feature** — Resend any failed or sent email directly from the logs
+- **Per-email lifecycle history** — Every email records queued/send/requeue events with actor and per-attempt request/response — timeline on the log detail page and in `wp mxroute logs view`
+- **Configurable log retention** — Processed entries purged after a configurable period (default 90 days, `0` = keep forever)
 - **Email logging** — Full logs with search, filtering, pagination, and transport details
 - **Reply-To support** — Preserves form sender addresses as Reply-To headers
 - **WP-CLI commands** — Manage settings, logs, queue, and send emails from the command line
@@ -79,12 +81,16 @@ wp mxroute settings get server
 
 # Update a setting
 wp mxroute settings set batch_size 10
+wp mxroute settings set retention_days 90   # 0 = keep entries forever
 
 # List recent logs
 wp mxroute logs list
 
-# View a specific log
+# View a specific log (includes the full lifecycle history)
 wp mxroute logs view 123
+
+# Re-queue a log entry (recorded in its history with actor 'cli')
+wp mxroute logs requeue 123
 
 # Check queue status
 wp mxroute queue count
@@ -93,7 +99,7 @@ wp mxroute queue count
 wp mxroute test user@example.com
 ```
 
-See the [CLI documentation](https://github.com/richardkentgates/mxroute-mailer/wiki/CLI-Commands) for full details.
+See the [Configuration wiki page](https://github.com/richardkentgates/mxroute-mailer/wiki/Configuration#wp-cli-configuration) for the full CLI reference.
 
 ## Multisite
 

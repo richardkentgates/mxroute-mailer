@@ -24,6 +24,8 @@ If you use MXRoute for email hosting, this plugin integrates it directly with Wo
 * Email queue with background processing via WP-Cron
 * File attachment support for all email types
 * Re-queue feature to resend failed or sent emails
+* Per-email lifecycle history — queued/send/requeue events with actor and request/response per attempt, shown as a timeline on the log detail page and in WP-CLI
+* Configurable log retention — processed entries purged after a set number of days (default 90, 0 = keep forever)
 * Email logging with filtering, search, and pagination
 * Reply-To header support for contact forms
 * Test email functionality with full API response details
@@ -96,6 +98,14 @@ Failed emails are logged with status -1 and visible on the Logs page. You can re
 3. Individual log detail view with API request and response data
 
 == Changelog ==
+
+= 1.4.84 – 1.4.88 =
+* Feature: Per-email lifecycle history — every email records queued, attempt (with transport, result, request/response), and requeue events with the acting user; timeline on the log detail page; `wp mxroute logs view` prints it
+* Feature: WP-CLI `wp mxroute logs requeue <id>` with actor tracking (recorded as `cli`)
+* Feature: Configurable log retention — Settings > Retention (default 90 days, range 0-3650, 0 = keep forever); daily cleanup purges processed entries and their stored attachments
+* Fix: Username field accepts your full MXRoute address — the domain is no longer rewritten to the site host, so subdomain and www addresses work
+* Fix: Cron events are registered only at activation and plugin update instead of on every init, following WordPress cron architecture
+* Fix: Schema upgrades now run on init, so new columns exist before any plugin write after a WP-CLI or scripted update
 
 = 1.4.53 =
 * Maintenance release
