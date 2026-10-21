@@ -150,6 +150,51 @@ class MXRoute_Mailer_Test extends \PHPUnit\Framework\TestCase {
     }
 
     /**
+     * Tests that daily_cleanup uses the 90-day default when no option is set.
+     */
+    public function test_daily_cleanup_uses_default_90_day_retention() {
+        unset( $GLOBALS['wp_db_col'] );
+        mxroute_mailer_daily_cleanup();
+
+        $query = end( $GLOBALS['wp_db_queries'] );
+        $this->assertStringContainsString( 'DELETE', $query );
+        $this->assertStringContainsString( 'processed_at <', $query );
+
+        preg_match( "/processed_at < '([^']+)'/", $query, $matches );
+        $this->assertNotEmpty( $matches );
+        $expected = strtotime( gmdate( 'Y-m-d H:i:s', strtotime( '-90 days', time() ) ) );
+        $this->assertLessThanOrEqual( 3, abs( strtotime( $matches[1] ) - $expected ) );
+    }
+
+    /**
+     * Tests that daily_cleanup honors a configured retention period.
+     */
+    public function test_daily_cleanup_honors_configured_retention() {
+        $GLOBALS['wp_options']['mxroute_mailer_retention_days'] = 30;
+        unset( $GLOBALS['wp_db_col'] );
+        mxroute_mailer_daily_cleanup();
+
+        $query = end( $GLOBALS['wp_db_queries'] );
+        $this->assertStringContainsString( 'DELETE', $query );
+
+        preg_match( "/processed_at < '([^']+)'/", $query, $matches );
+        $this->assertNotEmpty( $matches );
+        $expected = strtotime( gmdate( 'Y-m-d H:i:s', strtotime( '-30 days', time() ) ) );
+        $this->assertLessThanOrEqual( 3, abs( strtotime( $matches[1] ) - $expected ) );
+    }
+
+    /**
+     * Tests that daily_cleanup with retention 0 (unlimited) purges nothing.
+     */
+    public function test_daily_cleanup_unlimited_retention_purges_nothing() {
+        $GLOBALS['wp_options']['mxroute_mailer_retention_days'] = 0;
+        unset( $GLOBALS['wp_db_col'] );
+        mxroute_mailer_daily_cleanup();
+
+        $this->assertEmpty( $GLOBALS['wp_db_queries'] );
+    }
+
+    /**
      * Tests that the From address defaults to the username when no headers are provided.
      */
     public function test_extract_from_address_returns_default_when_no_headers() {

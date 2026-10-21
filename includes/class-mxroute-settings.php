@@ -118,6 +118,14 @@ class MXRoute_Settings {
 				'sanitize_callback' => array( $this, 'sanitize_batch_size' ),
 			)
 		);
+		register_setting(
+			'mxroute_mailer_settings',
+			'mxroute_mailer_retention_days',
+			array(
+				'type'              => 'integer',
+				'sanitize_callback' => array( $this, 'sanitize_retention_days' ),
+			)
+		);
 	}
 
 	/**
@@ -143,6 +151,26 @@ class MXRoute_Settings {
 		}
 		if ( $value > 50 ) {
 			$value = 50;
+		}
+		return $value;
+	}
+
+	/**
+	 * Sanitize queue retention days value.
+	 *
+	 * 0 means unlimited retention (entries are never purged). Negative
+	 * input clamps to 0; values above 3650 (10 years) clamp to 3650.
+	 *
+	 * @param mixed $value Retention days submitted by the form.
+	 * @return int Retention days between 0 (unlimited) and 3650.
+	 */
+	public function sanitize_retention_days( $value ) {
+		$value = intval( $value );
+		if ( $value < 0 ) {
+			$value = 0;
+		}
+		if ( $value > 3650 ) {
+			$value = 3650;
 		}
 		return $value;
 	}

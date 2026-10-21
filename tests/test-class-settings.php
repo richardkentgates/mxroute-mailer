@@ -40,6 +40,7 @@ class MXRoute_Settings_Test extends \PHPUnit\Framework\TestCase {
         $this->assertContains('mxroute_mailer_password', $option_names);
         $this->assertContains('mxroute_mailer_logging_enabled', $option_names);
         $this->assertContains('mxroute_mailer_keep_data', $option_names);
+        $this->assertContains('mxroute_mailer_retention_days', $option_names);
     }
 
     /**
@@ -245,6 +246,45 @@ class MXRoute_Settings_Test extends \PHPUnit\Framework\TestCase {
         $settings = new MXRoute_Settings();
         $this->assertEquals( 25, $settings->sanitize_batch_size( '25abc' ) );
         $this->assertEquals( 1, $settings->sanitize_batch_size( 'abc' ) );
+    }
+
+    /**
+     * Tests that sanitize_retention_days passes valid values through.
+     */
+    public function test_sanitize_retention_days_passes_valid_values() {
+        $settings = new MXRoute_Settings();
+        $this->assertEquals( 1, $settings->sanitize_retention_days( 1 ) );
+        $this->assertEquals( 30, $settings->sanitize_retention_days( 30 ) );
+        $this->assertEquals( 90, $settings->sanitize_retention_days( 90 ) );
+        $this->assertEquals( 3650, $settings->sanitize_retention_days( 3650 ) );
+    }
+
+    /**
+     * Tests that sanitize_retention_days treats 0 as unlimited retention.
+     */
+    public function test_sanitize_retention_days_zero_means_unlimited() {
+        $settings = new MXRoute_Settings();
+        $this->assertEquals( 0, $settings->sanitize_retention_days( 0 ) );
+        $this->assertEquals( 0, $settings->sanitize_retention_days( '0' ) );
+    }
+
+    /**
+     * Tests that sanitize_retention_days clamps negatives to 0 (unlimited)
+     * and values above 3650 to 3650.
+     */
+    public function test_sanitize_retention_days_clamps_out_of_range() {
+        $settings = new MXRoute_Settings();
+        $this->assertEquals( 0, $settings->sanitize_retention_days( -5 ) );
+        $this->assertEquals( 3650, $settings->sanitize_retention_days( 9999 ) );
+    }
+
+    /**
+     * Tests that sanitize_retention_days casts non-integer input.
+     */
+    public function test_sanitize_retention_days_casts_non_integer() {
+        $settings = new MXRoute_Settings();
+        $this->assertEquals( 90, $settings->sanitize_retention_days( '90abc' ) );
+        $this->assertEquals( 0, $settings->sanitize_retention_days( 'abc' ) );
     }
 
     /**

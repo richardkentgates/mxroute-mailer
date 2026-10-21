@@ -214,7 +214,7 @@ add_filter( 'cron_schedules', 'mxroute_mailer_cron_schedules' );
  */
 function mxroute_mailer_daily_cleanup() {
 	$queue = new MXRoute_Queue();
-	$queue->cleanup( 30 );
+	$queue->cleanup( (int) get_option( 'mxroute_mailer_retention_days', 90 ) );
 }
 add_action( 'mxroute_mailer_daily_cleanup', MXRoute_Cron_Tracker::wrap( 'mxroute_mailer_daily_cleanup', 'mxroute_mailer_daily_cleanup' ) );
 

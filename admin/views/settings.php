@@ -99,6 +99,15 @@ defined( 'ABSPATH' ) || exit;
 					<p class="description"><?php esc_html_e( 'Number of queued emails to process per 60-second cron cycle.', 'mxroute-mailer' ); ?></p>
 				</td>
 			</tr>
+			<tr>
+				<th scope="row"><label for="mxroute_mailer_retention_days"><?php esc_html_e( 'Retention (days)', 'mxroute-mailer' ); ?></label></th>
+				<td>
+					<input type="number" id="mxroute_mailer_retention_days" name="mxroute_mailer_retention_days"
+							value="<?php echo esc_attr( get_option( 'mxroute_mailer_retention_days', 90 ) ); ?>"
+							class="small-text" min="0" max="3650" />
+					<p class="description"><?php esc_html_e( 'Processed queue entries older than this are deleted daily along with their stored attachments. Set to 0 to keep entries forever.', 'mxroute-mailer' ); ?></p>
+				</td>
+			</tr>
 		</table>
 
 		<?php submit_button( __( 'Save Settings', 'mxroute-mailer' ) ); ?>

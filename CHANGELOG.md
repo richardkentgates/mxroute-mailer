@@ -24,6 +24,9 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 - Auto-incremented version from 1.4.82 to 1.4.83
 ## [Unreleased]
 
+### Added
+- Queue retention setting on Settings > MXRoute Mailer — controls how many days processed queue entries are kept before the daily cleanup deletes them (default 90, range 0-3650, `0` = keep forever); available as `retention_days` in `wp mxroute settings`
+
 ### Changed
 - Username field is now a plain full-address input — the domain is no longer derived from the WordPress site URL, so `www.` and subdomain mailboxes can be entered exactly as configured in MXRoute
 - `wp mxroute settings set username` now runs through `sanitize_email` and rejects values that are not full email addresses
