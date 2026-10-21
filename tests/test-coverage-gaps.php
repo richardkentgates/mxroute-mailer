@@ -137,14 +137,15 @@ class MXRoute_Queue_Mark_Test extends \PHPUnit\Framework\TestCase {
 	}
 
 	/**
-	 * Tests that mark_sent calls $wpdb->update with success=1 and transport.
+	 * Tests that mark_sent calls $wpdb->update with success=1 and transport,
+	 * then appends the attempt event to history.
 	 */
 	public function test_mark_sent_sets_success_1() {
 		$queue = new MXRoute_Queue();
 		$queue->mark_sent( 42, array( 'from' => 'a@b.com' ), array( 'success' => true ), 'smtp' );
 
 		$updates = $GLOBALS['wp_function_calls']['$wpdb->update'];
-		$this->assertCount( 1, $updates );
+		$this->assertCount( 2, $updates );
 
 		$data = $updates[0]['data'];
 		$this->assertEquals( 1, $data['success'] );
@@ -152,22 +153,37 @@ class MXRoute_Queue_Mark_Test extends \PHPUnit\Framework\TestCase {
 		$this->assertEquals( '{"from":"a@b.com"}', $data['api_request'] );
 		$this->assertEquals( '{"success":true}', $data['api_response'] );
 		$this->assertNotEmpty( $data['processed_at'] );
+
+		$history = json_decode( $updates[1]['data']['history'], true );
+		$this->assertIsArray( $history );
+		$this->assertEquals( 'attempt', $history[0]['event'] );
+		$this->assertTrue( $history[0]['success'] );
+		$this->assertEquals( 'smtp', $history[0]['transport'] );
+		$this->assertEquals( array( 'from' => 'a@b.com' ), $history[0]['request'] );
+		$this->assertNotEmpty( $history[0]['at'] );
 	}
 
 	/**
-	 * Tests that mark_failed calls $wpdb->update with success=-1 and transport.
+	 * Tests that mark_failed calls $wpdb->update with success=-1 and transport,
+	 * then appends the failed attempt event to history.
 	 */
 	public function test_mark_failed_sets_success_minus_1() {
 		$queue = new MXRoute_Queue();
 		$queue->mark_failed( 99, array(), array( 'error' => 'fail' ), 'api' );
 
 		$updates = $GLOBALS['wp_function_calls']['$wpdb->update'];
-		$this->assertCount( 1, $updates );
+		$this->assertCount( 2, $updates );
 
 		$data = $updates[0]['data'];
 		$this->assertEquals( -1, $data['success'] );
 		$this->assertEquals( 'api', $data['transport'] );
 		$this->assertEquals( '{"error":"fail"}', $data['api_response'] );
+
+		$history = json_decode( $updates[1]['data']['history'], true );
+		$this->assertIsArray( $history );
+		$this->assertEquals( 'attempt', $history[0]['event'] );
+		$this->assertFalse( $history[0]['success'] );
+		$this->assertEquals( 'api', $history[0]['transport'] );
 	}
 
 	/**

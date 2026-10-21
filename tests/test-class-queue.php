@@ -41,6 +41,31 @@ class MXRoute_Queue_Test extends \PHPUnit\Framework\TestCase {
 	}
 
 	/**
+	 * Tests that add initializes the history column with a queued event.
+	 */
+	public function test_add_initializes_history_with_queued_event() {
+		$queue = new MXRoute_Queue();
+		$queue->add(
+			'from@example.com',
+			'to@example.com',
+			'Test Subject',
+			'Test body',
+			'',
+			array(),
+			''
+		);
+
+		$insert = $GLOBALS['wp_db_inserts'][0];
+		$this->assertArrayHasKey( 'history', $insert['data'] );
+
+		$events = json_decode( $insert['data']['history'], true );
+		$this->assertIsArray( $events );
+		$this->assertCount( 1, $events );
+		$this->assertEquals( 'queued', $events[0]['event'] );
+		$this->assertNotEmpty( $events[0]['at'] );
+	}
+
+	/**
 	 * Tests that add stores headers in the queue entry.
 	 */
 	public function test_add_stores_headers() {
@@ -221,6 +246,28 @@ class MXRoute_Queue_Test extends \PHPUnit\Framework\TestCase {
 
 		$query = end( $GLOBALS['wp_db_queries'] );
 		$this->assertStringContainsString( 'DELETE', $query );
+	}
+
+	/**
+	 * Tests that cleanup with 0 days (unlimited retention) purges nothing.
+	 */
+	public function test_cleanup_with_zero_days_purges_nothing() {
+		$queue = new MXRoute_Queue();
+		$result = $queue->cleanup( 0 );
+
+		$this->assertEquals( 0, $result );
+		$this->assertEmpty( $GLOBALS['wp_db_queries'] );
+	}
+
+	/**
+	 * Tests that cleanup with negative days purges nothing.
+	 */
+	public function test_cleanup_with_negative_days_purges_nothing() {
+		$queue = new MXRoute_Queue();
+		$result = $queue->cleanup( -10 );
+
+		$this->assertEquals( 0, $result );
+		$this->assertEmpty( $GLOBALS['wp_db_queries'] );
 	}
 }
 

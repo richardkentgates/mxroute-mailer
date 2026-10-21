@@ -3,7 +3,7 @@
  * Plugin Name: MXRoute Mailer
  * Plugin URI: https://richardkentgates.com
  * Description: Sends WordPress email through MXRoute's HTTP API over port 443. Includes logging, test tools, and automatic updates.
- * Version: 1.4.85
+ * Version: 1.4.87
  * Author: Richard Kent Gates
  * Author URI: https://richardkentgates.com
  * License: GPL v2 or later
@@ -22,7 +22,7 @@ defined( 'ABSPATH' ) || exit;
  *
  * @var string
  */
-define( 'MXROUTE_MAILER_VERSION', '1.4.85' );
+define( 'MXROUTE_MAILER_VERSION', '1.4.87' );
 
 /**
  * Absolute path to the main plugin file.
@@ -166,7 +166,11 @@ function mxroute_mailer_db_upgrade() {
 		}
 
 		if ( ! in_array( 'transport', $columns, true ) ) {
-			$wpdb->query( "ALTER TABLE `$table_name` ADD COLUMN `transport` varchar(10) NOT NULL DEFAULT 'api' AFTER `success`" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$wpdb->query( "ALTER TABLE `$table_name` ADD COLUMN transport varchar(10) NOT NULL DEFAULT 'api' AFTER success" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Table name from $wpdb->prefix, safe. Schema upgrade.
+		}
+
+		if ( ! in_array( 'history', $columns, true ) ) {
+			$wpdb->query( "ALTER TABLE `$table_name` ADD COLUMN history longtext NULL AFTER api_response" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Table name from $wpdb->prefix, safe. Schema upgrade.
 		}
 
 		// Migrate old failed entries (success=0) to new failed status (success=-1)
@@ -214,7 +218,7 @@ add_filter( 'cron_schedules', 'mxroute_mailer_cron_schedules' );
  */
 function mxroute_mailer_daily_cleanup() {
 	$queue = new MXRoute_Queue();
-	$queue->cleanup( 30 );
+	$queue->cleanup( (int) get_option( 'mxroute_mailer_retention_days', 90 ) );
 }
 add_action( 'mxroute_mailer_daily_cleanup', MXRoute_Cron_Tracker::wrap( 'mxroute_mailer_daily_cleanup', 'mxroute_mailer_daily_cleanup' ) );
 

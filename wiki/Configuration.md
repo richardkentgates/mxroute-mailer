@@ -34,6 +34,15 @@ Number of emails to process per 60-second cron cycle.
 - Range: 1-50
 - Higher values process more emails per cycle
 
+### Retention
+
+How long processed queue entries (sent or failed) are kept before the daily cleanup removes them, along with their stored attachments.
+
+- Default: 90 days
+- Range: 0-3650
+- `0` = unlimited retention (entries are never purged)
+- Only processed entries are affected — pending queue items are never deleted by cleanup
+
 ### Logging
 
 When enabled, all sent emails are logged. When disabled, delivered emails are discarded from the log after sending (attachments included); failures are always retained with full request and response data. View logs under **Tools > MXRoute Logs**.
@@ -54,10 +63,12 @@ wp mxroute settings get
 wp mxroute settings get server
 wp mxroute settings get username
 wp mxroute settings get batch_size
+wp mxroute settings get retention_days
 
 # Update a setting
 wp mxroute settings set server chocobo.mxrouting.net
 wp mxroute settings set batch_size 10
+wp mxroute settings set retention_days 90   # 0 = keep entries forever
 
 # Enable/disable logging
 wp mxroute settings set logging_enabled 1
@@ -120,6 +131,9 @@ wp mxroute logs list --per-page=10
 
 # View a specific log
 wp mxroute logs view 123
+
+# Re-queue a log for sending
+wp mxroute logs requeue 123
 
 # Delete a log
 wp mxroute logs delete 123

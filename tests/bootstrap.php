@@ -425,6 +425,16 @@ if (!function_exists('current_time')) {
     }
 }
 
+if (!function_exists('wp_get_current_user')) {
+    function wp_get_current_user() {
+        return (object) array(
+            'ID'          => 1,
+            'user_login'  => 'admin',
+            'display_name'=> 'Admin',
+        );
+    }
+}
+
 if (!function_exists('number_format_i18n')) {
     function number_format_i18n($number, $decimals = 0) {
         return number_format($number, $decimals);

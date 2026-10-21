@@ -132,4 +132,102 @@ $response = json_decode( $log->api_response, true );
 
 	<h4><?php esc_html_e( 'Response', 'mxroute-mailer' ); ?></h4>
 	<pre class="mxroute-json"><?php echo esc_html( wp_json_encode( $response, JSON_PRETTY_PRINT ) ); ?></pre>
+
+	<?php
+	$history = json_decode( isset( $log->history ) && is_string( $log->history ) ? $log->history : '', true );
+	$history = is_array( $history ) ? $history : array();
+
+	if ( ! empty( $history ) ) :
+		$attempt_number = 0;
+		?>
+		<h4><?php esc_html_e( 'History', 'mxroute-mailer' ); ?></h4>
+		<table class="widefat">
+			<thead>
+				<tr>
+					<th scope="col" style="width:170px;"><?php esc_html_e( 'Time', 'mxroute-mailer' ); ?></th>
+					<th scope="col" style="width:150px;"><?php esc_html_e( 'Event', 'mxroute-mailer' ); ?></th>
+					<th scope="col" style="width:110px;"><?php esc_html_e( 'Result', 'mxroute-mailer' ); ?></th>
+					<th scope="col"><?php esc_html_e( 'Transport', 'mxroute-mailer' ); ?></th>
+				</tr>
+			</thead>
+			<tbody>
+				<?php foreach ( $history as $event ) : ?>
+					<?php
+					$type   = isset( $event['event'] ) ? (string) $event['event'] : '';
+					$at     = isset( $event['at'] ) ? (string) $event['at'] : '';
+					$result = '&mdash;';
+					$label  = $type;
+					?>
+					<tr>
+						<td><?php echo esc_html( $at ); ?></td>
+						<td>
+							<?php
+							if ( 'queued' === $type ) {
+								esc_html_e( 'Queued', 'mxroute-mailer' );
+							} elseif ( 'attempt' === $type ) {
+								++$attempt_number;
+								// translators: %d: attempt number.
+								echo esc_html( sprintf( __( 'Attempt #%d', 'mxroute-mailer' ), $attempt_number ) );
+								if ( ! empty( $event['by'] ) ) {
+									echo ' ';
+									// translators: %s: actor login.
+									echo esc_html( sprintf( __( 'by %s', 'mxroute-mailer' ), $event['by'] ) );
+								}
+							} elseif ( 'requeue' === $type ) {
+								esc_html_e( 'Re-queued', 'mxroute-mailer' );
+								if ( ! empty( $event['by'] ) ) {
+									echo ' ';
+									// translators: %s: actor login.
+									echo esc_html( sprintf( __( 'by %s', 'mxroute-mailer' ), $event['by'] ) );
+								}
+							} else {
+								echo esc_html( $label );
+							}
+							?>
+						</td>
+						<td>
+							<?php if ( 'attempt' === $type ) : ?>
+								<span class="mxroute-status-badge <?php echo esc_attr( ! empty( $event['success'] ) ? 'mxroute-success' : 'mxroute-fail' ); ?>" role="status">
+									<?php echo ! empty( $event['success'] ) ? esc_html__( 'Sent', 'mxroute-mailer' ) : esc_html__( 'Failed', 'mxroute-mailer' ); ?>
+								</span>
+							<?php else : ?>
+								&mdash;
+							<?php endif; ?>
+						</td>
+						<td>
+							<?php echo 'attempt' === $type && ! empty( $event['transport'] ) ? esc_html( $event['transport'] ) : '&mdash;'; ?>
+						</td>
+					</tr>
+				<?php endforeach; ?>
+			</tbody>
+		</table>
+
+		<?php
+		$attempt_number = 0;
+		foreach ( $history as $event ) :
+			if ( 'attempt' !== ( $event['event'] ?? '' ) ) {
+				continue;
+			}
+			++$attempt_number;
+			$attempt_request  = isset( $event['request'] ) && is_array( $event['request'] ) ? $event['request'] : array();
+			$attempt_response = isset( $event['response'] ) && is_array( $event['response'] ) ? $event['response'] : array();
+			?>
+			<h5>
+				<?php
+				// translators: %1$d: attempt number, %2$s: timestamp.
+				echo esc_html( sprintf( __( 'Attempt #%1$d — %2$s', 'mxroute-mailer' ), $attempt_number, isset( $event['at'] ) ? $event['at'] : '' ) );
+				?>
+			</h5>
+			<?php if ( ! empty( $attempt_request ) ) : ?>
+				<p class="description"><?php esc_html_e( 'Request', 'mxroute-mailer' ); ?></p>
+				<pre class="mxroute-json"><?php echo esc_html( wp_json_encode( $attempt_request, JSON_PRETTY_PRINT ) ); ?></pre>
+			<?php endif; ?>
+			<?php if ( ! empty( $attempt_response ) ) : ?>
+				<p class="description"><?php esc_html_e( 'Response', 'mxroute-mailer' ); ?></p>
+				<pre class="mxroute-json"><?php echo esc_html( wp_json_encode( $attempt_response, JSON_PRETTY_PRINT ) ); ?></pre>
+			<?php endif; ?>
+			<?php
+		endforeach;
+		?>
+	<?php endif; ?>
 </div>

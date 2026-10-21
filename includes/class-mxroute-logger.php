@@ -49,6 +49,7 @@ class MXRoute_Logger {
             attachments longtext NOT NULL,
             api_request longtext,
             api_response longtext,
+            history longtext NULL,
             success tinyint(2) NOT NULL DEFAULT 0,
             transport varchar(10) NOT NULL DEFAULT 'api',
             created_at datetime DEFAULT NULL,
@@ -221,12 +222,69 @@ class MXRoute_Logger {
 	}
 
 	/**
+	 * Append an event to a log entry's history column.
+	 *
+	 * The history column stores a JSON array of lifecycle events in order:
+	 * "queued" (job creation), "attempt" (each send with its request and
+	 * response), and "requeue" (each re-queue with the actor). The 'at'
+	 * timestamp is added when the event does not carry one.
+	 *
+	 * @param int   $id    Log entry ID.
+	 * @param array $event Event data; must contain an 'event' key.
+	 * @return void
+	 */
+	public static function append_history( $id, array $event ) {
+		global $wpdb;
+		$id = absint( $id );
+		if ( $id < 1 ) {
+			return;
+		}
+
+		$table_name = $wpdb->prefix . 'mxroute_mailer_logs';
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Read-modify-write of history column by primary key.
+		$raw = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT history FROM {$table_name} WHERE id = %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$id
+			)
+		);
+
+		$history = array();
+		if ( is_string( $raw ) && '' !== trim( $raw ) ) {
+			$decoded = json_decode( $raw, true );
+			if ( is_array( $decoded ) ) {
+				$history = $decoded;
+			}
+		}
+
+		if ( empty( $event['at'] ) ) {
+			$event['at'] = current_time( 'mysql' );
+		}
+		$history[] = $event;
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Append to history column by primary key.
+		$wpdb->update(
+			$table_name,
+			array( 'history' => wp_json_encode( $history ) ),
+			array( 'id' => $id ),
+			array( '%s' ),
+			array( '%d' )
+		);
+	}
+
+	/**
 	 * Re-queue a log entry by resetting it to pending status.
 	 *
-	 * @param int $id Log entry ID.
+	 * The previous attempt's api_request/api_response columns are cleared
+	 * so the detail view shows an empty current attempt; the full record
+	 * is preserved in the history column.
+	 *
+	 * @param int    $id  Log entry ID.
+	 * @param string $by  Actor for the history event (login name or 'cli').
 	 * @return bool True on success, false if row not found.
 	 */
-	public function requeue_log( $id ) {
+	public function requeue_log( $id, $by = '' ) {
 		global $wpdb;
 		$id = absint( $id );
 		if ( $id < 1 ) {
@@ -244,19 +302,30 @@ class MXRoute_Logger {
 			)
 		);
 
-		return $wpdb->rows_affected > 0;
+		if ( $wpdb->rows_affected < 1 ) {
+			return false;
+		}
+
+		$event = array( 'event' => 'requeue' );
+		if ( '' !== $by ) {
+			$event['by'] = sanitize_text_field( $by );
+		}
+		self::append_history( $id, $event );
+
+		return true;
 	}
 
 	/**
 	 * Re-queue multiple log entries by resetting them to pending status.
 	 *
-	 * @param array $ids Array of log entry IDs.
+	 * @param array  $ids Array of log entry IDs.
+	 * @param string $by  Actor for the history events.
 	 * @return int Number of entries re-queued.
 	 */
-	public function requeue_logs( $ids ) {
+	public function requeue_logs( $ids, $by = '' ) {
 		$count = 0;
 		foreach ( (array) $ids as $id ) {
-			if ( $this->requeue_log( $id ) ) {
+			if ( $this->requeue_log( $id, $by ) ) {
 				++$count;
 			}
 		}

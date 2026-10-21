@@ -118,6 +118,14 @@ class MXRoute_Settings {
 				'sanitize_callback' => array( $this, 'sanitize_batch_size' ),
 			)
 		);
+		register_setting(
+			'mxroute_mailer_settings',
+			'mxroute_mailer_retention_days',
+			array(
+				'type'              => 'integer',
+				'sanitize_callback' => array( $this, 'sanitize_retention_days' ),
+			)
+		);
 	}
 
 	/**
@@ -143,6 +151,26 @@ class MXRoute_Settings {
 		}
 		if ( $value > 50 ) {
 			$value = 50;
+		}
+		return $value;
+	}
+
+	/**
+	 * Sanitize queue retention days value.
+	 *
+	 * 0 means unlimited retention (entries are never purged). Negative
+	 * input clamps to 0; values above 3650 (10 years) clamp to 3650.
+	 *
+	 * @param mixed $value Retention days submitted by the form.
+	 * @return int Retention days between 0 (unlimited) and 3650.
+	 */
+	public function sanitize_retention_days( $value ) {
+		$value = intval( $value );
+		if ( $value < 0 ) {
+			$value = 0;
+		}
+		if ( $value > 3650 ) {
+			$value = 3650;
 		}
 		return $value;
 	}
@@ -506,7 +534,7 @@ class MXRoute_Settings {
 			array(
 				'id'      => 'mxroute-log-detail-overview',
 				'title'   => __( 'Overview', 'mxroute-mailer' ),
-				'content' => '<p>' . esc_html__( 'This page shows the full details for a single email log entry, including the message content, attachments, API request payload, and API response.', 'mxroute-mailer' ) . '</p>',
+				'content' => '<p>' . esc_html__( 'This page shows the full details for a single email log entry, including the message content, attachments, API request payload, API response, and the full event history (queueing, every send attempt, and re-queues).', 'mxroute-mailer' ) . '</p>',
 			)
 		);
 
@@ -524,6 +552,7 @@ class MXRoute_Settings {
 					. '<li><strong>' . esc_html__( 'Message:', 'mxroute-mailer' ) . '</strong> ' . esc_html__( 'The email body content.', 'mxroute-mailer' ) . '</li>'
 					. '<li><strong>' . esc_html__( 'API Request:', 'mxroute-mailer' ) . '</strong> ' . esc_html__( 'The JSON payload sent to the MXRoute API (password excluded).', 'mxroute-mailer' ) . '</li>'
 					. '<li><strong>' . esc_html__( 'API Response:', 'mxroute-mailer' ) . '</strong> ' . esc_html__( 'The raw JSON response from the MXRoute API.', 'mxroute-mailer' ) . '</li>'
+					. '<li><strong>' . esc_html__( 'History:', 'mxroute-mailer' ) . '</strong> ' . esc_html__( 'Every lifecycle event in order: when the email was queued, each send attempt with its result and request/response data, and each re-queue with who performed it.', 'mxroute-mailer' ) . '</li>'
 					. '</ul>',
 			)
 		);

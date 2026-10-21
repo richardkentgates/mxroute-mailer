@@ -217,6 +217,7 @@ The plugin registers `wp mxroute` with these subcommands:
 | `wp mxroute settings set <key> <value>` | Update a setting |
 | `wp mxroute logs list` | List email logs with pagination |
 | `wp mxroute logs view <id>` | View a specific log entry |
+| `wp mxroute logs requeue <id>` | Re-queue a log entry for sending |
 | `wp mxroute logs delete <id>` | Delete a log entry |
 | `wp mxroute logs clear` | Clear all processed logs |
 | `wp mxroute queue list` | List pending queue items |
