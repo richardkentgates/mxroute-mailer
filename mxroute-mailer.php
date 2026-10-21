@@ -190,7 +190,10 @@ function mxroute_mailer_db_upgrade() {
 		update_option( 'mxroute_mailer_db_version', MXROUTE_MAILER_VERSION );
 	}
 }
-add_action( 'admin_init', 'mxroute_mailer_db_upgrade' );
+// Fires on every request type (admin, front-end, cron, REST) so schema
+// upgrades land before any plugin write. Self-limits via the autoloaded
+// version option — a matching version is a no-op with zero queries.
+add_action( 'init', 'mxroute_mailer_db_upgrade' );
 
 mxroute_mailer();
 
