@@ -468,6 +468,53 @@ class MXRoute_Mailer_Queue_Test extends \PHPUnit\Framework\TestCase {
 		// No API calls should have been made.
 		$this->assertArrayNotHasKey( 'wp_remote_post', $GLOBALS['wp_function_calls'] );
 	}
+
+	/**
+	 * Tests that process_queue sends emails with attachments when memory_limit is -1 (unlimited).
+	 *
+	 * Regression test: get_available_memory_bytes() returned 0 for unlimited memory,
+	 * causing the memory guard to block every email with attachments. Items were
+	 * claimed, then unclaimed by unclaim_pending, looping forever.
+	 */
+	public function test_process_queue_unlimited_memory_sends_attachments() {
+		$original_memory_limit = ini_get( 'memory_limit' );
+		ini_set( 'memory_limit', '-1' );
+
+		$mailer = MXRoute_Mailer::instance();
+		$GLOBALS['wp_options']['mxroute_mailer_server']    = 'server.example.com';
+		$GLOBALS['wp_options']['mxroute_mailer_username']  = 'user@example.com';
+		$GLOBALS['wp_options']['mxroute_mailer_password']  = 'password123';
+		$GLOBALS['wp_options']['mxroute_mailer_batch_size'] = 5;
+
+		// Create a real attachment file so resolve_attachments returns it.
+		$attachment_file = tempnam( sys_get_temp_dir(), 'mxroute_mem_test_' );
+		file_put_contents( $attachment_file, 'test attachment content' );
+
+		$item = (object) array(
+			'id'          => 1,
+			'from_email'  => 'from@example.com',
+			'to_email'    => 'to@example.com',
+			'subject'     => 'Test Subject',
+			'message'     => 'Body',
+			'reply_to'    => '',
+			'attachments' => wp_json_encode( array(
+				array( 'type' => 'path', 'path' => $attachment_file, 'origin' => $attachment_file ),
+			) ),
+			'headers'     => '',
+			'transport'   => '',
+		);
+		$GLOBALS['wp_db_results'] = array( $item );
+
+		$mailer->process_queue();
+
+		ini_set( 'memory_limit', $original_memory_limit );
+		@unlink( $attachment_file );
+
+		// With the fix, unlimited memory (PHP_INT_MAX) must not block the send.
+		// Attachments trigger SMTP transport (PHPMailer), not the API (wp_remote_post).
+		$this->assertArrayHasKey( 'phpmailer_send', $GLOBALS['wp_function_calls'],
+			'process_queue must send emails with attachments when memory_limit is -1' );
+	}
 }
 
 /**

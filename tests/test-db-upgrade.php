@@ -152,11 +152,12 @@ class MXRoute_DB_Upgrade_Test extends \PHPUnit\Framework\TestCase {
 	}
 
 	/**
-	 * Tests that db_upgrade migrates old failed entries (success=0 to success=-1).
+	 * Tests that db_upgrade migrates old failed entries when column is tinyint(1).
 	 */
 	public function test_db_upgrade_migrates_old_failed_entries() {
 		$GLOBALS['wp_options']['mxroute_mailer_db_version'] = '0.0.0';
 		$GLOBALS['wp_db_col'] = array( 'id', 'timestamp', 'from_email', 'to_email', 'subject', 'message', 'success' );
+		$GLOBALS['wp_db_var'] = 'tinyint(1)';
 
 		mxroute_mailer_db_upgrade();
 
@@ -168,6 +169,27 @@ class MXRoute_DB_Upgrade_Test extends \PHPUnit\Framework\TestCase {
 			}
 		}
 		$this->assertTrue( $found, 'Expected UPDATE query migrating success=0 to success=-1' );
+	}
+
+	/**
+	 * Tests that db_upgrade skips migration when column is already tinyint(2).
+	 *
+	 * Regression test: the migration ran on every version upgrade, flipping
+	 * pending queue entries (success=0) to failed (success=-1).
+	 */
+	public function test_db_upgrade_skips_migration_when_column_already_widened() {
+		$GLOBALS['wp_options']['mxroute_mailer_db_version'] = '0.0.0';
+		$GLOBALS['wp_db_col'] = array( 'id', 'timestamp', 'from_email', 'to_email', 'subject', 'message', 'success' );
+		$GLOBALS['wp_db_var'] = 'tinyint(2)';
+
+		mxroute_mailer_db_upgrade();
+
+		foreach ( $GLOBALS['wp_db_queries'] as $query ) {
+			if ( false !== strpos( $query, 'SET `success` = -1' ) ) {
+				$this->fail( 'Migration must not run when success column is already tinyint(2)' );
+			}
+		}
+		$this->assertTrue( true );
 	}
 
 	/**
