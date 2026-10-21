@@ -104,6 +104,9 @@ function mxroute_mailer_activate_single_site(): void {
 	if ( ! wp_next_scheduled( 'mxroute_write_status_json' ) ) {
 		wp_schedule_event( time(), 'mxroute_mailer_interval', 'mxroute_write_status_json' );
 	}
+	if ( ! wp_next_scheduled( 'mxroute_mailer_daily_cleanup' ) ) {
+		wp_schedule_event( time(), 'daily', 'mxroute_mailer_daily_cleanup' );
+	}
 }
 
 /**
@@ -188,18 +191,6 @@ add_action( 'admin_init', 'mxroute_mailer_db_upgrade' );
 mxroute_mailer();
 
 MXRoute_Updater::init();
-
-/**
- * Schedule the daily queue cleanup cron event.
- *
- * @return void
- */
-function mxroute_mailer_schedule_cleanup() {
-	if ( ! wp_next_scheduled( 'mxroute_mailer_daily_cleanup' ) ) {
-		wp_schedule_event( time(), 'daily', 'mxroute_mailer_daily_cleanup' );
-	}
-}
-add_action( 'init', 'mxroute_mailer_schedule_cleanup' );
 
 /**
  * Register custom cron intervals for queue processing.
