@@ -6,7 +6,7 @@ MXRoute Mailer includes an apt-server-based auto-updater that checks for new rel
 
 The plugin uses WordPress's built-in plugin update system with a custom updater that:
 
-1. Fetches `https://apt.richardkentgates.com/mxroute-mailer/metadata.json` periodically (cached for 12 hours)
+1. Fetches `https://apt.richardkentgates.com/mxroute-mailer/metadata.json` on every update check (no caching — always fetches fresh)
 2. Compares the latest published version with your installed version
 3. Shows an update notification in your WordPress dashboard when a new version is available
 4. Downloads and installs the update when you click "Update Now"
@@ -77,8 +77,7 @@ Releases use semantic versioning with a `v` prefix:
 ### Update Not Showing
 
 1. **Clear transients**: Go to Dashboard > Updates and click "Check again"
-2. **Check metadata cache**: The updater caches apt-server results for 12 hours
-3. **Verify version**: Make sure your installed version is older than the latest release
+2. **Verify version**: Make sure your installed version is older than the latest release
 
 ### Update Fails
 
@@ -95,7 +94,6 @@ This usually means the update was extracted into a versioned folder like `mxrout
 This usually means:
 
 - Your server can't reach the apt server (firewall, DNS issue)
-- The metadata cache is stale (clears after 12 hours)
 
 Check if your server can reach the apt server:
 

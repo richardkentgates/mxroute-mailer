@@ -20,7 +20,7 @@
 
 3. **Wrong username**
    - Username is your full MXRoute email address (e.g., `you@mxroute.com`)
-   - Do not enter just the local part unless the domain matches your site URL
+   - Enter the complete address including the domain — it is not derived from your site URL
 
 4. **Password incorrect**
    - Reset your MXRoute password if unsure
@@ -75,9 +75,10 @@ Common failure reasons:
 **Causes and Fixes**:
 
 1. **WP-Cron not running** - A recurring WP-Cron event checks the queue every 60 seconds. Ensure WP-Cron is triggered by an external uptime monitor or page visits. Without traffic, WP-Cron won't fire.
-2. **MXRoute credentials wrong** - Check Settings > MXRoute Mailer for correct server, username, password
-3. **Batch size too small** - Increase batch size under Settings > MXRoute Mailer (more emails per 60-second cycle)
-4. **Re-queue failed emails** - Go to Tools > MXRoute Logs, filter by Failed status, and re-queue
+2. **Cron events missing** - The plugin registers its events (`mxroute_mailer_process_queue`, `mxroute_write_status_json`, `mxroute_mailer_daily_cleanup`) when the plugin is activated or updated — not on page loads. Check with `wp cron event list | grep mxroute`. If the events are gone (a cleanup plugin or database change removed them), deactivate and reactivate the plugin to re-register them.
+3. **MXRoute credentials wrong** - Check Settings > MXRoute Mailer for correct server, username, password
+4. **Batch size too small** - Increase batch size under Settings > MXRoute Mailer (more emails per 60-second cycle)
+5. **Re-queue failed emails** - Go to Tools > MXRoute Logs, filter by Failed status, and re-queue
 
 ### Emails with Attachments Fail
 

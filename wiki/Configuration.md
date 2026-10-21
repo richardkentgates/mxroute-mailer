@@ -20,7 +20,7 @@ Your MXRoute email address. This is also used as the **From** address for all em
 
 Example: `you@mxroute.com`
 
-The username field displays your full email address (e.g., `you@example.com`) with the domain derived from your WordPress site URL. If you enter just the local part (e.g., `you`), the domain is appended automatically.
+The username field accepts your full MXRoute email address (e.g., `you@example.com` or `you@sub.example.com`). Enter the complete address exactly as shown in your MXRoute control panel — nothing is derived from the site URL, so subdomain and `www.` addresses work.
 
 ### Password
 
@@ -33,6 +33,15 @@ Number of emails to process per 60-second cron cycle.
 - Default: 5
 - Range: 1-50
 - Higher values process more emails per cycle
+
+### Retention
+
+How long processed queue entries (sent or failed) are kept before the daily cleanup removes them, along with their stored attachments.
+
+- Default: 90 days
+- Range: 0-3650
+- `0` = unlimited retention (entries are never purged)
+- Only processed entries are affected — pending queue items are never deleted by cleanup
 
 ### Logging
 
@@ -54,10 +63,12 @@ wp mxroute settings get
 wp mxroute settings get server
 wp mxroute settings get username
 wp mxroute settings get batch_size
+wp mxroute settings get retention_days
 
 # Update a setting
 wp mxroute settings set server chocobo.mxrouting.net
 wp mxroute settings set batch_size 10
+wp mxroute settings set retention_days 90   # 0 = keep entries forever
 
 # Enable/disable logging
 wp mxroute settings set logging_enabled 1
@@ -107,6 +118,7 @@ Each log entry includes:
 - **Transport** - How the email was sent: `api` (MXRoute HTTP API) or `smtp` (SMTP for attachments)
 - **API Request** - JSON payload sent to MXRoute
 - **API Response** - MXRoute's response
+- **History** - The email's full lifecycle timeline: when it was queued, every send attempt with its result, transport, and request/response payload, and every re-queue with who performed it. Entries created before the history feature was upgraded have no timeline.
 
 ### WP-CLI Log Management
 
@@ -120,6 +132,9 @@ wp mxroute logs list --per-page=10
 
 # View a specific log
 wp mxroute logs view 123
+
+# Re-queue a log for sending
+wp mxroute logs requeue 123
 
 # Delete a log
 wp mxroute logs delete 123
@@ -142,6 +157,8 @@ From the logs page, you can re-queue any sent or failed email to be sent again:
 - Click the **Re-queue** button on any log entry
 - Use bulk actions to re-queue multiple entries at once
 - Re-queued emails move to the queue and are processed by the next cron cycle (within 60 seconds)
+- Each re-queue is recorded in the entry's **History** with the acting user, and the re-queued attempt appears as a new attempt in the timeline
+- From the command line: `wp mxroute logs requeue <id>` (recorded as actor `cli`)
 
 ### Clearing Logs
 
@@ -232,6 +249,7 @@ The plugin creates a database table `{prefix}_mxroute_mailer_logs` to store emai
 | attachments | longtext | JSON array of typed attachment references |
 | api_request | longtext | JSON API request |
 | api_response | longtext | JSON API response |
+| history | longtext | JSON array of lifecycle events (queued, attempt, requeue) |
 | success | tinyint(2) | 1 = sent, -1 = failed, 0 = pending |
 | transport | varchar(10) | Transport method: 'api' or 'smtp' |
 | created_at | datetime | When the queue entry was created |
