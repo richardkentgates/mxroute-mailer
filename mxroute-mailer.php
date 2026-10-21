@@ -3,7 +3,7 @@
  * Plugin Name: MXRoute Mailer
  * Plugin URI: https://richardkentgates.com
  * Description: Sends WordPress email through MXRoute's HTTP API over port 443. Includes logging, test tools, and automatic updates.
- * Version: 1.4.91
+ * Version: 1.4.92
  * Author: Richard Kent Gates
  * Author URI: https://richardkentgates.com
  * License: GPL v2 or later
@@ -22,7 +22,7 @@ defined( 'ABSPATH' ) || exit;
  *
  * @var string
  */
-define( 'MXROUTE_MAILER_VERSION', '1.4.91' );
+define( 'MXROUTE_MAILER_VERSION', '1.4.92' );
 
 /**
  * Absolute path to the main plugin file.
@@ -174,17 +174,17 @@ function mxroute_mailer_db_upgrade() {
 		}
 
 		// Migrate old failed entries (success=0) to new failed status (success=-1)
-		// before widening the column. In the old system 0 = failed; in the new
-		// system 0 = pending (queued). At upgrade time no queue entries exist yet,
-		// so every success=0 row is an old failure.
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$wpdb->query( "UPDATE `$table_name` SET `success` = -1 WHERE `success` = 0" );
-
-		// Widen success column to support -1 (failed) status.
+		// and widen the column. In the old system 0 = failed; in the new system
+		// 0 = pending (queued). Only runs when the column is still the old
+		// tinyint(1) schema — subsequent upgrades skip it so pending queue
+		// entries are never flipped to failed.
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$success_type = $wpdb->get_var( "SHOW COLUMNS FROM `$table_name` LIKE 'success'" );
 		if ( false !== strpos( $success_type, 'tinyint(1)' ) ) {
-			$wpdb->query( "ALTER TABLE `$table_name` MODIFY COLUMN `success` tinyint(2) NOT NULL DEFAULT 0" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$wpdb->query( "UPDATE `$table_name` SET `success` = -1 WHERE `success` = 0" );
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$wpdb->query( "ALTER TABLE `$table_name` MODIFY COLUMN `success` tinyint(2) NOT NULL DEFAULT 0" );
 		}
 
 		update_option( 'mxroute_mailer_db_version', MXROUTE_MAILER_VERSION );
