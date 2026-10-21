@@ -165,6 +165,13 @@ Commands are loaded conditionally via `WP_CLI` constant check. The CLI class is 
 - Promotion directive: `PROMOTION.md`
 - WordPress readme: `readme.txt`
 
+**`wiki/` is the source of truth.** The live GitHub wiki, the `gh-pages` branch's `wiki/` copies, and the site content are all downstream. After editing `wiki/` or site-facing content, sync all of them:
+
+1. Live wiki: copy `wiki/*.md` into a clone of `github.com/richardkentgates/mxroute-mailer.wiki.git` and push
+2. Site: check out the `gh-pages` branch (j-make template — content lives in `body/*/index.html` fragments, `index.html` meta), refresh its `wiki/` copies, commit, push — served at https://mailer.richardkentgates.com
+3. Homepage: the `richardkentgates/rkg` repo's `index.html` has a version card and Open Source list — bump the MXRoute version there on releases
+4. Repo surfaces: `README.md`, `readme.txt` (features + changelog), and the help tabs in `includes/class-mxroute-settings.php` must be checked for dead links and new features whenever one ships
+
 ## When to Ask the User
 
 - Before deleting tags or releases
