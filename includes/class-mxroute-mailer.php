@@ -85,23 +85,6 @@ class MXRoute_Mailer {
 	}
 
 	/**
-	 * Schedule the recurring cron events.
-	 *
-	 * Ensures the recurring cron events are always active. The interval
-	 * is 60 seconds (the minimum WP-Cron supports).
-	 *
-	 * @return void
-	 */
-	public function schedule_cron_events() {
-		if ( ! wp_next_scheduled( 'mxroute_mailer_process_queue' ) ) {
-			wp_schedule_event( time(), 'mxroute_mailer_interval', 'mxroute_mailer_process_queue' );
-		}
-		if ( ! wp_next_scheduled( 'mxroute_write_status_json' ) ) {
-			wp_schedule_event( time(), 'mxroute_mailer_interval', 'mxroute_write_status_json' );
-		}
-	}
-
-	/**
 	 * Intercept wp_mail to queue emails for background processing.
 	 *
 	 * This is attached to the `pre_wp_mail` filter. Returning a non-null value

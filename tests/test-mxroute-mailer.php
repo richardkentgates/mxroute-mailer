@@ -150,23 +150,6 @@ class MXRoute_Mailer_Test extends \PHPUnit\Framework\TestCase {
     }
 
     /**
-     * Tests that schedule_cron_events schedules the recurring cron events.
-     */
-    public function test_intercept_schedules_processor() {
-        $mailer = MXRoute_Mailer::instance();
-        $GLOBALS['wp_options']['mxroute_mailer_server'] = 'server.example.com';
-        $GLOBALS['wp_options']['mxroute_mailer_username'] = 'user@example.com';
-        $GLOBALS['wp_options']['mxroute_mailer_password'] = 'password123';
-
-        $mailer->schedule_cron_events();
-
-        $this->assertArrayHasKey('wp_schedule_event', $GLOBALS['wp_function_calls']);
-        $schedule = $GLOBALS['wp_function_calls']['wp_schedule_event'][0];
-        $this->assertEquals('mxroute_mailer_process_queue', $schedule['hook']);
-        $this->assertEquals('mxroute_mailer_interval', $schedule['recurrence']);
-    }
-
-    /**
      * Tests that the From address defaults to the username when no headers are provided.
      */
     public function test_extract_from_address_returns_default_when_no_headers() {
