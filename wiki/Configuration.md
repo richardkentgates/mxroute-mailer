@@ -132,6 +132,9 @@ wp mxroute logs list --per-page=10
 # View a specific log
 wp mxroute logs view 123
 
+# Re-queue a log for sending
+wp mxroute logs requeue 123
+
 # Delete a log
 wp mxroute logs delete 123
 

@@ -171,6 +171,25 @@ class MXRoute_DB_Upgrade_Test extends \PHPUnit\Framework\TestCase {
 	}
 
 	/**
+	 * Tests that db_upgrade adds history column when missing.
+	 */
+	public function test_db_upgrade_adds_history_column() {
+		$GLOBALS['wp_options']['mxroute_mailer_db_version'] = '0.0.0';
+		$GLOBALS['wp_db_col'] = array( 'id', 'timestamp', 'from_email', 'to_email', 'subject', 'message', 'success' );
+
+		mxroute_mailer_db_upgrade();
+
+		$found = false;
+		foreach ( $GLOBALS['wp_db_queries'] as $query ) {
+			if ( false !== strpos( $query, 'ADD COLUMN history' ) ) {
+				$found = true;
+				break;
+			}
+		}
+		$this->assertTrue( $found, 'Expected history ALTER TABLE query' );
+	}
+
+	/**
 	 * Tests that db_upgrade updates the db_version option.
 	 */
 	public function test_db_upgrade_updates_version_option() {
@@ -190,7 +209,7 @@ class MXRoute_DB_Upgrade_Test extends \PHPUnit\Framework\TestCase {
 		$GLOBALS['wp_db_col'] = array(
 			'id', 'timestamp', 'from_email', 'reply_to', 'to_email',
 			'subject', 'message', 'headers', 'attachments', 'success',
-			'transport', 'created_at', 'processed_at',
+			'transport', 'created_at', 'processed_at', 'history',
 		);
 
 		mxroute_mailer_db_upgrade();

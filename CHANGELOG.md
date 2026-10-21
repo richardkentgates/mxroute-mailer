@@ -11,6 +11,11 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 
 
+
+## [1.4.87] - 2026-10-21
+
+### Changed
+- Auto-incremented version from 1.4.86 to 1.4.87
 ## [1.4.86] - 2026-10-21
 
 ### Changed
@@ -30,11 +35,16 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Per-email history: new `history` JSON column records the full lifecycle of every email — `queued` event at job creation, an `attempt` event for every send (with full request/response/transport/result), and a `requeue` event with the actor. The log detail view renders the history as a timeline plus per-attempt request/response blocks
+- `wp mxroute logs requeue <id>` — re-queue a log entry from WP-CLI (records `cli` as the actor in history)
+- `wp mxroute logs view` now prints the full event history, including each attempt's request and response
 - Queue retention setting on Settings > MXRoute Mailer — controls how many days processed queue entries are kept before the daily cleanup deletes them (default 90, range 0-3650, `0` = keep forever); available as `retention_days` in `wp mxroute settings`
 
 ### Changed
 - Username field is now a plain full-address input — the domain is no longer derived from the WordPress site URL, so `www.` and subdomain mailboxes can be entered exactly as configured in MXRoute
 - `wp mxroute settings set username` now runs through `sanitize_email` and rejects values that are not full email addresses
+- Cron events are registered only at activation and after plugin updates — the daily cleanup is no longer re-checked on every request via `init`
+- Requeue now records an actor in history instead of only wiping the previous attempt's data (the wipe behavior of the main request/response fields is unchanged)
 
 ### Fixed
 - Saving the settings page no longer rewrites the username domain to the site host (previously stripped any submitted domain and re-appended `home_url()` host, silently corrupting subdomain addresses)

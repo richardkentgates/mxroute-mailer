@@ -151,15 +151,15 @@ class MXRoute_CLI_Commands extends WP_CLI_Command {
 	}
 
 	/**
-	 * List, view, clear, or delete email logs.
+	 * List, view, requeue, clear, or delete email logs.
 	 *
 	 * ## OPTIONS
 	 *
 	 * [<action>]
-	 * : The action to perform: list, view, clear, delete.
+	 * : The action to perform: list, view, requeue, clear, delete.
 	 *
 	 * [<id>]
-	 * : Log ID (required for view and delete actions).
+	 * : Log ID (required for view, requeue, and delete actions).
 	 *
 	 * [--status=<status>]
 	 * : Filter by status: 1 (sent), -1 (failed), 0 (pending).
@@ -187,6 +187,7 @@ class MXRoute_CLI_Commands extends WP_CLI_Command {
 	 *     wp mxroute logs list
 	 *     wp mxroute logs list --status=1 --per-page=10
 	 *     wp mxroute logs view 123
+	 *     wp mxroute logs requeue 123
 	 *     wp mxroute logs delete 123
 	 *     wp mxroute logs clear
 	 *
@@ -283,7 +284,60 @@ class MXRoute_CLI_Commands extends WP_CLI_Command {
 				WP_CLI::log( '--- API Response ---' );
 				WP_CLI::log( wp_json_encode( $response, JSON_PRETTY_PRINT ) );
 			}
+
+			$history = json_decode( isset( $log->history ) && is_string( $log->history ) ? $log->history : '', true );
+			if ( is_array( $history ) && ! empty( $history ) ) {
+				WP_CLI::log( '' );
+				WP_CLI::log( '--- History ---' );
+				$attempt = 0;
+				foreach ( $history as $event ) {
+					$type = $event['event'] ?? '';
+					$at   = $event['at'] ?? '-';
+					if ( 'queued' === $type ) {
+						WP_CLI::log( sprintf( '[%s] queued', $at ) );
+					} elseif ( 'attempt' === $type ) {
+						++$attempt;
+						WP_CLI::log(
+							sprintf(
+								'[%s] attempt #%d %s via %s',
+								$at,
+								$attempt,
+								! empty( $event['success'] ) ? 'sent' : 'failed',
+								$event['transport'] ?? 'api'
+							)
+						);
+						if ( ! empty( $event['request'] ) && is_array( $event['request'] ) ) {
+							WP_CLI::log( '  request: ' . wp_json_encode( $event['request'], JSON_PRETTY_PRINT ) );
+						}
+						if ( ! empty( $event['response'] ) && is_array( $event['response'] ) ) {
+							WP_CLI::log( '  response: ' . wp_json_encode( $event['response'], JSON_PRETTY_PRINT ) );
+						}
+					} elseif ( 'requeue' === $type ) {
+						WP_CLI::log( sprintf( '[%s] re-queued%s', $at, ! empty( $event['by'] ) ? ' by ' . $event['by'] : '' ) );
+					} else {
+						WP_CLI::log( sprintf( '[%s] %s', $at, $type ) );
+					}
+				}
+			}
 			return;
+		}
+
+		if ( 'requeue' === $action ) {
+			if ( empty( $id ) || ! is_numeric( $id ) ) {
+				WP_CLI::error( 'Please provide a log ID.' );
+			}
+
+			$log = $logger->get_log( intval( $id ) );
+			if ( ! $log ) {
+				WP_CLI::error( 'Log not found.' );
+			}
+
+			if ( $logger->requeue_log( intval( $id ), 'cli' ) ) {
+				WP_CLI::success( sprintf( 'Log %d re-queued.', $id ) );
+				return;
+			}
+
+			WP_CLI::error( sprintf( 'Log %d could not be re-queued (it may be in flight).', $id ) );
 		}
 
 		if ( 'delete' === $action ) {
@@ -307,7 +361,7 @@ class MXRoute_CLI_Commands extends WP_CLI_Command {
 			return;
 		}
 
-		WP_CLI::error( 'Invalid action. Use "list", "view", "delete", or "clear".' );
+		WP_CLI::error( 'Invalid action. Use "list", "view", "requeue", "delete", or "clear".' );
 	}
 
 	/**

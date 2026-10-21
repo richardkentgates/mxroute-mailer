@@ -534,7 +534,7 @@ class MXRoute_Settings {
 			array(
 				'id'      => 'mxroute-log-detail-overview',
 				'title'   => __( 'Overview', 'mxroute-mailer' ),
-				'content' => '<p>' . esc_html__( 'This page shows the full details for a single email log entry, including the message content, attachments, API request payload, and API response.', 'mxroute-mailer' ) . '</p>',
+				'content' => '<p>' . esc_html__( 'This page shows the full details for a single email log entry, including the message content, attachments, API request payload, API response, and the full event history (queueing, every send attempt, and re-queues).', 'mxroute-mailer' ) . '</p>',
 			)
 		);
 
@@ -552,6 +552,7 @@ class MXRoute_Settings {
 					. '<li><strong>' . esc_html__( 'Message:', 'mxroute-mailer' ) . '</strong> ' . esc_html__( 'The email body content.', 'mxroute-mailer' ) . '</li>'
 					. '<li><strong>' . esc_html__( 'API Request:', 'mxroute-mailer' ) . '</strong> ' . esc_html__( 'The JSON payload sent to the MXRoute API (password excluded).', 'mxroute-mailer' ) . '</li>'
 					. '<li><strong>' . esc_html__( 'API Response:', 'mxroute-mailer' ) . '</strong> ' . esc_html__( 'The raw JSON response from the MXRoute API.', 'mxroute-mailer' ) . '</li>'
+					. '<li><strong>' . esc_html__( 'History:', 'mxroute-mailer' ) . '</strong> ' . esc_html__( 'Every lifecycle event in order: when the email was queued, each send attempt with its result and request/response data, and each re-queue with who performed it.', 'mxroute-mailer' ) . '</li>'
 					. '</ul>',
 			)
 		);

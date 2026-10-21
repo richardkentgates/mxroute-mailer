@@ -141,7 +141,7 @@ class MXRoute_Dashboard {
 			return;
 		}
 
-		$logger->requeue_log( $log_id );
+		$logger->requeue_log( $log_id, wp_get_current_user()->user_login );
 
 		wp_send_json_success( array( 'message' => __( 'Email re-queued.', 'mxroute-mailer' ) ) );
 	}
@@ -170,7 +170,7 @@ class MXRoute_Dashboard {
 		}
 
 		$logger = new MXRoute_Logger();
-		$logger->requeue_logs( $ids );
+		$logger->requeue_logs( $ids, wp_get_current_user()->user_login );
 
 		$count = count( $ids );
 		// translators: %d: number of logs re-queued.
