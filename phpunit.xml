@@ -19,6 +19,7 @@
             <file>./tests/test-can-manage.php</file>
             <file>./tests/test-class-cli.php</file>
             <file>./tests/test-db-upgrade.php</file>
+            <file>./tests/test-dashboard-widget.php</file>
         </testsuite>
     </testsuites>
 </phpunit>

@@ -256,11 +256,16 @@ class MXRoute_Dashboard {
 			wp_send_json_error( 'No status data' );
 		}
 
+		$history = $data['history'] ?? array();
+		foreach ( $history as $hook => $info ) {
+			$history[ $hook ]['last_run_display'] = mxroute_mailer_format_last_run( $info['last_run'] ?? '' );
+		}
+
 		wp_send_json_success( array(
 			'pending' => $data['pending'] ?? 0,
 			'sent'    => $data['sent'] ?? 0,
 			'failed'  => $data['failed'] ?? 0,
-			'history' => $data['history'] ?? array(),
+			'history' => $history,
 		) );
 	}
 
