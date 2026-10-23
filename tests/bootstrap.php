@@ -164,6 +164,12 @@ if (!function_exists('esc_attr')) {
     }
 }
 
+if (!function_exists('esc_js')) {
+    function esc_js($text) {
+        return is_string($text) ? htmlspecialchars($text, ENT_QUOTES, 'UTF-8') : '';
+    }
+}
+
 if (!function_exists('wp_json_encode')) {
     function wp_json_encode($data, $options = 0) {
         return json_encode($data, $options);
@@ -339,6 +345,13 @@ if (!function_exists('add_options_page')) {
     }
 }
 
+if (!function_exists('wp_add_dashboard_widget')) {
+    function wp_add_dashboard_widget($widget_id, $widget_name, $callback = '', $control_callback = '') {
+        $GLOBALS['wp_function_calls']['wp_add_dashboard_widget'][] = compact('widget_id', 'widget_name', 'callback');
+        return true;
+    }
+}
+
 if (!function_exists('add_management_page')) {
     function add_management_page($page_title, $menu_title, $capability, $menu_slug, $function = '') {
         $GLOBALS['wp_function_calls']['add_management_page'][] = compact('page_title', 'menu_title', 'capability', 'menu_slug');
@@ -422,6 +435,15 @@ if (!function_exists('current_time')) {
             return time();
         }
         return date('Y-m-d H:i:s');
+    }
+}
+
+if (!function_exists('wp_date')) {
+    function wp_date($format, $timestamp = null, $timezone = null) {
+        if (null === $timestamp) {
+            $timestamp = time();
+        }
+        return date($format, $timestamp);
     }
 }
 
@@ -627,6 +649,9 @@ if (!function_exists('wp_tempnam')) {
 // Define constants
 if (!defined('ABSPATH')) {
     define('ABSPATH', '/tmp/wordpress/');
+}
+if (!defined('WP_CONTENT_DIR')) {
+    define('WP_CONTENT_DIR', '/tmp/wordpress/wp-content');
 }
 
 if (!defined('MXROUTE_MAILER_DEBUG')) {
