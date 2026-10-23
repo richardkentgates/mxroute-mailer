@@ -99,6 +99,11 @@ Failed emails are logged with status -1 and visible on the Logs page. You can re
 
 == Changelog ==
 
+= 1.4.91 – 1.4.93 =
+* Fix: Emails with attachments no longer stall permanently when PHP memory_limit is unlimited (-1) — affected queue entries now send instead of being claimed and reset on every run
+* Fix: Pending queue entries are no longer flipped to "failed" with no attempt history when the plugin version bumps
+* Fix: Dashboard widget timestamps and styling now match between initial page load and live refresh — site timezone, pass/fail icons on both render paths, cron table always visible (with empty state), correct multisite capability check, immediate refresh on load
+
 = 1.4.84 – 1.4.88 =
 * Feature: Per-email lifecycle history — every email records queued, attempt (with transport, result, request/response), and requeue events with the acting user; timeline on the log detail page; `wp mxroute logs view` prints it
 * Feature: WP-CLI `wp mxroute logs requeue <id>` with actor tracking (recorded as `cli`)

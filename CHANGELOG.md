@@ -20,16 +20,19 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [1.4.93] - 2026-10-23
 
-### Changed
-- Auto-incremented version from 1.4.92 to 1.4.93
+### Fixed
+- Dashboard widget PHP and JS rendering are now a single source of truth: timestamps are formatted server-side in the site timezone (identical on first paint and on live refresh), pass/fail dashicons render in the PHP initial output, the cron table always renders with an empty state instead of disappearing, widget registration uses the multisite-aware capability check (`manage_network_options` on multisite), the first refresh runs 2s after load instead of 60s, and refresh failures log to the browser console instead of failing silently
+
 ## [1.4.92] - 2026-10-21
 
-### Changed
-- Auto-incremented version from 1.4.91 to 1.4.92
+### Fixed
+- `mxroute_mailer_db_upgrade()` no longer re-runs the `success` column migration on every version bump (which flipped pending queue entries to `success=-1` with no attempt history); the migration and column widen now only run while the column is still `tinyint(1)`
+
 ## [1.4.91] - 2026-10-21
 
-### Changed
-- Auto-incremented version from 1.4.90 to 1.4.91
+### Fixed
+- `get_available_memory_bytes()` returned 0 when `memory_limit` was `-1` (unlimited), so the attachment-size guard blocked every email with attachments — entries were claimed, failed the memory check, and reset forever. It now returns `PHP_INT_MAX` for unlimited memory
+
 ## [1.4.90] - 2026-10-21
 
 ### Changed
