@@ -85,6 +85,27 @@ function mxroute_mailer_can_manage() {
 	return current_user_can( 'manage_options' );
 }
 
+/**
+ * Format a cron tracker timestamp for display.
+ *
+ * Single source of truth for the widget's "Last Run" column so the PHP
+ * initial render and the AJAX refresh always produce identical output.
+ * Uses the site timezone (wp_date), not UTC or browser-local.
+ *
+ * @param string $iso ISO 8601 timestamp (e.g. 2026-10-21T14:30:00Z).
+ * @return string Formatted timestamp, or em dash if empty/invalid.
+ */
+function mxroute_mailer_format_last_run( $iso ) {
+	if ( empty( $iso ) ) {
+		return '—';
+	}
+	$timestamp = strtotime( $iso );
+	if ( false === $timestamp ) {
+		return '—';
+	}
+	return wp_date( 'M j, g:ia', $timestamp );
+}
+
 require_once MXROUTE_MAILER_PLUGIN_DIR . 'includes/class-mxroute-crypto.php';
 require_once MXROUTE_MAILER_PLUGIN_DIR . 'includes/class-mxroute-mailer.php';
 require_once MXROUTE_MAILER_PLUGIN_DIR . 'includes/class-mxroute-updater.php';
@@ -237,7 +258,7 @@ add_action( 'wp_dashboard_setup', 'mxroute_mailer_register_dashboard_widget' );
  * @return void
  */
 function mxroute_mailer_register_dashboard_widget() {
-	if ( ! current_user_can( 'manage_options' ) ) {
+	if ( ! mxroute_mailer_can_manage() ) {
 		return;
 	}
 	wp_add_dashboard_widget(
@@ -294,15 +315,26 @@ function mxroute_mailer_render_dashboard_widget() {
 			</tr>
 		</tbody>
 	</table>
-	<?php if ( ! empty( $history ) ) : ?>
 	<br />
 	<table class="widefat striped" style="margin-bottom:0" id="mxroute-cron-table">
 		<thead><tr><th><?php esc_html_e( 'Cron Event', 'mxroute-mailer' ); ?></th><th><?php esc_html_e( 'Last Run', 'mxroute-mailer' ); ?></th><th style="text-align:right"><?php esc_html_e( 'Pass / Fail', 'mxroute-mailer' ); ?></th></tr></thead>
 		<tbody>
+			<?php if ( empty( $history ) ) : ?>
+			<tr><td colspan="3" style="text-align:center;color:#787c82;"><?php esc_html_e( 'No cron data yet.', 'mxroute-mailer' ); ?></td></tr>
+			<?php else : ?>
 			<?php foreach ( $history as $hook => $info ) : ?>
 			<tr>
 				<td><?php echo esc_html( $hook ); ?></td>
-				<td style="white-space:nowrap"><?php echo $info['last_run'] ? esc_html( gmdate( 'M j, g:ia', strtotime( $info['last_run'] ) ) ) : '—'; ?></td>
+				<td style="white-space:nowrap">
+					<?php echo esc_html( mxroute_mailer_format_last_run( $info['last_run'] ?? '' ) ); ?>
+					<?php if ( ! empty( $info['last_status'] ) ) : ?>
+						<?php if ( 'pass' === $info['last_status'] ) : ?>
+							<span class="dashicons dashicons-yes-alt" style="color:#00a32a;font-size:14px;width:14px;height:14px;vertical-align:middle;"></span>
+						<?php else : ?>
+							<span class="dashicons dashicons-dismiss" style="color:#d63638;font-size:14px;width:14px;height:14px;vertical-align:middle;"></span>
+						<?php endif; ?>
+					<?php endif; ?>
+				</td>
 				<td style="text-align:right;white-space:nowrap">
 					<?php echo esc_html( $info['pass_count'] ?? 0 ); ?>
 					/
@@ -312,11 +344,16 @@ function mxroute_mailer_render_dashboard_widget() {
 				</td>
 			</tr>
 			<?php endforeach; ?>
+			<?php endif; ?>
 		</tbody>
 	</table>
-	<?php endif; ?>
 	<script>
 	(function(){
+		function mxFormatStatus(status){
+			if(status==='pass')return '<span class="dashicons dashicons-yes-alt" style="color:#00a32a;font-size:14px;width:14px;height:14px;vertical-align:middle;"></span>';
+			if(status==='fail')return '<span class="dashicons dashicons-dismiss" style="color:#d63638;font-size:14px;width:14px;height:14px;vertical-align:middle;"></span>';
+			return '';
+		}
 		function refreshMXStatus(){
 			var fd=new FormData();
 			fd.append('action','mxroute_status_refresh');
@@ -346,21 +383,29 @@ function mxroute_mailer_render_dashboard_widget() {
 						}
 					}
 					// Second table: cron events
-					if(tables[1]&&d.history){
+					if(tables[1]){
 						var tbody=tables[1].querySelector('tbody');
+						if(!tbody)return;
+						var hooks=d.history||{};
+						var count=0;
 						var html='';
-						for(var hook in d.history){
-							var c=d.history[hook];
-							var lr=c.last_run?new Date(c.last_run).toLocaleDateString('en-US',{month:'short',day:'numeric'})+' '+new Date(c.last_run).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}):'—';
-							var icon=c.last_status==='pass'?'<span class="dashicons dashicons-yes-alt" style="color:#00a32a;font-size:14px;width:14px;height:14px;vertical-align:middle;"></span>':'<span class="dashicons dashicons-dismiss" style="color:#d63638;font-size:14px;width:14px;height:14px;vertical-align:middle;"></span>';
+						for(var hook in hooks){
+							count++;
+							var c=hooks[hook];
+							var lr=c.last_run_display||'—';
+							var icon=mxFormatStatus(c.last_status);
 							var fc=(c.fail_count||0)>0?'<span style="color:#d63638;">'+c.fail_count+'</span>':(c.fail_count||0);
 							html+='<tr><td>'+hook+'</td><td style="white-space:nowrap">'+lr+' '+icon+'</td><td style="text-align:right;white-space:nowrap">'+(c.pass_count||0)+' / '+fc+'</td></tr>';
 						}
-						if(tbody)tbody.innerHTML=html;
+						if(count===0){
+							html='<tr><td colspan="3" style="text-align:center;color:#787c82;">No cron data yet.</td></tr>';
+						}
+						tbody.innerHTML=html;
 					}
 				})
-				.catch(function(){});
+				.catch(function(err){console.warn('MXRoute status refresh failed:',err);});
 		}
+		setTimeout(refreshMXStatus,2000);
 		setInterval(refreshMXStatus,60000);
 	})();
 	</script>
