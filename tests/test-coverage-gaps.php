@@ -77,6 +77,45 @@ class MXRoute_Process_Queue_Test extends \PHPUnit\Framework\TestCase {
 	}
 
 	/**
+	 * Tests that process_queue defers processing while MetaManager has queued jobs.
+	 *
+	 * Receiving is never affected — rows stay pending and no claim happens.
+	 */
+	public function test_process_queue_defers_while_metamanager_busy() {
+		$mm_dir = WP_CONTENT_DIR . '/metamanager-jobs/compress';
+		mkdir( $mm_dir, 0777, true );
+		$job = $mm_dir . '/gate-test.json';
+		file_put_contents( $job, '{}' );
+
+		$item = (object) array(
+			'id'          => 1,
+			'from_email'  => 'from@example.com',
+			'to_email'    => 'to@example.com',
+			'subject'     => 'Queue Test',
+			'message'     => 'Body',
+			'reply_to'    => '',
+			'attachments' => '[]',
+			'headers'     => '',
+			'transport'   => '',
+		);
+		$GLOBALS['wp_db_results'] = array( $item );
+
+		$mailer = MXRoute_Mailer::instance();
+		$mailer->process_queue();
+
+		$updates = $GLOBALS['wp_function_calls']['$wpdb->update'] ?? array();
+		$this->assertEmpty( $updates, 'process_queue must not claim work while MetaManager has queued jobs' );
+
+		// Gate opens once the queue drains — processing proceeds
+		unlink( $job );
+		rmdir( $mm_dir );
+		$GLOBALS['wp_db_results'] = array( $item );
+		$mailer->process_queue();
+		$updates = $GLOBALS['wp_function_calls']['$wpdb->update'] ?? array();
+		$this->assertNotEmpty( $updates, 'process_queue should process once MetaManager is idle' );
+	}
+
+	/**
 	 * Tests that process_queue calls mark_failed when send fails.
 	 */
 	public function test_process_queue_marks_failed_on_error() {

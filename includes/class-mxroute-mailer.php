@@ -179,6 +179,14 @@ class MXRoute_Mailer {
 	 * @return void
 	 */
 	public function process_queue() {
+		// Cross-process gating: processing pauses while another gated process
+		// (backup, upgrade, restore) is working or MetaManager has queued jobs.
+		// Receiving mail is never affected — rows stay pending and are sent on
+		// a later run. Missing state files or uninstalled software = idle.
+		if ( ! $this->gates_allow_processing() ) {
+			return;
+		}
+
 		$queue   = new MXRoute_Queue();
 		$api     = new MXRoute_API();
 		$batch   = absint( get_option( 'mxroute_mailer_batch_size', 5 ) );
@@ -239,6 +247,37 @@ class MXRoute_Mailer {
 		}
 
 		$queue->write_status_json();
+	}
+
+	/**
+	 * Cross-process gate: may the queue processor run right now?
+	 *
+	 * Checks the GCM busy-state files (backup/upgrade/restore) and the
+	 * MetaManager job queue. Missing files, missing directories, or
+	 * uninstalled software are treated as idle — processing proceeds.
+	 *
+	 * @return bool True when no other gated process is working.
+	 */
+	private function gates_allow_processing() {
+		foreach ( array( 'backup', 'upgrade', 'restore' ) as $proc ) {
+			if ( file_exists( '/var/lib/gcm/busy/' . $proc ) ) {
+				return false;
+			}
+		}
+
+		// MetaManager job queue (missing dirs = not installed = idle)
+		$mm_root = WP_CONTENT_DIR . '/metamanager-jobs';
+		foreach ( array( 'compress', 'meta' ) as $sub ) {
+			$dir = $mm_root . '/' . $sub;
+			if ( is_dir( $dir ) ) {
+				$files = glob( $dir . '/*.json' );
+				if ( is_array( $files ) && count( $files ) > 0 ) {
+					return false;
+				}
+			}
+		}
+
+		return true;
 	}
 
 	/**
