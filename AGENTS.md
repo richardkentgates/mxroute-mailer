@@ -41,6 +41,29 @@ mxroute-mailer/
 └── AGENTS.md                       # This file
 ```
 
+## Role — Site Mail Transport
+
+MXRoute Mailer is the site mail transport for client sites (email standard:
+`no-reply@<domain>` through the universal password). `gcm migrate` installs
+it flagged + absent-only when the site has no mail transport — **software
+never activates it.** Activation + competitor deactivation + delivery test
+is the manual post-migration checklist. It is a WordPress.org-style plugin,
+not a MetaManager-style never-activate package.
+
+## Cross-Process Gating
+
+`gates_allow_processing()` (`includes/class-mxroute-mailer.php`) defers
+**queue processing** while another gated process is working:
+
+- `/var/lib/gcm/busy/{backup,upgrade,restore}` exists → defer
+- MetaManager job queue non-empty (`WP_CONTENT_DIR/metamanager-jobs/{compress,meta}/*.json`) → defer
+
+**Receiving is never prevented** — messages keep queueing while processing
+waits; queued items are sent when the gate clears. Missing busy files,
+missing directories, or uninstalled software are treated as idle — the
+gate only ever pauses work, never drops it. Do not change this to skip or
+drop queued items.
+
 ## Hard Constraints
 
 - **No Composer.** Do not add `composer.json`, `vendor/`, or composer-based tools.
