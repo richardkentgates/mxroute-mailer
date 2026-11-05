@@ -399,7 +399,7 @@ class MXRoute_Updater {
 		if ( $metadata ) {
 			$remote_version = $metadata->version;
 			if ( version_compare( $remote_version, MXROUTE_MAILER_VERSION, '>' ) ) {
-				$notice = urlencode(
+				$notice = rawurlencode(
 					sprintf(
 						/* translators: %s = new version number */
 						__( 'MXRoute Mailer %s is available. Check the Updates page to install.', 'mxroute-mailer' ),
@@ -408,11 +408,11 @@ class MXRoute_Updater {
 				);
 				$type = 'updated';
 			} else {
-				$notice = urlencode( __( 'MXRoute Mailer is up to date.', 'mxroute-mailer' ) );
+				$notice = rawurlencode( __( 'MXRoute Mailer is up to date.', 'mxroute-mailer' ) );
 				$type   = 'updated';
 			}
 		} else {
-			$notice = urlencode( __( 'Could not contact the update server to check for updates.', 'mxroute-mailer' ) );
+			$notice = rawurlencode( __( 'Could not contact the update server to check for updates.', 'mxroute-mailer' ) );
 			$type   = 'error';
 		}
 
