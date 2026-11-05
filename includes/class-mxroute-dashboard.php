@@ -217,6 +217,7 @@ class MXRoute_Dashboard {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Table name from $wpdb->prefix, safe. Placeholders built from count().
 		$pending = $wpdb->get_col(
 			$wpdb->prepare(
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name from $wpdb->prefix, safe. Placeholders built from count().
 				"SELECT id FROM {$table_name} WHERE id IN ($placeholders) AND success = 0 AND processed_at IS NULL",
 				$ids
 			)
