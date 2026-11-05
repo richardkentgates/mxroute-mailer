@@ -197,6 +197,7 @@ class MXRoute_Logger {
 		// Fetch attachments before deleting to clean up stored copies.
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Fetch by primary key.
 		$attachments_json = $wpdb->get_var(
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Fetch by primary key.
 			$wpdb->prepare( "SELECT attachments FROM {$this->table_name} WHERE id = %d", absint( $id ) )
 		);
 		if ( $attachments_json ) {
@@ -297,6 +298,7 @@ class MXRoute_Logger {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$wpdb->query(
 			$wpdb->prepare(
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table identifier interpolated after prefix composition; values use prepare().
 				"UPDATE {$this->table_name} SET success = 0, api_request = '', api_response = '', processed_at = NULL WHERE id = %d AND (processed_at IS NULL OR success != 0)",
 				$id
 			)

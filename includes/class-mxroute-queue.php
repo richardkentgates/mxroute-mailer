@@ -106,6 +106,7 @@ class MXRoute_Queue {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is safe, dynamic limit.
 		return $wpdb->get_results(
 			$wpdb->prepare(
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is safe, dynamic limit.
 				"SELECT * FROM {$this->table_name} WHERE success = 0 AND processed_at IS NULL ORDER BY created_at ASC LIMIT %d",
 				$limit
 			)
@@ -130,6 +131,7 @@ class MXRoute_Queue {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is safe, dynamic limit.
 		$wpdb->query(
 			$wpdb->prepare(
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is safe, dynamic limit.
 				"UPDATE {$this->table_name} SET processed_at = %s WHERE success = 0 AND processed_at IS NULL ORDER BY created_at ASC LIMIT %d",
 				$claim_time,
 				$limit
@@ -139,6 +141,7 @@ class MXRoute_Queue {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is safe.
 		return $wpdb->get_results(
 			$wpdb->prepare(
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is safe.
 				"SELECT * FROM {$this->table_name} WHERE processed_at = %s ORDER BY created_at ASC LIMIT %d",
 				$claim_time,
 				$limit
@@ -212,6 +215,7 @@ class MXRoute_Queue {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Queue read by primary key.
 		$attachments_json = $wpdb->get_var(
 			$wpdb->prepare(
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Queue read by primary key.
 				"SELECT attachments FROM {$this->table_name} WHERE id = %d",
 				$id
 			)
@@ -282,6 +286,7 @@ class MXRoute_Queue {
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is safe.
 		return (int) $wpdb->get_var(
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is safe.
 			"SELECT COUNT(*) FROM {$this->table_name} WHERE success = 0 AND processed_at IS NULL"
 		);
 	}
@@ -303,6 +308,7 @@ class MXRoute_Queue {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is safe, dynamic limit/offset.
 		return $wpdb->get_results(
 			$wpdb->prepare(
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is safe, dynamic limit/offset.
 				"SELECT * FROM {$this->table_name} WHERE success = 0 AND processed_at IS NULL ORDER BY created_at ASC LIMIT %d OFFSET %d",
 				$per_page,
 				$offset
@@ -329,6 +335,7 @@ class MXRoute_Queue {
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Queue write, caching not applicable.
 			return (int) $wpdb->query(
 				$wpdb->prepare(
+					// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Queue write, caching not applicable.
 					"UPDATE {$this->table_name} SET processed_at = NULL WHERE processed_at = %s",
 					$claim_time
 				)
@@ -340,6 +347,7 @@ class MXRoute_Queue {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is safe, dynamic IN clause.
 		return (int) $wpdb->query(
 			$wpdb->prepare(
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is safe, dynamic IN clause.
 				"UPDATE {$this->table_name} SET processed_at = NULL WHERE processed_at = %s AND id NOT IN ({$placeholders})",
 				array_merge( array( $claim_time ), $processed_ids )
 			)
@@ -368,6 +376,7 @@ class MXRoute_Queue {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is safe.
 		$rows = $wpdb->get_col(
 			$wpdb->prepare(
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is safe.
 				"SELECT attachments FROM {$this->table_name} WHERE success IN (1, -1) AND processed_at < %s",
 				$date
 			)
@@ -380,6 +389,7 @@ class MXRoute_Queue {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is safe.
 		return (int) $wpdb->query(
 			$wpdb->prepare(
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is safe.
 				"DELETE FROM {$this->table_name} WHERE success IN (1, -1) AND processed_at < %s",
 				$date
 			)
@@ -403,16 +413,19 @@ class MXRoute_Queue {
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is safe.
 		$pending = (int) $wpdb->get_var(
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is safe.
 			"SELECT COUNT(*) FROM {$this->table_name} WHERE success = 0 AND processed_at IS NULL"
 		);
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is safe.
 		$sent = (int) $wpdb->get_var(
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is safe.
 			"SELECT COUNT(*) FROM {$this->table_name} WHERE success = 1"
 		);
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is safe.
 		$failed = (int) $wpdb->get_var(
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is safe.
 			"SELECT COUNT(*) FROM {$this->table_name} WHERE success = -1"
 		);
 
@@ -768,6 +781,7 @@ class MXRoute_Queue {
 		// Fetch attachment metadata before deleting rows.
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is safe.
 		$rows = $wpdb->get_col(
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is safe.
 			"SELECT attachments FROM {$this->table_name} WHERE success = 0 AND processed_at IS NULL"
 		);
 
@@ -778,6 +792,7 @@ class MXRoute_Queue {
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is safe.
 		return (int) $wpdb->query(
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is safe.
 			"DELETE FROM {$this->table_name} WHERE success = 0 AND processed_at IS NULL"
 		);
 	}
