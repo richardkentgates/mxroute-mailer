@@ -180,9 +180,11 @@ class MXRoute_Mailer {
 	 */
 	public function process_queue() {
 		// Cross-process gating: processing pauses while another gated process
-		// (backup, upgrade, restore) is working or MetaManager has queued jobs.
-		// Receiving mail is never affected — rows stay pending and are sent on
-		// a later run. Missing state files or uninstalled software = idle.
+		// is working — the GCM busy scopes (backup, the OS maintenance window,
+		// a standalone update, a standalone security scan, restore) — or
+		// MetaManager has queued jobs. Receiving mail is never affected — rows
+		// stay pending and are sent on a later run. Missing state files or
+		// uninstalled software = idle.
 		if ( ! $this->gates_allow_processing() ) {
 			return;
 		}
@@ -259,7 +261,7 @@ class MXRoute_Mailer {
 	 * @return bool True when no other gated process is working.
 	 */
 	private function gates_allow_processing() {
-		foreach ( array( 'backup', 'upgrade', 'restore' ) as $proc ) {
+		foreach ( array( 'backup', 'maint', 'update', 'scan', 'restore' ) as $proc ) {
 			if ( file_exists( '/var/lib/gcm/busy/' . $proc ) ) {
 				return false;
 			}
