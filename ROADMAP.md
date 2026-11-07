@@ -126,8 +126,13 @@ main ──push──> promote-to-main.yml (tag + GitHub release + deploy to apt
 
 ### MEDIUM — Audit #4 Cleanup
 
-- [ ] **Remove vestigial `$attachments` parameter** from `send_via_api()`.
-- [ ] **Add `error_log()` to `process_queue()`** failures when debug mode enabled.
+- [x] **`$attachments` parameter on `send_via_api()`** — audited 2026-11-07,
+  REJECTED as stated: the parameter is not vestigial. It is encoded into
+  the API payload (`encode_attachments`) and the direct-transport tests
+  assert that path. Removing it would delete working, tested behavior.
+- [x] **Add `error_log()` to `process_queue()`** failures when debug mode
+  enabled — already implemented (`MXRoute Queue Failure` log guarded by
+  `MXROUTE_MAILER_DEBUG`).
 
 ### Maintenance
 1. Keep GitHub Pages docs in sync with any future changes.
