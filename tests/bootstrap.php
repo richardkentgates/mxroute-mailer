@@ -648,10 +648,10 @@ if (!function_exists('wp_tempnam')) {
 
 // Define constants
 if (!defined('ABSPATH')) {
-    define('ABSPATH', '/tmp/wordpress/');
+    define('ABSPATH', __DIR__ . '/fixtures/wp/');
 }
 if (!defined('WP_CONTENT_DIR')) {
-    define('WP_CONTENT_DIR', '/tmp/wordpress/wp-content');
+    define('WP_CONTENT_DIR', __DIR__ . '/fixtures/wp-content');
 }
 
 if (!defined('MXROUTE_MAILER_DEBUG')) {
@@ -691,6 +691,25 @@ if (!file_exists('/tmp/wordpress/wp-admin/includes/upgrade.php')) {
 }
 
 // Mock global $wpdb
+// Abilities API registration stubs — capture registrations for tests.
+if ( ! function_exists( 'wp_register_ability' ) ) {
+    function wp_register_ability( $name, $args ) {
+        $GLOBALS['wp_registered_abilities'][ $name ] = $args;
+        return $args;
+    }
+}
+if ( ! function_exists( 'wp_register_ability_category' ) ) {
+    function wp_register_ability_category( $slug, $args ) {
+        $GLOBALS['wp_registered_ability_categories'][ $slug ] = $args;
+        return $args;
+    }
+}
+if ( ! function_exists( '__' ) ) {
+    function __( $text, $domain = 'default' ) {
+        return $text;
+    }
+}
+
 class MockWPDB {
     public $prefix = 'wp_';
     public $insert_id = 0;

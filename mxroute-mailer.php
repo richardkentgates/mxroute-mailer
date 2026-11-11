@@ -3,7 +3,7 @@
  * Plugin Name: MXRoute Mailer
  * Plugin URI: https://richardkentgates.com
  * Description: Sends WordPress email through MXRoute's HTTP API over port 443. Includes logging, test tools, and automatic updates.
- * Version: 1.4.99
+ * Version: 1.4.100
  * Author: Richard Kent Gates
  * Author URI: https://richardkentgates.com
  * License: GPL v2 or later
@@ -22,7 +22,7 @@ defined( 'ABSPATH' ) || exit;
  *
  * @var string
  */
-define( 'MXROUTE_MAILER_VERSION', '1.4.99' );
+define( 'MXROUTE_MAILER_VERSION', '1.4.100' );
 
 /**
  * Absolute path to the main plugin file.
@@ -110,6 +110,7 @@ require_once MXROUTE_MAILER_PLUGIN_DIR . 'includes/class-mxroute-crypto.php';
 require_once MXROUTE_MAILER_PLUGIN_DIR . 'includes/class-mxroute-mailer.php';
 require_once MXROUTE_MAILER_PLUGIN_DIR . 'includes/class-mxroute-updater.php';
 require_once MXROUTE_MAILER_PLUGIN_DIR . 'includes/class-mxroute-cron-tracker.php';
+require_once MXROUTE_MAILER_PLUGIN_DIR . 'includes/class-mxroute-abilities.php';
 
 /**
  * Single-site activation routine: create log table and schedule cron events.
@@ -251,6 +252,12 @@ add_action( 'mxroute_mailer_daily_cleanup', MXRoute_Cron_Tracker::wrap( 'mxroute
 // -------------------------------------------------------------------------
 
 add_action( 'wp_dashboard_setup', 'mxroute_mailer_register_dashboard_widget' );
+
+// AI surface — abilities must be hooked at file load. The Abilities API
+// initializes early (third-party abilities register on its init action).
+if ( class_exists( 'MXRoute_Abilities' ) ) {
+	( new MXRoute_Abilities() )->register_hooks();
+}
 
 /**
  * Register the MXRoute Mailer dashboard widget.
