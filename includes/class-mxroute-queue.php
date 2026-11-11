@@ -405,6 +405,29 @@ class MXRoute_Queue {
 	 *
 	 * @return void
 	 */
+	/**
+	 * Re-queue failed rows (success = -1) back to pending — the bulk
+	 * path behind the mxroute/requeue-failed ability. Claim-aware via
+	 * requeue_log(): rows currently in flight are never touched.
+	 *
+	 * @param string     $by  Actor recorded in each row's history.
+	 * @param int[]|null $ids Explicit ids, or null for every failed row.
+	 * @return int Number of rows re-queued.
+	 */
+	public function requeue_failed( $by = '', $ids = null ) {
+		global $wpdb;
+		if ( null === $ids ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is safe.
+			$ids = $wpdb->get_col( "SELECT id FROM {$this->table_name} WHERE success = -1" );
+		}
+		$ids = array_values( array_filter( array_map( 'intval', (array) $ids ) ) );
+		if ( empty( $ids ) ) {
+			return 0;
+		}
+		$logger = new MXRoute_Logger();
+		return (int) $logger->requeue_logs( $ids, $by );
+	}
+
 	public function write_status_json() {
 		global $wpdb;
 
