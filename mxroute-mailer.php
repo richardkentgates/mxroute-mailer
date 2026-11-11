@@ -110,6 +110,7 @@ require_once MXROUTE_MAILER_PLUGIN_DIR . 'includes/class-mxroute-crypto.php';
 require_once MXROUTE_MAILER_PLUGIN_DIR . 'includes/class-mxroute-mailer.php';
 require_once MXROUTE_MAILER_PLUGIN_DIR . 'includes/class-mxroute-updater.php';
 require_once MXROUTE_MAILER_PLUGIN_DIR . 'includes/class-mxroute-cron-tracker.php';
+require_once MXROUTE_MAILER_PLUGIN_DIR . 'includes/class-mxroute-abilities.php';
 
 /**
  * Single-site activation routine: create log table and schedule cron events.
@@ -251,6 +252,12 @@ add_action( 'mxroute_mailer_daily_cleanup', MXRoute_Cron_Tracker::wrap( 'mxroute
 // -------------------------------------------------------------------------
 
 add_action( 'wp_dashboard_setup', 'mxroute_mailer_register_dashboard_widget' );
+
+// AI surface — abilities must be hooked at file load. The Abilities API
+// initializes early (third-party abilities register on its init action).
+if ( class_exists( 'MXRoute_Abilities' ) ) {
+	( new MXRoute_Abilities() )->register_hooks();
+}
 
 /**
  * Register the MXRoute Mailer dashboard widget.
