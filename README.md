@@ -133,3 +133,21 @@ See [CONTRIBUTING.md](.github/CONTRIBUTING.md) and [AGENTS.md](AGENTS.md) for th
 ## License
 
 GPL v2 or later. See [LICENSE](LICENSE) for details.
+
+## AI abilities (2026-11-11)
+
+Three abilities on the WordPress Abilities API (consumed by the
+MetaManager Site Assistant and by external agents over MCP):
+
+- **`mxroute/queue-status`** — pending/sent/failed counts plus the most
+  recent failures with their errors.
+- **`mxroute/requeue-failed`** — claim-aware bulk requeue (rows in
+  flight are never touched; each requeue is recorded in the row's
+  history with its actor). Optional explicit ids.
+- **`mxroute/send-test`** — the existing test-send path; explicit
+  errors for a missing recipient or unconfigured sender.
+
+All three are gated by `mxroute_mailer_can_manage()` (manage_options /
+manage_network_options). Plugin absence degrades cleanly in either
+direction: MetaManager's mail report returns an explicit error when
+this plugin is missing, and these abilities never assume MetaManager.
