@@ -34,6 +34,13 @@ class MXRoute_Abilities_Test extends \PHPUnit\Framework\TestCase {
         $GLOBALS['wp_current_user_can_value'] = true;
         $GLOBALS['wp_registered_abilities'] = array();
         $GLOBALS['wp_registered_ability_categories'] = array();
+        $GLOBALS['wp_db_queries'] = array();
+        $GLOBALS['wp_db_col'] = array();
+        $GLOBALS['wp_db_inserts'] = array();
+        $GLOBALS['wp_db_results'] = array();
+        $GLOBALS['wp_db_row'] = null;
+        $GLOBALS['wp_db_var'] = 0;
+        unset( $GLOBALS['wp_db_affected_rows'] );
         $GLOBALS['wpdb'] = new MockWPDB();
     }
 
@@ -110,8 +117,18 @@ class MXRoute_Abilities_Test extends \PHPUnit\Framework\TestCase {
         // The claim guard: in-flight rows (processed, success = 0) must
         // never be requeued.
         $this->assertStringContainsString( 'processed_at IS NULL OR success != 0', $queries );
-        // Actor recorded in the row history.
-        $this->assertStringContainsString( 'ability:mxroute/requeue-failed', $queries );
+        // Actor recorded in the row history (via append_history -> update).
+        $updates = $GLOBALS['wp_function_calls']['$wpdb->update'] ?? array();
+        $found = false;
+        foreach ( $updates as $u ) {
+            $hist = json_decode( (string) ( $u['data']['history'] ?? '' ), true );
+            foreach ( (array) $hist as $event ) {
+                if ( ( $event['by'] ?? '' ) === 'ability:mxroute/requeue-failed' ) {
+                    $found = true;
+                }
+            }
+        }
+        $this->assertTrue( $found, 'the requeue actor must be recorded in the row history' );
     }
 
     public function test_requeue_failed_with_explicit_ids() {
@@ -163,9 +180,12 @@ class MXRoute_Abilities_Test extends \PHPUnit\Framework\TestCase {
         ) );
 
         $this->assertIsArray( $result );
-        $this->assertTrue( $result['sent'] );
+        $this->assertTrue( $result['queued'] );
+        $this->assertArrayHasKey( 'log_id', $result );
         $this->assertEquals( 'client@example.test', $result['to'] );
         $this->assertEquals( 'no-reply@example.test', $result['from'] );
-        $this->assertArrayHasKey( 'wp_remote_post', $GLOBALS['wp_function_calls'] );
+        // The ONLY transport is the queue: no direct send, ever.
+        $this->assertArrayNotHasKey( 'wp_remote_post', $GLOBALS['wp_function_calls'] );
+        $this->assertNotEmpty( $GLOBALS['wp_db_inserts'], 'the test email must be queued' );
     }
 }

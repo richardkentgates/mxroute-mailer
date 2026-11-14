@@ -215,41 +215,21 @@ class MXRoute_Abilities {
 	 * @return array|WP_Error
 	 */
 	public function ability_send_test( array $input = array() ) {
-		$to = sanitize_email( $input['to'] ?? '' );
-		if ( '' === $to ) {
-			return new WP_Error( 'invalid_input', 'A recipient address is required.' );
-		}
-		$from = (string) get_option( 'mxroute_mailer_username', '' );
-		if ( '' === $from ) {
-			return new WP_Error(
-				'missing_config',
-				'Missing sender address — the mail transport is not configured.'
-			);
-		}
-		$subject = sanitize_text_field( $input['subject'] ?? '' );
-		if ( '' === $subject ) {
-			$subject = __( 'MXRoute Mailer Test', 'mxroute-mailer' );
-		}
-		$body = sanitize_textarea_field( $input['body'] ?? '' );
-		if ( '' === $body ) {
-			$body = __( 'This is a test email from MXRoute Mailer.', 'mxroute-mailer' );
-		}
-
-		// Route through the plugin's real pipeline (the same one wp_mail
-		// and the dashboard test form use): the queue logs the message and
-		// the cron processor delivers it. A direct API call here would
-		// report success regardless of the outcome and leave no trace.
-		$queue  = new MXRoute_Queue();
-		$log_id = $queue->add( $from, $to, $subject, $body, '', array(), '' );
-		if ( false === $log_id ) {
-			return new WP_Error( 'send_failed', 'The test message could not be queued.' );
+		$result = MXRoute_Mailer::send_test_email(
+			$input['to'] ?? '',
+			$input['subject'] ?? '',
+			$input['body'] ?? ''
+		);
+		if ( is_wp_error( $result ) ) {
+			return $result;
 		}
 		return array(
 			'sent'   => true,
 			'queued' => true,
-			'log_id' => (int) $log_id,
-			'to'     => $to,
-			'from'   => $from,
+			'log_id' => $result['log_id'],
+			'to'     => $result['to'],
+			'from'   => $result['from'],
 		);
 	}
+
 }
