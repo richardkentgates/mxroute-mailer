@@ -135,9 +135,11 @@ class MXRoute_Abilities {
 			'output_schema' => array(
 				'type'       => 'object',
 				'properties' => array(
-					'sent' => array( 'type' => 'boolean' ),
-					'to'   => array( 'type' => 'string' ),
-					'from' => array( 'type' => 'string' ),
+					'sent'   => array( 'type' => 'boolean', 'description' => 'Accepted into the delivery pipeline (queued), not yet confirmed delivered.' ),
+					'queued' => array( 'type' => 'boolean' ),
+					'log_id' => array( 'type' => 'integer', 'description' => 'Queue log row ID; delivery status is recorded against it.' ),
+					'to'     => array( 'type' => 'string' ),
+					'from'   => array( 'type' => 'string' ),
 				),
 			),
 			'execute_callback'    => array( $this, 'ability_send_test' ),
@@ -233,14 +235,21 @@ class MXRoute_Abilities {
 			$body = __( 'This is a test email from MXRoute Mailer.', 'mxroute-mailer' );
 		}
 
-		$api    = new MXRoute_API();
-		$result = $api->send( $from, $to, $subject, $body );
-		if ( is_wp_error( $result ) ) {
-			return $result;
+		// Route through the plugin's real pipeline (the same one wp_mail
+		// and the dashboard test form use): the queue logs the message and
+		// the cron processor delivers it. A direct API call here would
+		// report success regardless of the outcome and leave no trace.
+		$queue  = new MXRoute_Queue();
+		$log_id = $queue->add( $from, $to, $subject, $body, '', array(), '' );
+		if ( false === $log_id ) {
+			return new WP_Error( 'send_failed', 'The test message could not be queued.' );
 		}
-		if ( ! $result ) {
-			return new WP_Error( 'send_failed', 'The test message could not be sent.' );
-		}
-		return array( 'sent' => true, 'to' => $to, 'from' => $from );
+		return array(
+			'sent'   => true,
+			'queued' => true,
+			'log_id' => (int) $log_id,
+			'to'     => $to,
+			'from'   => $from,
+		);
 	}
 }
