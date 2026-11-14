@@ -443,6 +443,51 @@ class MXRoute_Mailer {
 	 *
 	 * @return void
 	 */
+	/**
+	 * Canonical test send — the single path every caller uses (the
+	 * dashboard test form, `wp mxroute test`, and the mxroute/send-test
+	 * ability). It queues the message through the same pipeline as real
+	 * mail, so it is logged, delivered, and retried exactly like every
+	 * other email. No caller may send out-of-band; the queue is the only
+	 * transport.
+	 *
+	 * @param string $to        Recipient.
+	 * @param string $subject   Optional subject.
+	 * @param string $body      Optional body.
+	 * @param array  $attachments Optional attachment paths.
+	 * @return array|WP_Error { log_id, to, from, subject, queued }
+	 */
+	public static function send_test_email( $to, $subject = '', $body = '', $attachments = array() ) {
+		$to = MXRoute_API::sanitize_email_address( (string) $to );
+		if ( '' === $to ) {
+			return new WP_Error( 'invalid_input', 'A recipient address is required.' );
+		}
+		$from = (string) get_option( 'mxroute_mailer_username', '' );
+		if ( '' === $from ) {
+			return new WP_Error( 'missing_config', 'Missing sender address — the mail transport is not configured.' );
+		}
+		$subject = sanitize_text_field( (string) $subject );
+		if ( '' === $subject ) {
+			$subject = __( 'MXRoute Mailer Test', 'mxroute-mailer' );
+		}
+		$body = sanitize_textarea_field( (string) $body );
+		if ( '' === $body ) {
+			$body = __( 'This is a test email from MXRoute Mailer.', 'mxroute-mailer' );
+		}
+		$queue  = new MXRoute_Queue();
+		$log_id = $queue->add( $from, $to, $subject, $body, '', (array) $attachments, '' );
+		if ( false === $log_id ) {
+			return new WP_Error( 'send_failed', 'The test message could not be queued.' );
+		}
+		return array(
+			'log_id'  => (int) $log_id,
+			'to'      => $to,
+			'from'    => $from,
+			'subject' => $subject,
+			'queued'  => true,
+		);
+	}
+
 	public function handle_test_email() {
 		if (
 			! isset( $_POST['mxroute_test_email_nonce'] ) ||
@@ -531,15 +576,16 @@ class MXRoute_Mailer {
 		}
 
 		// Queue the test email so it goes through the same path as real emails.
-		$queue = new MXRoute_Queue();
-		$queue->add( $from, $to, $subject, $body, '', $attachments, '' );
+		$result = self::send_test_email( $to, $subject, $body, $attachments );
 
 		set_transient(
 			'mxroute_test_email_result',
 			array(
-				'success' => true,
-				'queued'  => true,
-				'message' => __( 'Test email queued for sending.', 'mxroute-mailer' ),
+				'success' => ! is_wp_error( $result ),
+				'queued'  => ! is_wp_error( $result ),
+				'message' => is_wp_error( $result )
+					? $result->get_error_message()
+					: __( 'Test email queued for sending.', 'mxroute-mailer' ),
 			),
 			60
 		);

@@ -135,9 +135,11 @@ class MXRoute_Abilities {
 			'output_schema' => array(
 				'type'       => 'object',
 				'properties' => array(
-					'sent' => array( 'type' => 'boolean' ),
-					'to'   => array( 'type' => 'string' ),
-					'from' => array( 'type' => 'string' ),
+					'sent'   => array( 'type' => 'boolean', 'description' => 'Accepted into the delivery pipeline (queued), not yet confirmed delivered.' ),
+					'queued' => array( 'type' => 'boolean' ),
+					'log_id' => array( 'type' => 'integer', 'description' => 'Queue log row ID; delivery status is recorded against it.' ),
+					'to'     => array( 'type' => 'string' ),
+					'from'   => array( 'type' => 'string' ),
 				),
 			),
 			'execute_callback'    => array( $this, 'ability_send_test' ),
@@ -213,34 +215,21 @@ class MXRoute_Abilities {
 	 * @return array|WP_Error
 	 */
 	public function ability_send_test( array $input = array() ) {
-		$to = sanitize_email( $input['to'] ?? '' );
-		if ( '' === $to ) {
-			return new WP_Error( 'invalid_input', 'A recipient address is required.' );
-		}
-		$from = (string) get_option( 'mxroute_mailer_username', '' );
-		if ( '' === $from ) {
-			return new WP_Error(
-				'missing_config',
-				'Missing sender address — the mail transport is not configured.'
-			);
-		}
-		$subject = sanitize_text_field( $input['subject'] ?? '' );
-		if ( '' === $subject ) {
-			$subject = __( 'MXRoute Mailer Test', 'mxroute-mailer' );
-		}
-		$body = sanitize_textarea_field( $input['body'] ?? '' );
-		if ( '' === $body ) {
-			$body = __( 'This is a test email from MXRoute Mailer.', 'mxroute-mailer' );
-		}
-
-		$api    = new MXRoute_API();
-		$result = $api->send( $from, $to, $subject, $body );
+		$result = MXRoute_Mailer::send_test_email(
+			$input['to'] ?? '',
+			$input['subject'] ?? '',
+			$input['body'] ?? ''
+		);
 		if ( is_wp_error( $result ) ) {
 			return $result;
 		}
-		if ( ! $result ) {
-			return new WP_Error( 'send_failed', 'The test message could not be sent.' );
-		}
-		return array( 'sent' => true, 'to' => $to, 'from' => $from );
+		return array(
+			'sent'   => true,
+			'queued' => true,
+			'log_id' => $result['log_id'],
+			'to'     => $result['to'],
+			'from'   => $result['from'],
+		);
 	}
+
 }
