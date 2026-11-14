@@ -499,14 +499,13 @@ class MXRoute_CLI_Commands extends WP_CLI_Command {
 			$message = __( 'This is a test email from MXRoute Mailer CLI.', 'mxroute-mailer' );
 		}
 
-		$queue = new MXRoute_Queue();
-		$log_id = $queue->add( $from, $to, $subject, $message, '', array(), '' );
+		$result = MXRoute_Mailer::send_test_email( $to, $subject, $message );
 
-		if ( false === $log_id ) {
-			WP_CLI::error( 'Failed to queue test email.' );
+		if ( is_wp_error( $result ) ) {
+			WP_CLI::error( $result->get_error_message() );
 		}
 
-		WP_CLI::success( sprintf( 'Test email queued (ID: %d). It will be sent on the next cron cycle.', $log_id ) );
+		WP_CLI::success( sprintf( 'Test email queued (ID: %d). It will be sent on the next cron cycle.', $result['log_id'] ) );
 	}
 }
 
