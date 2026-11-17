@@ -6,7 +6,26 @@
 - PHP 7.3 or higher
 - A [MXRoute](https://mxroute.com) account with API credentials
 
-## Method 1: Upload via WordPress Admin
+## Method 1: GCM-managed servers (standard)
+
+On GCM-provisioned hosts, install with:
+
+```bash
+gcm install-mxroute-mailer
+```
+
+It installs the plugin **absent-only** (no-op if already present) and **never activates it** — activation is a human decision (see Post-Installation).
+
+## Method 2: WordPress admin (standard)
+
+**Via the plugin installer:**
+
+1. Download the latest release zip from [GitHub Releases](https://github.com/richardkentgates/mxroute-mailer/releases)
+2. In WordPress admin, go to **Plugins → Add New → Upload Plugin**
+3. Upload the zip — WordPress installs the files and owns them
+4. Click **Activate**
+
+**Manual upload:**
 
 1. Download the latest release from [GitHub Releases](https://github.com/richardkentgates/mxroute-mailer/releases)
 2. Extract the `mxroute-mailer` folder from the zip file
@@ -15,20 +34,24 @@
 5. Go to **Plugins** and find "MXRoute Mailer"
 6. Click **Activate**
 
-## Method 2: Git Clone (Recommended for Production)
-
-SSH into your server and run:
-
-```bash
-cd /srv/www/wordpress/wp-content/plugins/
-sudo git clone https://github.com/richardkentgates/mxroute-mailer.git mxroute-mailer
-```
-
 ## Method 3: WP-CLI
 
 ```bash
 wp plugin install --activate path/to/mxroute-mailer
 ```
+
+## Method 4: Git Clone (development and testing only — not for production)
+
+```bash
+cd /srv/www/wordpress/wp-content/plugins/
+git clone https://github.com/richardkentgates/mxroute-mailer.git mxroute-mailer
+```
+
+Never run this with `sudo` — root-owned plugin files break dashboard
+updates (WordPress cannot write to the directory; the same failure mode
+as root-run plugin installs). If the files are already root-owned,
+repair with `sudo chown -R www-data:www-data mxroute-mailer`. For
+production sites use Method 1 or 2.
 
 ## Post-Installation
 

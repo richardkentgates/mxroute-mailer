@@ -397,7 +397,7 @@ class MXRoute_Queue {
 	}
 
 	/**
-	 * Write status JSON to /var/run/mxroute-status.json.
+	 * Write status JSON to wp-content/mxroute-status.json.
 	 *
 	 * Called after each queue batch to keep the status file current.
 	 * The file is read by the GCM MU plugin dashboard widget and
