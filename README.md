@@ -70,7 +70,7 @@ MXRoute Mailer includes a built-in updater that checks the apt server for new ve
 
 ## WP-CLI
 
-MXRoute Mailer includes WP-CLI commands for command-line management:
+MXRoute Mailer includes WP-CLI commands for command-line management (reference: [`wiki/Configuration.md`](wiki/Configuration.md) — the source of truth for the full CLI reference):
 
 ```bash
 # View all settings

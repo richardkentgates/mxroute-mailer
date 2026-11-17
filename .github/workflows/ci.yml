@@ -3,6 +3,7 @@ name: Quality and Security Checks
 on:
   push:
     branches: [ dev ]
+  workflow_dispatch:
 
 permissions: {}
 
@@ -10,7 +11,9 @@ jobs:
   version-bump:
     name: Bump patch version
     runs-on: ubuntu-latest
-    if: github.actor != 'github-actions[bot]'
+    # Bump on human pushes only — a gate-dispatched verification run must
+    # never rewrite the tree it is verifying (pinned-gate requirement).
+    if: github.actor != 'github-actions[bot]' && github.event_name == 'push'
     permissions:
       contents: write
     steps:

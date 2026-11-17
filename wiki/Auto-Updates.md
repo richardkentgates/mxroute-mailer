@@ -29,7 +29,7 @@ Alternatively, go to **Plugins** and click **Check for updates**.
 
 1. When an update is available, you'll see a notification on the Plugins page
 2. Click **Update Now** next to MXRoute Mailer
-3. The update downloads from GitHub and installs automatically
+3. The update downloads from the apt server (the same `metadata.json` feed above) and installs automatically
 
 ### Via WP-CLI
 
