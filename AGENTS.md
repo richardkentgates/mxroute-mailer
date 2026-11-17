@@ -30,7 +30,7 @@ mxroute-mailer/
 │   └── index.php                   # i18n directory (translations go here)
 ├── assets/
 │   └── test-attachment.txt         # Persistent test attachment file
-├── tests/                          # PHPUnit tests (295 tests)
+├── tests/                          # PHPUnit tests
 ├── .github/workflows/              # CI/CD and promotion workflows
 ├── wiki/                           # Local copies of GitHub wiki pages
 ├── phpunit.xml                     # PHPUnit configuration
@@ -180,6 +180,8 @@ Commands are loaded conditionally via `WP_CLI` constant check. The CLI class is 
 - **Version drift.** Do not manually bump patch versions. CI handles it automatically on every dev push. Only bump minor/major versions manually when needed.
 - **Apt server deployment requires secrets.** The promotion workflows use `DEPLOY_SSH_KEY`, `DEPLOY_HOST`, and `DEPLOY_USER` secrets for SSH access to the apt server.
 - **Updater must NOT cache metadata in a transient.** The `get_metadata()` method in `MXRoute_Updater` must fetch fresh from the apt server every time WordPress calls `inject_update`. MetaManager's updater works this way and detects updates within minutes. Caching metadata in a WordPress transient (e.g. `mxroute_remote_metadata`) for 12 hours breaks update detection because: (1) a failed fetch caches empty string, which is falsy, causing `get_metadata` to return null for 12 hours; (2) even on success, WordPress calls `set_site_transient('update_plugins', ...)` multiple times per check cycle (once for `last_checked` update, once for the full API result), and a stale cached value can cause the second call to overwrite the first with no update data. The fix (committed 2026-09-03) removed the `TRANSIENT` and `CACHE_TTL` constants and all `get_transient`/`set_transient` calls from `get_metadata()`. Do not re-add them.
+- **Schema migrations must run on `init`, not `admin_init`** — any version-gated DB upgrade that new code depends on must fire before any plugin write on any request type (proven 2026-10-21 when admin_init-only upgrades silently dropped emails).
+- **'Stuck' queue entries need timed observation first** — cron passes every 60s and entries can lag hours; do not reconfigure when merely delayed (workspace rule 14 applies to queue diagnosis).
 
 ## Documentation
 

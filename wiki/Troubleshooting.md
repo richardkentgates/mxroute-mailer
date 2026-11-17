@@ -136,8 +136,8 @@ sudo git -C /path/to/wp-content/plugins/mxroute-mailer checkout v1.2.4
 
 If you see database errors about missing `reply_to` column:
 
-1. Visit any WordPress admin page (triggers `admin_init` hook)
-2. The migration runs automatically on admin init
+1. Visit any WordPress page (triggers the `init` hook)
+2. The migration runs automatically on `init` — never `admin_init`, so it fires on any request type
 3. If it still fails, manually run:
    ```sql
    ALTER TABLE {prefix}_mxroute_mailer_logs ADD COLUMN reply_to varchar(255) NOT NULL DEFAULT '' AFTER from_email;

@@ -56,6 +56,9 @@ mxroute-mailer/
 │   ├── class-mxroute-queue.php     # Queue CRUD operations
 │   ├── class-mxroute-dashboard.php # AJAX handlers for log management
 │   ├── class-mxroute-updater.php   # Apt-server-based auto-updater
+│   ├── class-mxroute-rest-api.php  # REST endpoint for status JSON
+│   ├── class-mxroute-abilities.php # AI abilities (mxroute/* namespace)
+│   ├── class-mxroute-cron-tracker.php # Cron history tracking wrapper
 │   └── class-mxroute-cli.php       # WP-CLI commands: settings, logs, queue, test
 ├── admin/
 │   ├── views/
@@ -71,22 +74,27 @@ mxroute-mailer/
 │   └── test-attachment.txt         # Persistent test attachment file
 ├── tests/
 │   ├── bootstrap.php               # Test bootstrap with mocks
+│   ├── fixtures/                   # Test fixtures
+│   ├── mock-wp-cli-utils.php       # WP-CLI utils mock
 │   ├── test-mxroute-mailer.php     # Core mailer tests
 │   ├── test-class-settings.php     # Settings tests
 │   ├── test-class-logger.php       # Logger tests
 │   ├── test-class-dashboard.php    # Dashboard AJAX tests
 │   ├── test-class-queue.php        # Queue and API tests
 │   ├── test-class-crypto.php       # Encryption tests
+│   ├── test-class-cli.php          # WP-CLI command tests
 │   ├── test-class-mxroute-api.php  # API client tests
+│   ├── test-abilities.php          # AI abilities tests
+│   ├── test-can-manage.php         # Capability helper tests
+│   ├── test-dashboard-widget.php   # Dashboard widget tests
+│   ├── test-db-upgrade.php         # DB upgrade (init) tests
 │   ├── test-edge-cases.php         # Edge case and boundary tests
 │   └── test-coverage-gaps.php      # Coverage gap tests
 ├── .github/
 │   ├── workflows/
-│   │   ├── ci.yml                  # Quality and security checks
-│   │   ├── version-bump.yml        # Auto patch-version bump on dev push
-│   │   ├── promote-to-test.yml     # Dev → Test promotion
-│   │   ├── promote-to-main.yml     # Test → Main promotion
-│   │   └── release.yml             # Release build and publish
+│   │   ├── ci.yml                  # Quality and security checks (includes the version-bump job)
+│   │   ├── promote-to-test.yml     # Dev → Test promotion (manual)
+│   │   └── promote-to-main.yml     # Test → Main promotion (manual)
 │   └── CONTRIBUTING.md             # Contribution guidelines
 ├── wiki/                           # GitHub wiki pages (local copies)
 ├── readme.txt                      # WordPress plugin readme
@@ -135,7 +143,7 @@ The promotion workflows are triggered manually via `workflow_dispatch`. Always r
 gh workflow run "Promote to Test" --repo richardkentgates/mxroute-mailer --ref dev
 ```
 
-This merges `dev` into `test` and uploads a test artifact.
+This merges `dev` into `test`, builds the zip, and deploys it to the apt server test channel (`/var/www/html/mxroute-mailer-test/`).
 
 ### Test → Main
 
@@ -143,11 +151,11 @@ This merges `dev` into `test` and uploads a test artifact.
 gh workflow run "Promote to Main" --repo richardkentgates/mxroute-mailer --ref test
 ```
 
-This merges `test` into `main`, creates the release tag, and triggers the Release workflow.
+This merges `test` into `main`, creates the release tag, builds the zip, creates the GitHub release, and deploys to the apt server production channel (`/var/www/html/mxroute-mailer/`).
 
 ### Version Bump
 
-Every human push to `dev` automatically increments the patch version in `mxroute-mailer.php`. The bump commit is made by `github-actions[bot]` with `[version] [skip ci]` in the message so it does not re-trigger CI.
+Every human push to `dev` automatically increments the patch version in `mxroute-mailer.php` (the `version-bump` job in `ci.yml`). The bump commit is made by `github-actions[bot]`; the job's `github.actor != 'github-actions[bot]'` condition keeps the bump commit from re-triggering CI.
 
 ## CI/CD Pipeline
 
@@ -174,36 +182,30 @@ Bumps the patch version in `mxroute-mailer.php` and pushes the change back to `d
 **Trigger:** Manual dispatch from the `dev` branch.
 
 - Validates the source branch is `dev`
-- Creates or finds an open PR from `dev` to `test`
-- Merges the PR
-- Builds a test zip artifact
+- Verifies CI passed on `dev`
+- Merges `dev` into `test` (direct git merge) and pushes
+- Builds the zip and deploys it to the apt server test channel (`/var/www/html/mxroute-mailer-test/`), writing `metadata.json`
 
 ### Promote to Main (`promote-to-main.yml`)
 
 **Trigger:** Manual dispatch from the `test` branch.
 
 - Validates the source branch is `test`
-- Creates or finds an open PR from `test` to `main`
-- Merges the PR
-- Checks out `origin/main` and creates the release tag
-- Triggers the Release workflow for the new tag
-
-### Release (`promote-to-main.yml`)
-
-**Trigger:** Push of a `v*` tag, or manual dispatch.
-
-- Builds the release zip in `/tmp` with a top-level `mxroute-mailer/` folder
-- Creates a GitHub release and attaches the zip
+- Verifies CI passed on `dev`
+- Merges `test` into `main` (direct git merge) and pushes
+- Creates the release tag on `main`
+- Builds the zip and creates the GitHub release with the zip + checksum attached
+- Deploys to the apt server production channel (`/var/www/html/mxroute-mailer/`) and validates the deployed `metadata.json`
 
 ## Releasing a New Version
 
 There is no manual version-editing step for patch releases. The pipeline handles it:
 
 1. Merge your feature PR into `dev`.
-2. The Auto Bump Version workflow increments the patch version (e.g., `1.2.14` → `1.2.15`).
+2. The `version-bump` job in `ci.yml` increments the patch version (e.g., `1.2.14` → `1.2.15`).
 3. Run Promote to Test from `dev`.
 4. Run Promote to Main from `test`.
-5. The Release workflow creates the GitHub release with the zip attached.
+5. Promote to Main creates the GitHub release with the zip attached.
 
 If you need a minor or major version bump, update the version manually in `mxroute-mailer.php` before pushing to `dev`.
 
@@ -354,7 +356,7 @@ When adding new database columns:
    - Checks if the column exists
    - Adds it if missing
    - Updates the `mxroute_mailer_db_version` option
-3. The migration runs automatically on `admin_init`
+3. The migration runs automatically on `init` (never `admin_init` — it must fire before any plugin write on any request type)
 
 ## Contributing
 

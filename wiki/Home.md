@@ -12,7 +12,7 @@ If your hosting provider blocks SMTP ports, standard WordPress email and SMTP pl
 
 - Google Cloud Platform
 - AWS (EC2, Lightsail)
-- Shared hosting with restricted ports
+- cPanel-style hosting with restricted ports
 - Any environment where SMTP is blocked
 
 ## Features

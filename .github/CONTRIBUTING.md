@@ -129,7 +129,7 @@ The test bootstrap mocks WordPress functions to allow testing without a full Wor
 - [ ] All PHPUnit tests pass
 - [ ] New tests added for new functionality
 - [ ] Documentation updated (`readme.txt`, wiki if applicable)
-- [ ] Do not bump the version number manually; the Auto Bump Version workflow handles patch bumps on `dev`
+- [ ] Do not bump the version number manually; the `version-bump` job in `ci.yml` handles patch bumps on `dev`
 
 ### PR Description
 
@@ -170,10 +170,10 @@ Include:
 Patch releases are automated:
 
 1. Merge changes into `dev`
-2. The Auto Bump Version workflow increments the patch version in `mxroute-mailer.php`
+2. The `version-bump` job in `ci.yml` increments the patch version in `mxroute-mailer.php`
 3. Run the Promote to Test workflow from `dev`
 4. Run the Promote to Main workflow from `test`
-5. The Release workflow automatically builds the zip and creates the GitHub release
+5. The Promote to Main workflow builds the zip and creates the GitHub release
 
 For minor or major releases, update the version manually in `mxroute-mailer.php` before pushing to `dev`.
 
